@@ -28,6 +28,12 @@ This living tracker records all completed labs, runtime metrics, review counts, 
 | **Pillar IV** | `09_project_blueprints` | 0 | 4 | **Not Started** |
 | **Pillar IV** | `10_llm_training_finetuning` | 0 | 3 | **Not Started** |
 | **Pillar V** | `11_harness_architecture` | 0 | 3 | **Not Started** |
+| **Pillar VI** | `12_context_engine_and_compaction` | 0 | 3 | **Not Started** |
+| **Pillar VI** | `13_mcp_and_universal_tooling` | 0 | 3 | **Not Started** |
+| **Pillar VI** | `14_agentic_memory_systems` | 0 | 3 | **Not Started** |
+| **Pillar VI** | `15_security_prompt_injection_redaction` | 0 | 3 | **Not Started** |
+| **Pillar VII** | `16_codebase_indexing_and_ast_parsing` | 0 | 3 | **Not Started** |
+| **Pillar VII** | `17_cli_terminal_harness_and_hitl` | 0 | 3 | **Not Started** |
 
 ---
 
@@ -380,3 +386,190 @@ This living tracker records all completed labs, runtime metrics, review counts, 
 - **Score**: 0/5
 - **Key Takeaways & Discussions**:
   - *Pending initial run.*
+
+---
+
+### Pillar VI — Module 12: Context Engine & Token Budget Compaction
+
+#### Lab 1: Dynamic Sliding Window & Context Summarizer
+- **Script**: [`education/labs/12_context_engine/lab1_context_summarizer.py`](../education/labs/12_context_engine/lab1_context_summarizer.py)
+- **Doc & Q&A**: [`education/labs/12_context_engine/lab1_context_summarizer.md`](../education/labs/12_context_engine/lab1_context_summarizer.md)
+- **Last Executed**: `Not run yet`
+- **Review Count**: 0
+- **Score**: 0/5
+- **Key Takeaways & Discussions**:
+  - *Pending initial run.*
+
+#### Lab 2: Tool Output Micro-Compaction & Transcript Pruning
+- **Script**: [`education/labs/12_context_engine/lab2_transcript_pruner.py`](../education/labs/12_context_engine/lab2_transcript_pruner.py)
+- **Doc & Q&A**: [`education/labs/12_context_engine/lab2_transcript_pruner.md`](../education/labs/12_context_engine/lab2_transcript_pruner.md)
+- **Last Executed**: `Not run yet`
+- **Review Count**: 0
+- **Score**: 0/5
+- **Key Takeaways & Discussions**:
+  - *Pending initial run.*
+
+#### Lab 3: Dynamic System Prompt Hydration Engine
+- **Script**: [`education/labs/12_context_engine/lab3_prompt_hydrator.py`](../education/labs/12_context_engine/lab3_prompt_hydrator.py)
+- **Doc & Q&A**: [`education/labs/12_context_engine/lab3_prompt_hydrator.md`](../education/labs/12_context_engine/lab3_prompt_hydrator.md)
+- **Last Executed**: `Not run yet`
+- **Review Count**: 0
+- **Score**: 0/5
+- **Key Takeaways & Discussions**:
+  - *Pending initial run.*
+
+---
+
+### Pillar VI — Module 13: Model Context Protocol (MCP) & Universal Tooling Interface
+
+#### Lab 1: MCP Stdio Server & Client Protocol Handshake
+- **Script**: [`education/labs/13_mcp_tooling/lab1_mcp_stdio_server.py`](../education/labs/13_mcp_tooling/lab1_mcp_stdio_server.py)
+- **Doc & Q&A**: [`education/labs/13_mcp_tooling/lab1_mcp_stdio_server.md`](../education/labs/13_mcp_tooling/lab1_mcp_stdio_server.md)
+- **Last Executed**: `Not run yet`
+- **Review Count**: 0
+- **Score**: 0/5
+- **Key Takeaways & Discussions**:
+  - *Pending initial run.*
+
+#### Lab 2: Dynamic Tool Discovery & JSON-RPC Registration
+- **Script**: [`education/labs/13_mcp_tooling/lab2_mcp_tool_registry.py`](../education/labs/13_mcp_tooling/lab2_mcp_tool_registry.py)
+- **Doc & Q&A**: [`education/labs/13_mcp_tooling/lab2_mcp_tool_registry.md`](../education/labs/13_mcp_tooling/lab2_mcp_tool_registry.md)
+- **Last Executed**: `Not run yet`
+- **Review Count**: 0
+- **Score**: 0/5
+- **Key Takeaways & Discussions**:
+  - *Pending initial run.*
+
+#### Lab 3: Standardized Resource & Prompt Template Provider
+- **Script**: [`education/labs/13_mcp_tooling/lab3_mcp_resource_provider.py`](../education/labs/13_mcp_tooling/lab3_mcp_resource_provider.py)
+- **Doc & Q&A**: [`education/labs/13_mcp_tooling/lab3_mcp_resource_provider.md`](../education/labs/13_mcp_tooling/lab3_mcp_resource_provider.md)
+- **Last Executed**: `Not run yet`
+- **Review Count**: 0
+- **Score**: 0/5
+- **Key Takeaways & Discussions**:
+  - *Pending initial run.*
+
+---
+
+### Pillar VI — Module 14: Agentic Memory Systems (Episodic, Semantic & Procedural)
+
+#### Lab 1: Episodic Trajectory Store & Execution History Search
+- **Script**: [`education/labs/14_agentic_memory/lab1_episodic_memory.py`](../education/labs/14_agentic_memory/lab1_episodic_memory.py)
+- **Doc & Q&A**: [`education/labs/14_agentic_memory/lab1_episodic_memory.md`](../education/labs/14_agentic_memory/lab1_episodic_memory.md)
+- **Last Executed**: `Not run yet`
+- **Review Count**: 0
+- **Score**: 0/5
+- **Key Takeaways & Discussions**:
+  - *Pending initial run.*
+
+#### Lab 2: Semantic Fact Store & User Preference Graph
+- **Script**: [`education/labs/14_agentic_memory/lab2_semantic_fact_graph.py`](../education/labs/14_agentic_memory/lab2_semantic_fact_graph.py)
+- **Doc & Q&A**: [`education/labs/14_agentic_memory/lab2_semantic_fact_graph.md`](../education/labs/14_agentic_memory/lab2_semantic_fact_graph.md)
+- **Last Executed**: `Not run yet`
+- **Review Count**: 0
+- **Score**: 0/5
+- **Key Takeaways & Discussions**:
+  - *Pending initial run.*
+
+#### Lab 3: Procedural Macro-Action & Learned Workflow Store
+- **Script**: [`education/labs/14_agentic_memory/lab3_procedural_workflow_store.py`](../education/labs/14_agentic_memory/lab3_procedural_workflow_store.py)
+- **Doc & Q&A**: [`education/labs/14_agentic_memory/lab3_procedural_workflow_store.md`](../education/labs/14_agentic_memory/lab3_procedural_workflow_store.md)
+- **Last Executed**: `Not run yet`
+- **Review Count**: 0
+- **Score**: 0/5
+- **Key Takeaways & Discussions**:
+  - *Pending initial run.*
+
+---
+
+### Pillar VI — Module 15: Security, Prompt Injection Defenses & Data Redaction
+
+#### Lab 1: Indirect Prompt Injection Scanner & Guard Filter
+- **Script**: [`education/labs/15_security_defenses/lab1_prompt_injection_scanner.py`](../education/labs/15_security_defenses/lab1_prompt_injection_scanner.py)
+- **Doc & Q&A**: [`education/labs/15_security_defenses/lab1_prompt_injection_scanner.md`](../education/labs/15_security_defenses/lab1_prompt_injection_scanner.md)
+- **Last Executed**: `Not run yet`
+- **Review Count**: 0
+- **Score**: 0/5
+- **Key Takeaways & Discussions**:
+  - *Pending initial run.*
+
+#### Lab 2: Secrets & PII Data Anonymization Engine
+- **Script**: [`education/labs/15_security_defenses/lab2_secrets_pii_redactor.py`](../education/labs/15_security_defenses/lab2_secrets_pii_redactor.py)
+- **Doc & Q&A**: [`education/labs/15_security_defenses/lab2_secrets_pii_redactor.md`](../education/labs/15_security_defenses/lab2_secrets_pii_redactor.md)
+- **Last Executed**: `Not run yet`
+- **Review Count**: 0
+- **Score**: 0/5
+- **Key Takeaways & Discussions**:
+  - *Pending initial run.*
+
+#### Lab 3: Output Code Sanitizer & AST Safety Checker
+- **Script**: [`education/labs/15_security_defenses/lab3_code_safety_sanitizer.py`](../education/labs/15_security_defenses/lab3_code_safety_sanitizer.py)
+- **Doc & Q&A**: [`education/labs/15_security_defenses/lab3_code_safety_sanitizer.md`](../education/labs/15_security_defenses/lab3_code_safety_sanitizer.md)
+- **Last Executed**: `Not run yet`
+- **Review Count**: 0
+- **Score**: 0/5
+- **Key Takeaways & Discussions**:
+  - *Pending initial run.*
+
+---
+
+### Pillar VII — Module 16: Codebase Indexing & AST Parsing Engine
+
+#### Lab 1: AST Symbol & Dependency Graph Extractor
+- **Script**: [`education/labs/16_codebase_indexing/lab1_ast_symbol_extractor.py`](../education/labs/16_codebase_indexing/lab1_ast_symbol_extractor.py)
+- **Doc & Q&A**: [`education/labs/16_codebase_indexing/lab1_ast_symbol_extractor.md`](../education/labs/16_codebase_indexing/lab1_ast_symbol_extractor.md)
+- **Last Executed**: `Not run yet`
+- **Review Count**: 0
+- **Score**: 0/5
+- **Key Takeaways & Discussions**:
+  - *Pending initial run.*
+
+#### Lab 2: Lexical Regex Search & File Tree Map Engine
+- **Script**: [`education/labs/16_codebase_indexing/lab2_lexical_grep_indexer.py`](../education/labs/16_codebase_indexing/lab2_lexical_grep_indexer.py)
+- **Doc & Q&A**: [`education/labs/16_codebase_indexing/lab2_lexical_grep_indexer.md`](../education/labs/16_codebase_indexing/lab2_lexical_grep_indexer.md)
+- **Last Executed**: `Not run yet`
+- **Review Count**: 0
+- **Score**: 0/5
+- **Key Takeaways & Discussions**:
+  - *Pending initial run.*
+
+#### Lab 3: Unified Diff & Code Patch Execution Engine
+- **Script**: [`education/labs/16_codebase_indexing/lab3_unified_diff_patcher.py`](../education/labs/16_codebase_indexing/lab3_unified_diff_patcher.py)
+- **Doc & Q&A**: [`education/labs/16_codebase_indexing/lab3_unified_diff_patcher.md`](../education/labs/16_codebase_indexing/lab3_unified_diff_patcher.md)
+- **Last Executed**: `Not run yet`
+- **Review Count**: 0
+- **Score**: 0/5
+- **Key Takeaways & Discussions**:
+  - *Pending initial run.*
+
+---
+
+### Pillar VII — Module 17: CLI Terminal Harness & Interactive HITL
+
+#### Lab 1: Stdio Process Piping & Terminal Stream Handler
+- **Script**: [`education/labs/17_cli_harness/lab1_stdio_terminal_pipe.py`](../education/labs/17_cli_harness/lab1_stdio_terminal_pipe.py)
+- **Doc & Q&A**: [`education/labs/17_cli_harness/lab1_stdio_terminal_pipe.md`](../education/labs/17_cli_harness/lab1_stdio_terminal_pipe.md)
+- **Last Executed**: `Not run yet`
+- **Review Count**: 0
+- **Score**: 0/5
+- **Key Takeaways & Discussions**:
+  - *Pending initial run.*
+
+#### Lab 2: ANSI Escape Stripper & Terminal Formatter
+- **Script**: [`education/labs/17_cli_harness/lab2_ansi_format_cleaner.py`](../education/labs/17_cli_harness/lab2_ansi_format_cleaner.py)
+- **Doc & Q&A**: [`education/labs/17_cli_harness/lab2_ansi_format_cleaner.md`](../education/labs/17_cli_harness/lab2_ansi_format_cleaner.md)
+- **Last Executed**: `Not run yet`
+- **Review Count**: 0
+- **Score**: 0/5
+- **Key Takeaways & Discussions**:
+  - *Pending initial run.*
+
+#### Lab 3: Interactive CLI User Handoff & Prompt Interceptor
+- **Script**: [`education/labs/17_cli_harness/lab3_cli_interactive_hitl.py`](../education/labs/17_cli_harness/lab3_cli_interactive_hitl.py)
+- **Doc & Q&A**: [`education/labs/17_cli_harness/lab3_cli_interactive_hitl.md`](../education/labs/17_cli_harness/lab3_cli_interactive_hitl.md)
+- **Last Executed**: `Not run yet`
+- **Review Count**: 0
+- **Score**: 0/5
+- **Key Takeaways & Discussions**:
+  - *Pending initial run.*
+
