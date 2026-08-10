@@ -69,7 +69,7 @@ Always highlight real-world engineering decisions during code reviews and lab wa
 - **Workspace Layout**:
   - `/education/`: Track 1 modules (`/education/modules/`) and hands-on lab code scripts (`/education/labs/`).
   - `/resources/human_to_ai_bridge/`: Intent-to-Primitive Translation Catalog (`resources/human_to_ai_bridge/intent_to_primitive_catalog.md`) mapping plain English intent to production software primitives.
-  - `/demos/`: Track 2 production demo applications (e.g. `/demos/01_learner_blog_poster_agent/`).
+  - `/demos/`: Track 2 production demo applications (e.g. `/demos/00_headless_linux_sysadmin_agent/`, `/demos/01_iot_integrater_agent/`).
   - `ROADMAP.md`: Master living roadmap tracking active phases (`resources/ROADMAP.md`).
 - **Track 1 (Labs)**: Focus on low-abstraction, zero-magic hands-on code experiments in `/education/labs` to see exact RPC calls, token streaming, state transitions, and memory mechanics.
 - **Track 2 (Demos)**: Translate mastered primitives into production components for real-world agent applications in `/demos`.

@@ -8,7 +8,7 @@ This living roadmap tracks the transition from Track 1 (mastering low-abstractio
 
 - **Current Active Phase**: **Phase 1: Intent-to-Primitive Reference Bridge** (`/resources/human_to_ai_bridge`).
 - **Target Goal**: Construct a plain-English translation catalog mapping user business intent to exact software primitives, and package it as a custom Antigravity skill/rule for AI coding assistants.
-- **Next Phase**: **Phase 2: Learner & Blog Poster Agent** (`/demos/01_learner_blog_poster_agent`).
+- **Next Phase**: **Phase 2: Production Demo Applications** (`/demos/00_headless_linux_sysadmin_agent` & `/demos/01_iot_integrater_agent`).
 
 ---
 
@@ -20,15 +20,16 @@ flowchart TD
         P1["Intent-to-Primitive Translation Catalog (/resources/human_to_ai_bridge)"]
     end
 
-    subgraph Phase 2: First Production Demo Project
-        P2["Learner & Blog Poster Agent (/demos/01_learner_blog_poster_agent)"]
+    subgraph Phase 2: Production Demo Applications
+        P2A["Headless Linux SysAdmin Agent (/demos/00_headless_linux_sysadmin_agent)"]
+        P2B["Smart IoT Integrator Agent (/demos/01_iot_integrater_agent)"]
     end
 
     subgraph Phase 3: Advanced Horizons
         P3["Module 12: Multi-Modal Vision & Context Compression (/education)"]
     end
 
-    P1 --> P2 --> P3
+    P1 --> P2A & P2B --> P3
 ```
 
 ---
@@ -42,12 +43,21 @@ flowchart TD
 - [x] Update `AGENTS.md` rules with the Intent-to-Primitive system prompt mapping.
 
 
-### Phase 2: First Production Demo Project — Learner & Blog Poster Agent (UPCOMING)
+### Phase 2: Production Demo Applications (UPCOMING)
+
+#### 00_headless_linux_sysadmin_agent
 - [ ] Architecture design: Session state hydrator + ReAct kernel + Sandboxed execution worker + SDUI HITL approval gate.
-- [ ] Subsystem 1: Content Research & Synthesis Agent (Ingests lab docs, extracts takeaways).
-- [ ] Subsystem 2: Blog Post Generator (Formats articles for personal blog).
-- [ ] Subsystem 3: LinkedIn Post Automation (Creates concise social summaries).
-- [ ] Subsystem 4: Human-in-the-Loop Gate (Requires token approval before live publishing).
+- [ ] Subsystem 1: System Monitoring & Telemetry Collector (Ingests log files, system metrics, hardware status).
+- [ ] Subsystem 2: Incident Diagnosis & Script Generator (Generates shell scripts and repair actions).
+- [ ] Subsystem 3: Automated Verification Harness (Executes checks inside sandboxed subprocess).
+- [ ] Subsystem 4: Human-in-the-Loop Safety Gate (Requires explicit clearance before running mutative/root commands).
+
+#### 01_iot_integrater_agent
+- [ ] Architecture design: MQTT/HTTP event subscriber + Async task queue + Logit steering + SDUI alert dashboard.
+- [ ] Subsystem 1: Sensor Telemetry Ingestion (Collects real-time MQTT payload feeds from smart home/industrial devices).
+- [ ] Subsystem 2: Anomaly Detection & Rule Engine (Identifies out-of-bounds readings and state changes).
+- [ ] Subsystem 3: Automated Actuator Commands (Dispatches state patches to smart switches, relays, and controllers).
+
 
 ### Phase 3: Module 12 — Advanced Horizons (PLANNED)
 - [ ] Lab 1: Multi-Modal Vision & Image Generation Integration.

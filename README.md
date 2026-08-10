@@ -26,7 +26,8 @@ AgenticAI-Labs/
 │   └── labs/                            # Low-abstraction Python implementations & co-located docs
 │
 ├── demos/                               # Production Application Harnesses & Demo Projects
-│   └── 01_learner_blog_poster_agent/    # Real-world agent projects built from primitives
+│   ├── 00_headless_linux_sysadmin_agent/# Headless Linux SysAdmin agent project
+│   └── 01_iot_integrater_agent/         # Smart IoT device & telemetry integration agent project
 │
 └── resources/                           # Master Reference Guides, Trackers & Bridges
     ├── LAB_TRACKER.md                   # Live lab execution & score tracker
@@ -38,36 +39,25 @@ AgenticAI-Labs/
 
 ---
 
-## 3. How to Use This Workspace: Step-by-Step Human Procedure
+## 3. How to Use This Workspace: Step-by-Step Procedure
 
 The workspace follows a strict 3-Phase workflow moving from concept research to lab experimentation and real-world application construction:
 
-| 1. Research & Module Specs (`/education/modules`) | 2. Hands-On Lab Code (`/education/labs`) | 3. Demo Application Projects (`/demos/<project>`) |
-| :--- | :--- | :--- |
-| **IDE Scope**: Open AI IDE (Antigravity, Claude Code, Cursor) at root directory (`AgenticAI-Labs/`). | **IDE Scope**: Open AI IDE at root directory (`AgenticAI-Labs/`). | **IDE Scope**: Open AI IDE directly in target demo folder (`demos/01_learner_blog_poster_agent/`). |
-| **Action**: Read architectural concept specifications (`education/modules/01_single_agent_architecture/00_the_react_loop.md`). | **Action**: Execute low-abstraction Python scripts (`python education/labs/01_single_agent/lab1_react_loop.py`), capture TTFT/TPS metrics, and inspect outputs. | **Action**: Copy `AGENTS_TEMPLATE.md` (as `AGENTS.md`) and `intent_to_primitive_catalog.md` from `resources/human_to_ai_bridge/` into the demo root. |
-| **Goal**: Understand problem statements, Rosetta Stone jargon mappings, and system design trade-offs. | **Goal**: See raw RPC calls, state transitions, and memory mechanics under the hood without magic framework abstractions. | **Goal**: Describe business features in plain English; AI maps intent to lab primitives, presents a Mermaid architecture flowchart, and builds decoupled code (`core/`, `api/`, `tools/`). |
-| **Maintenance**: Review concepts before writing code. | **Maintenance**: Auto-update `resources/LAB_TRACKER.md`. To restart labs from scratch, prompt AI using [`resources/tracker_reset_template.md`](file:///d:/Google/AgenticAI-Labs/resources/tracker_reset_template.md). | **Maintenance**: Report edge cases or new primitive needs back to root workspace. |
+### Phase 1: Module Concept Research (`/education/modules`)
+- **IDE Scope**: Open your AI IDE (Antigravity, Claude Code, Cursor) at the repository root directory (`AgenticAI-Labs/`).
+- **Action**: Read architectural concept specifications in [`education/modules/`](education/modules/) (e.g., [`education/modules/01_single_agent_architecture/00_the_react_loop.md`](education/modules/01_single_agent_architecture/00_the_react_loop.md)).
+- **Goal**: Understand problem statements, Rosetta Stone jargon mappings, and system design trade-offs before writing code. Ask your AI assistant to explain **WHEN** and **WHY** specific architectural patterns apply.
 
----
+### Phase 2: Hands-On Lab Experimentation (`/education/labs`)
+- **IDE Scope**: Keep your AI IDE open at the repository root directory so it automatically reads [`AGENTS.md`](AGENTS.md) and [`resources/LAB_TRACKER.md`](resources/LAB_TRACKER.md).
+- **Action**: Execute low-abstraction Python scripts in [`education/labs/`](education/labs/) (e.g., `python education/labs/01_single_agent/lab1_react_loop.py`), capture empirical metrics (TTFT, TPS, execution duration), and inspect co-located `.md` documentation files.
+- **Goal**: See raw RPC calls, state transitions, and memory mechanics under the hood without magic framework abstractions.
+- **Progress Tracking**: Your AI assistant automatically updates [`resources/LAB_TRACKER.md`](resources/LAB_TRACKER.md) after every lab execution. To restart the labs from scratch, prompt your AI assistant using [`resources/tracker_reset_template.md`](resources/tracker_reset_template.md).
 
-### Step-by-Step Execution Guidelines for Humans
-
-#### Phase 1: Module Concept Research
-1. Open your AI IDE (Antigravity, Claude Code, Cursor) at the root directory (`d:\Google\AgenticAI-Labs`).
-2. Navigate to `/education/modules/` to review architectural specifications and Rosetta Stone jargon mappings.
-3. Prompt your AI assistant to explain **WHEN** and **WHY** specific architectural patterns apply.
-
-#### Phase 2: Hands-On Lab Experimentation
-1. Keep your AI IDE open at the root directory so it automatically reads `AGENTS.md` and `resources/LAB_TRACKER.md`.
-2. Work through python scripts in `/education/labs/`. Run scripts via terminal and inspect co-located `.md` docs.
-3. The AI assistant automatically updates `resources/LAB_TRACKER.md` after every run.
-4. *Resetting Labs*: If you ever want to re-learn or restart the labs from scratch, copy the prompt from [`resources/tracker_reset_template.md`](file:///d:/Google/AgenticAI-Labs/resources/tracker_reset_template.md) into your chat.
-
-#### Phase 3: Building Real-World Applications
-1. Open a new AI IDE window pointing **directly** to your target demo project folder (e.g. `d:\Google\AgenticAI-Labs\demos\01_learner_blog_poster_agent`).
-2. Copy `AGENTS_TEMPLATE.md` (renamed as `AGENTS.md`) and `intent_to_primitive_catalog.md` from `resources/human_to_ai_bridge/` into your demo folder.
-3. Prompt the AI assistant with your desired feature in plain English. The local `AGENTS.md` will force the AI assistant to ask clarifying questions, map your intent to lab primitives, display a Mermaid architecture flowchart, and write production-grade decoupled code (`core/`, `api/`, `tools/`).
+### Phase 3: Building Real-World Applications (`/demos`)
+- **IDE Scope**: Open a new AI IDE window pointing directly to your target demo project folder (e.g., [`demos/00_headless_linux_sysadmin_agent/`](demos/00_headless_linux_sysadmin_agent/) or [`demos/01_iot_integrater_agent/`](demos/01_iot_integrater_agent/)).
+- **Action**: Copy `AGENTS_TEMPLATE.md` (renamed as `AGENTS.md`) and `intent_to_primitive_catalog.md` from [`resources/human_to_ai_bridge/`](resources/human_to_ai_bridge/) into your demo root directory.
+- **Goal**: Describe business features in plain English. The AI assistant maps your intent to lab primitives, presents a Mermaid architecture flowchart, and builds decoupled code (`core/`, `api/`, `tools/`).
 
 ---
 
@@ -111,9 +101,9 @@ The curriculum and codebase are organized across five fundamental engineering pi
 
 ## 6. Living Workspace Assets
 
-- [`AGENTS.md`](file:///d:/Google/AgenticAI-Labs/AGENTS.md): Defines coaching persona rules, environment setup, and the **Intent-to-Primitive Translation Protocol**.
-- [`resources/LAB_TRACKER.md`](file:///d:/Google/AgenticAI-Labs/resources/LAB_TRACKER.md): Live tracker recording completed labs, execution metrics, review counts, and resume pointers.
-- [`resources/ROADMAP.md`](file:///d:/Google/AgenticAI-Labs/resources/ROADMAP.md): Tracks active strategic phases from reference catalog setup to production demo projects.
-- [`resources/term_glossary.md`](file:///d:/Google/AgenticAI-Labs/resources/term_glossary.md): Master AI engineering and autonomy glossary.
-- [`resources/tracker_reset_template.md`](file:///d:/Google/AgenticAI-Labs/resources/tracker_reset_template.md): Prompt directive for resetting lab tracker history to restart learning.
-- [`resources/human_to_ai_bridge/intent_to_primitive_catalog.md`](file:///d:/Google/AgenticAI-Labs/resources/human_to_ai_bridge/intent_to_primitive_catalog.md): Plain-English catalog translating non-technical requirements into production lab primitives.
+- [`AGENTS.md`](AGENTS.md): Defines coaching persona rules, environment setup, and the **Intent-to-Primitive Translation Protocol**.
+- [`resources/LAB_TRACKER.md`](resources/LAB_TRACKER.md): Live tracker recording completed labs, execution metrics, review counts, and resume pointers.
+- [`resources/ROADMAP.md`](resources/ROADMAP.md): Tracks active strategic phases from reference catalog setup to production demo projects.
+- [`resources/term_glossary.md`](resources/term_glossary.md): Master AI engineering and autonomy glossary.
+- [`resources/tracker_reset_template.md`](resources/tracker_reset_template.md): Prompt directive for resetting lab tracker history to restart learning.
+- [`resources/human_to_ai_bridge/intent_to_primitive_catalog.md`](resources/human_to_ai_bridge/intent_to_primitive_catalog.md): Plain-English catalog translating non-technical requirements into production lab primitives.
