@@ -82,7 +82,7 @@ python education/12_reliability/lab2_cycle_detection.py
 `[ACTION]` and `[OBSERVATION]` for record 999, a `[TRAJECTORY HASH]`, then on the repeat `[CRITICAL ALERT] INFINITE LOOP DETECTED!` and `HALTED_BY_CYCLE_DETECTOR`. If the loop hits `max_turns` with no halt, the second call did not produce the same hash (args or result differed). If you see `URLError` or connection refused, the provider is not reachable. If you see HTTP 404, the model name is wrong or not pulled.
 
 ## Stop here
-This is not Tree of Thoughts and not MCTS. Do not add logit bias or a reflexion retry on this script. Chapter 04 is the loop. This lab only adds the hash. A later harness can call the same check. Do not rename this file even though two other files in this folder are also named lab2.
+This is not Tree of Thoughts and not MCTS. Do not add logit bias or a reflexion retry on this script. Chapter 04 is the loop. This lab only adds the hash. A later harness can call the same check.
 
 ## Notes
 - Mechanism: SHA-256 of `tool_name` plus sorted args plus the tool result. Membership in `seen_hashes` is the stop.
