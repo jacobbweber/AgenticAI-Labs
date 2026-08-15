@@ -27,6 +27,12 @@ $env:OLLAMA_MODEL="llama3.2:1b"
 python education/00_atoms/lab1_script_posts_json.py
 ```
 
+```bash
+export OLLAMA_HOST="http://127.0.0.1:11434"
+export OLLAMA_MODEL="llama3.2:1b"
+python education/00_atoms/lab1_script_posts_json.py
+```
+
 You see a few sentences of text. Then you are ready for chapter 00.
 
 ## Files in this folder
