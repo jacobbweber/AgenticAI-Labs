@@ -36,7 +36,7 @@ Delete the `labN_*.py` files. Leave every `.md`. That is a full reset.
 Get-ChildItem -Path education -Recurse -Filter lab*.py | Remove-Item
 ```
 
-Do not delete modules, lab briefs, or `education/templates/`.
+Do not delete modules, lab briefs, or `resources/templates/`.
 
 ## What you must not do
 
@@ -49,10 +49,10 @@ Do not delete modules, lab briefs, or `education/templates/`.
 
 ## Templates
 
-New modules copy the headers in `education/templates/MODULE.md`.
+New modules copy the headers in `resources/templates/MODULE.md`.
 Required on a module: Data, Information, Knowledge, Wisdom, The When and Why, How it works, Data contract, Lab, Related, Notes.
 
-New lab briefs copy the headers in `education/templates/LAB.md`.
+New lab briefs copy the headers in `resources/templates/LAB.md`.
 Required on a lab: What you touch, Steps, Data contract, Run, What you should see, Stop here, Notes.
 Do not put Data, Information, Knowledge, or Wisdom on a lab. Those live on the module.
 
