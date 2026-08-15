@@ -13,7 +13,7 @@ The markdown is the course. The Python is what you and the IDE write.
 5. Run the script. Put real output under **Notes** in the lab brief.
 6. Go to the next numbered folder.
 
-That is the whole workflow. There is no separate tracker to keep in sync.
+That is the whole workflow.
 
 ## Start from scratch
 
@@ -23,33 +23,27 @@ Delete the lab scripts. Keep the markdown.
 Get-ChildItem -Path education -Recurse -Filter lab*.py | Remove-Item
 ```
 
-Worked solutions, if present, live under `reference/` and are optional.
+Existing `.py` files in the chapter folders are optional reference solutions.
 
 ## What lives where
 
 ```
+AGENTS.md                 # rules for the AI IDE
+README.md
 education/
-  PATH.md             # numbered chapter list
-  templates/          # MODULE.md and LAB.md — copy these headers
-  00_atoms/           # first chapter
-  01_the_call/        # then this, then the next number
-  ...
-  optional_training/  # LoRA, GGUF, GRPO — side folder, not on the path
-demos/                # optional apps you build after the path
-AGENTS.md             # rules for the AI IDE
+  PATH.md                 # the numbered path, plus "when you want X"
+  templates/
+  00_atoms/ ... 15_synthesis/
+  optional_training/      # LoRA / GGUF / GRPO — not on the main path
+resources/
+  term_glossary.md        # optional lookup
 ```
 
-The folder numbers are the path. If a folder is missing, it is not on the course yet.
-
 ## Local model
-
-Labs default to a local Ollama server.
 
 - `OLLAMA_HOST` (default `http://192.168.1.29:11434`)
 - `OLLAMA_MODEL` (default `qwen3.6:35b-a3b-65k`)
 
-Any OpenAI-compatible server works if you point those variables at it.
-
 ## Share it
 
-This repo is meant to be cloned and used as-is. You should not need to edit the README, a roadmap, or a progress file to add a chapter. Add a numbered folder with a module, a lab brief, and (later) a script.
+Clone and use as-is. To add a chapter, add a numbered folder and a row in `education/PATH.md`.
