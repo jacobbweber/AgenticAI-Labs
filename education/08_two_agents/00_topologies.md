@@ -114,8 +114,8 @@ The new fact is two isolated POSTs joined in one process. The workers never see 
 Done when two workers return and the supervisor prints both `role` headers.
 
 - Module: [this file](./00_topologies.md)
-- Lab 1: [lab1_supervisor_worker.py](./lab1_supervisor_worker.py) / [lab1_supervisor_worker.md](./lab1_supervisor_worker.md) — `supervisor_orchestrator` gathers two workers. Done when you see `Security Auditor` and `Doc Generator` reports and a duration.
-- Lab 2: [lab2_agent_handoff.py](./lab2_agent_handoff.py) / [lab2_agent_handoff.md](./lab2_agent_handoff.md) — peer handoff JSON. Covered on the next page.
+- Lab 1: [lab1_supervisor_worker.py](./lab1_supervisor_worker.py) / [lab1_supervisor_worker.md](./lab1_supervisor_worker.md) - `supervisor_orchestrator` gathers two workers. Done when you see `Security Auditor` and `Doc Generator` reports and a duration.
+- Lab 2: [lab2_agent_handoff.py](./lab2_agent_handoff.py) / [lab2_agent_handoff.md](./lab2_agent_handoff.md) - peer handoff JSON. Covered on the next page.
 
 ## Related
 - **Chapter 07 one agent:** one persona, one session file, one process. Use it until a second prompt is required.
