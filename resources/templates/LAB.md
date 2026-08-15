@@ -39,12 +39,14 @@ Only the keys this script sends and reads. Not the full provider catalog.
 From the repo root:
 
 ```bash
+export OLLAMA_HOST="http://127.0.0.1:11434"
+export OLLAMA_MODEL="llama3.2:1b"
 python education/{chapter}/labN_name.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
+$env:OLLAMA_HOST="http://127.0.0.1:11434"
+$env:OLLAMA_MODEL="llama3.2:1b"
 python education/{chapter}/labN_name.py
 ```
 
