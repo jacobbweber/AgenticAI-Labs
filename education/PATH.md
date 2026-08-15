@@ -50,3 +50,21 @@ Stay on the current chapter until you finish it. Use this only to find the chapt
 | Put the pieces together | [15_synthesis](./15_synthesis/) |
 
 To add a chapter, add a numbered folder and one row in both tables.
+
+## Open gaps
+
+Missing labs and colliding names found on this branch. One line each. Not a tracker.
+
+- [05_the_state/STUB_lab1_save_json.md](./05_the_state/STUB_lab1_save_json.md): write and read a `messages` list as JSON before SQLite.
+- [06_the_workflow/STUB_lab2_graph_workflow.md](./06_the_workflow/STUB_lab2_graph_workflow.md): a named-edge loop between the one-pass DAG and the async queue.
+- [09_the_shield/STUB_lab2_permissions.md](./09_the_shield/STUB_lab2_permissions.md): a tool-name allowlist after the sandbox and before HITL.
+- [10_the_front_door/STUB_cli_harness.md](./10_the_front_door/STUB_cli_harness.md): stdin and stdout as a client of `run_turn`.
+- [10_the_front_door/STUB_frontend_client.md](./10_the_front_door/STUB_frontend_client.md): a page that holds tokens, `job_id`, and an interrupt control.
+- [10_the_front_door/STUB_mx_vs_ux.md](./10_the_front_door/STUB_mx_vs_ux.md): split person-facing frames from model-facing frames.
+- [12_reliability/STUB_lab_numbering.md](./12_reliability/STUB_lab_numbering.md): three different labs share the `lab2_` prefix.
+- [13_memory/STUB_lab1_context_window.md](./13_memory/STUB_lab1_context_window.md): shrink a long `messages` list before RAG.
+- [13_memory/STUB_lab2_episodic_vs_procedural.md](./13_memory/STUB_lab2_episodic_vs_procedural.md): one fact row versus how-to text in system `content`.
+- [13_memory/STUB_lab4_codebase_index.md](./13_memory/STUB_lab4_codebase_index.md): walk a repo and print hits with `path` and `span`.
+- [14_mcp/STUB_lab2_skills.md](./14_mcp/STUB_lab2_skills.md): load a `SKILL.md` when a trigger matches.
+- [15_synthesis/STUB_lab_numbering.md](./15_synthesis/STUB_lab_numbering.md): two `lab2_` files and three `lab3_` files share numbers.
+- [optional_training/STUB_lab0_pretrain_tiny.md](./optional_training/STUB_lab0_pretrain_tiny.md): no `lab0_pretrain_tiny.py` for next-token train and a `loss` float.
