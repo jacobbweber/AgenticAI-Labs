@@ -32,11 +32,11 @@ AGENTS.md                 # rules for the AI IDE
 README.md
 education/
   PATH.md                 # the numbered path, plus "when you want X"
-  templates/
   00_atoms/ ... 15_synthesis/
   optional_training/      # LoRA / GGUF / GRPO — not on the main path
 resources/
   term_glossary.md        # optional lookup
+  templates/              # MODULE.md and LAB.md for new chapters
 ```
 
 ## Local model
