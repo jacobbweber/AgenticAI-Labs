@@ -12,7 +12,7 @@ Not on the agent path.
 Run only if you are studying post-training.
 
 ## Wisdom
-Skip for the 00–315 line.
+Skip for the 00–15 line.
 
 ## The When and Why
 - **When:** you are aligning a small model.
