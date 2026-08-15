@@ -83,8 +83,9 @@ python education/12_reliability/lab1_cot_demuxer.py
 Two channels. `[THINKING LOG]` lines, then `[RESPONSE PAYLOAD]` lines, then `Total Thinking Characters` and `Total Response Characters`. The distance answer (150 miles) should be in the response channel. If both channels are mixed in one string, `feed` is not splitting on the tags. If you see `URLError` or connection refused, the provider is not reachable. If you see HTTP 404, the model name is wrong or not pulled. If thinking is empty, this model may not emit `<think>` tags.
 
 ## Stop here
-This is not a UI filter and not a second demux lab. The old `labs/01_single_agent/lab3_reasoning_demux` is deleted. Do not add cycle detection, logit bias, or reflexion. Chapter 10 can show only the response channel. Chapter 07 already has a smaller copy of this class. Do not copy it again.
+This is not a UI filter and not a second demux lab. The old `labs/01_single_agent/lab3_reasoning_demux` is deleted. Do not add cycle detection, logit bias, or reflexion. Next: [lab2_cycle_detection.md](./lab2_cycle_detection.md).
 
 ## Notes
 - Mechanism: state machine over a buffer. `feed` returns thinking text and response text for each chunk.
 - Contract drift vs `lab1_cot_demuxer.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). `feed` returns a tuple `(thinking_tokens, response_tokens)`, not a dict. The script prints character counts, not a JSON object. The intended contract is still `{ "thinking", "response" }`. Write that in your copy. Leave the reference file as-is.
+- Chapter 10 can show only the response channel. Chapter 07 already has a smaller copy of this class. Do not copy it again.
