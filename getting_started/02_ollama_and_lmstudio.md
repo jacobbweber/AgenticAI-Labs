@@ -29,6 +29,11 @@ $env:OLLAMA_HOST="http://127.0.0.1:11434"
 $env:OLLAMA_MODEL="llama3.2:1b"
 ```
 
+```bash
+export OLLAMA_HOST="http://127.0.0.1:11434"
+export OLLAMA_MODEL="llama3.2:1b"
+```
+
 `127.0.0.1` means this computer. Port `11434` is Ollama's default.
 
 If `ollama pull` says there is not enough memory, go back to [pick a model](./01_pick_a_model.md) and choose a smaller name.
@@ -45,6 +50,11 @@ $env:OLLAMA_HOST="http://127.0.0.1:1234"
 $env:OLLAMA_MODEL="the-name-shown-in-lm-studio"
 ```
 
+```bash
+export OLLAMA_HOST="http://127.0.0.1:1234"
+export OLLAMA_MODEL="the-name-shown-in-lm-studio"
+```
+
 Chapter 00 shows both JSON shapes. If you use LM Studio on day one, write the lab against `/v1/chat/completions` and read `choices[0].message.content`. Do not pretend the `/api/generate` keys exist.
 
 ## Which one should I use?
@@ -57,4 +67,4 @@ Chapter 00 shows both JSON shapes. If you use LM Studio on day one, write the la
 
 You do not need a cloud account for this page.
 
-Next: [run the first lab](./05_first_lab.md), or [use a cloud API](./03_cloud_apis.md) if you do not want a local model.
+Next: [open an editor](./04_editors_and_terminal.md), then [run the first lab](./05_first_lab.md). Or [use a cloud API](./03_cloud_apis.md) if you do not want a local model.
