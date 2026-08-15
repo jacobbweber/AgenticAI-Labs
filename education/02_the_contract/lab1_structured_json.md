@@ -1,41 +1,39 @@
 # Lab 1: Structured JSON
 
-After this lab you send `messages[]` and you validate a JSON object from the assistant.
+You send `messages[]` and you validate a JSON object from the assistant.
 
-## Data
+## What you touch
 - Script you will write: `lab1_structured_json.py`
-- URL: `{OLLAMA_HOST}/api/chat`
-- Request keys: `model`, `messages`, `stream: false`. Optional: `format: "json"`.
-- Roles: `system`, `user`
-- Required output keys (minimum): `intent` (string), `confidence` (number)
+- URL / path: `{OLLAMA_HOST}/api/chat` (default `http://192.168.1.29:11434/api/chat`)
+- Keys sent: `model`, `messages`, `stream` (`false`), `format` (`"json"`)
+- Roles sent: `system`, `user`
+- Keys read: `message.content`, then after `json.loads`: `intent` (string), `confidence` (number)
 
-## Information
-The script POSTs a two-message list, reads `message.content`, runs `json.loads`, and checks the keys.
-
-## Knowledge
-1. Read host and model from env.
-2. Build `messages = [{"role": "system", "content": "Reply with JSON only. Keys: intent (string), confidence (number 0-1)."}, {"role": "user", "content": "Classify: reset my password"}]`.
-3. POST to `/api/chat`.
-4. `obj = json.loads(data["message"]["content"])`.
-5. Assert `intent` is a non-empty string and `confidence` is a number. Print the object. Exit non-zero if parse or keys fail.
-
-## Wisdom
-This is not tool calling. Chapter 03 adds `tools` and `tool_calls`. Do not write a 200-line client.
-
-## The When and Why
-- **When:** chapter 01 returns a string and the next function needs fields.
-- **Why:** this is the smallest script that proves roles plus a validated JSON object.
-
-## How it works
-
+## Steps
 ```mermaid
 flowchart LR
-    A["messages system+user"] -->|"POST /api/chat"| B["Ollama"]
-    B -->|"message.content"| C["json.loads"]
-    C --> D["check intent, confidence"]
+    subgraph ch02_lab1_script [This script]
+        M["messages system plus user"]
+        P["json.loads"]
+        K["check intent confidence"]
+    end
+    subgraph ch02_lab1_host [Ollama on port 11434]
+        C["POST /api/chat"]
+    end
+    M --> C
+    C -->|"message.content"| P
+    P --> K
 ```
 
+1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. Defaults: `http://192.168.1.29:11434` and `qwen3.6:35b-a3b-65k`.
+2. Build `messages = [{"role": "system", "content": "Reply with JSON only. Keys: intent (string), confidence (number 0-1)."}, {"role": "user", "content": "Classify: reset my password"}]`.
+3. POST `{ "model", "messages", "stream": false, "format": "json" }` to `{host}/api/chat` with header `Content-Type: application/json`.
+4. Read `data["message"]["content"]`. Run `obj = json.loads(...)`.
+5. Check `intent` is a non-empty string and `confidence` is a number. Print the object.
+6. Exit non-zero if parse fails or a required key is missing or the type is wrong. Do not guess the fields from prose.
+
 ## Data contract
+Only the keys this script sends and reads.
 
 **Request**
 
@@ -43,7 +41,7 @@ flowchart LR
 {
   "model": "qwen3.6:35b-a3b-65k",
   "messages": [
-    { "role": "system", "content": "Reply with JSON only. Keys: intent, confidence." },
+    { "role": "system", "content": "Reply with JSON only. Keys: intent (string), confidence (number 0-1)." },
     { "role": "user", "content": "Classify: reset my password" }
   ],
   "stream": false,
@@ -69,15 +67,17 @@ From the repo root, after you write the script:
 python education/02_the_contract/lab1_structured_json.py
 ```
 
+```powershell
+$env:OLLAMA_HOST="http://192.168.1.29:11434"
+$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
+python education/02_the_contract/lab1_structured_json.py
+```
+
 ## What you should see
-A printed dict with `intent` and `confidence`. If you get `JSONDecodeError`, the model wrapped the JSON in markdown fences — strip them or tighten the system message. If a key is missing, fail the script.
+A printed dict with `intent` and `confidence`. If you get `JSONDecodeError`, the model wrapped the JSON in markdown fences or thinking text. Strip the fences or tighten the system message. If a key is missing or `confidence` is not a number, fail the script. If you see `URLError`, the provider is not reachable.
 
-## What this becomes later
-Chapter 03 adds a `tools` array on the request and `tool_calls` on the response.
-
-## Related
-- **Ollama `/api/generate`:** `prompt` string, no roles. Chapter 00–01.
-- **OpenAI `response_format`:** same job, different key.
+## Stop here
+This is not tool calling. Do not add `tools`, `tool_calls`, Pydantic, or a 200-line client. Chapter 03 adds a `tools` array on the request and `tool_calls` on the response.
 
 ## Notes
-Leave empty until you run it.
+There is no reference `.py` in this folder. Paste a real run here: the printed dict, and whether you had to strip fences.
