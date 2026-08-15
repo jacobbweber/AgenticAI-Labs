@@ -4,7 +4,7 @@ A Python file on disk has received text from a model. No wrapper function. No st
 
 ## What you touch
 - Script: `lab1_script_posts_json.py`
-- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
+- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://127.0.0.1:11434/api/generate`)
 - Keys sent: `model`, `prompt`, `stream` (`false`)
 - Keys read: `response`
 
@@ -15,7 +15,7 @@ flowchart LR
     B -->|"JSON.response"| A
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://192.168.1.29:11434` and `qwen3.6:35b-a3b-65k`.
+1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://127.0.0.1:11434` and `llama3.2:1b`.
 2. Build one JSON body: `model`, `prompt` ("In 2 sentences, explain what an HTTP POST request is."), `stream: false`. Do not send `options`.
 3. POST it to `{host}/api/generate` with header `Content-Type: application/json`.
 4. Decode the response JSON.
@@ -28,7 +28,7 @@ Only the keys this script sends and reads.
 
 ```json
 {
-  "model": "qwen3.6:35b-a3b-65k",
+  "model": "llama3.2:1b",
   "prompt": "In 2 sentences, explain what an HTTP POST request is.",
   "stream": false
 }
@@ -46,12 +46,12 @@ Only the keys this script sends and reads.
 From the repo root:
 
 ```bash
-python education/00_atoms/lab1_script_posts_json.py
+OLLAMA_HOST=http://127.0.0.1:11434 OLLAMA_MODEL=llama3.2:1b python education/00_atoms/lab1_script_posts_json.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
+$env:OLLAMA_HOST="http://127.0.0.1:11434"
+$env:OLLAMA_MODEL="llama3.2:1b"
 python education/00_atoms/lab1_script_posts_json.py
 ```
 
@@ -59,7 +59,7 @@ python education/00_atoms/lab1_script_posts_json.py
 Two sentences about HTTP POST. If you see `URLError` or `Connection refused`, the provider process is not reachable at that host. If you see HTTP 404, the model name is wrong or not pulled. If you see `empty 'response' field`, you hit the wrong route or the model returned no visible text.
 
 ## Stop here
-This is not a client library. Do not add `def query_llm(prompt) -> str`. That is chapter 01. Do not stream. Do not add tools. Lab 2 of this chapter stays on the same POST and names every JSON key.
+This is not a client library. Do not add `def query_llm(prompt) -> str`. That is chapter 01. Do not stream. Do not add tools. Next: [lab2_read_the_json.md](./lab2_read_the_json.md).
 
 ## Notes
-Results from a real run. Questions that came up while running. Do not put module teaching here.
+Leave this empty until you run it. Paste the printed text from your machine here.
