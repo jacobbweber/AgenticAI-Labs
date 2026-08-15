@@ -2,8 +2,6 @@
 
 Work these folders in order. One chapter per session. Open the repo root so the IDE reads `AGENTS.md`.
 
-If you have not run a script yet, start at [../getting_started/](../getting_started/).
-
 A `labN_*.py` on disk is a reference solution. Delete the `.py` files to start from scratch.
 
 | Folder | What you can do after it |
@@ -25,7 +23,7 @@ A `labN_*.py` on disk is a reference solution. Delete the `.py` files to start f
 | [14_mcp](./14_mcp/) | The dispatcher, extracted into its own process. |
 | [15_synthesis](./15_synthesis/) | Snap the pieces into one harness. |
 
-Side folder, not on this line: [optional_training](./optional_training/) (LoRA, GGUF, GRPO).
+Side folder, not on this line: [optional_training](./optional_training/) (pretrain, LoRA, GGUF, GRPO).
 
 Terms: [../resources/term_glossary.md](../resources/term_glossary.md).
 

@@ -9,8 +9,8 @@ After this chapter the chapter 03 dispatcher is another process speaking JSON-RP
 
 Two methods matter here:
 
-1. `tools/list` — the server returns the tool names and schemas it owns.
-2. `tools/call` — the client sends `{ "name": "string", "arguments": {} }`. The server runs the local function and returns a JSON result.
+1. `tools/list` - the server returns the tool names and schemas it owns.
+2. `tools/call` - the client sends `{ "name": "string", "arguments": {} }`. The server runs the local function and returns a JSON result.
 
 Two **transports** move those objects:
 
@@ -108,8 +108,8 @@ There is no reference `.py` in this folder. The brief is the contract.
 Done when you have listed one tool from another process and printed one call result.
 
 - Module: [this file](./00_mcp_overview.md)
-- Lab 1: [lab1_mcp_brief.md](./lab1_mcp_brief.md) — brief only; no old script. Write `lab1_mcp_client.py` in the session if you implement it. Keep it small.
-- Skills: [01_skills_and_plugins.md](./01_skills_and_plugins.md) — files in the prompt, not RPC.
+- Lab 1: [lab1_mcp_brief.md](./lab1_mcp_brief.md) - brief only; no old script. Write `lab1_mcp_client.py` in the session if you implement it. Keep it small.
+- Skills: [01_skills_and_plugins.md](./01_skills_and_plugins.md) - files in the prompt, not RPC.
 
 ## Related
 - **Chapter 03 registry:** same lookup, same process. This chapter moves the dict across a PID.
