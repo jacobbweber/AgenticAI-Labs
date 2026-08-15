@@ -1,44 +1,115 @@
 # 13: Agentic memory
 
-After this page you can name working, short-term, long-term, and procedural memory as different stores.
+After this chapter you can name four stores and say which one a fact belongs in. Working, short-term, long-term (episodic), and procedural are different files or tables. This page does not put all four in one script.
 
 ## Data
-- Working: this POST
-- Short-term: session list
-- Long-term: SQLite/vector across sessions
-- Procedural: system prompt / SKILL.md
-- Moved from modules/14 and leftover 01/03
+Four stores. They are not the same object.
+
+**Working memory** is this POST. It is the `messages` list (or the `prompt` string) you send to `{OLLAMA_HOST}/api/generate` or `/v1/chat/completions` right now. Chapter 00 in this folder shrinks that list. When the process exits, working memory is gone unless you wrote it somewhere else.
+
+**Short-term / session memory** is the session list on disk. Chapter 05 writes it as JSON or as a row in `checkpoints.db`. One session, one thread_id. A new session starts a new list.
+
+**Long-term / episodic memory** is facts that must survive a new session. A fact is a small row: `{ "key": "string", "value": "string" }`. The store can be a SQLite table or a vector collection. You write after a session. You read at the start of a later session and inject matching rows into `messages`.
+
+**Procedural memory** is how to do a job, not what happened. It lives in the system prompt (`role: "system"`, key `content`) or in a `SKILL.md` file (chapter 14). You load it every run. You do not treat it as a fact row.
+
+This file was moved from modules/14. Leftover notes from old 01/03 folders live here. The four names did not change.
+
+`OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. Memory writes do not require a POST. A POST happens only when you ask the model to use a loaded fact.
 
 ## Information
-Do not put all four in one file.
+Do not put all four stores in one file. A bug in the session JSON is not a bug in the fact table. A bad system prompt is not a missing episodic row.
+
+The session file is not long-term memory. If you only `json.dump` the `messages` list, a new session with a new path or a new `thread_id` will not see last week's facts.
+
+Episodic means "what happened" or "what is true about this user or project": a key/value you can look up later. Procedural means "how we do this job": the steps in the system prompt or in `SKILL.md`.
+
+Vector RAG (`02_private_rag.md`, `lab3_local_private_rag.py`) is one way to store long-term text. It is not the only way. A SQLite table of `{ "key", "value" }` is enough to prove cross-session facts.
 
 ## Knowledge
-1. Decide which store.
-2. Write/read that store only.
+1. Decide which store the item belongs in before you write.
+2. Working: append to `messages` and POST. Do not open a DB for one turn.
+3. Short-term: `json.dump` / `json.load` or `save_checkpoint` / `load_latest_checkpoint` from chapter 05. Same session only.
+4. Long-term / episodic: INSERT a fact row `{ "key": "string", "value": "string" }`. On a later run, SELECT (or embed-and-query) and prepend matching values into `messages`.
+5. Procedural: edit the system `content` string or a `SKILL.md`. Load it as the first message every run. Do not INSERT it as a fact.
+6. Write and read that store only. Do not merge the four into one class on this page.
 
 ## Wisdom
-JSON session is enough until you need cross-session facts.
+A JSON session file is enough until a fact must survive a new session. Then add one fact table (or one vector collection). Do not add all four stores, a skill loader, and RAG in the same script. If you do, you will not know which store a missing fact came from.
 
 ## The When and Why
-- **When:** a fact must survive a new session.
-- **Why:** the session file is not long-term memory.
+- **When:** a fact must survive a new session, or you need to separate "what happened" from "how we do the job".
+- **Why:** the session file is not long-term memory. The system prompt is not a fact row. Mixing them hides which store failed.
 
 ## How it works
 
 ```mermaid
-flowchart LR
-    W["working"] --> S["session"]
-    S --> L["long-term DB"]
+flowchart TD
+    subgraph mem_working [This POST]
+        W["messages / prompt"]
+    end
+    subgraph mem_session [Short-term]
+        S["session JSON or checkpoints.db"]
+    end
+    subgraph mem_long [Long-term episodic]
+        L["fact row key value"]
+    end
+    subgraph mem_proc [Procedural]
+        P["system prompt or SKILL.md"]
+    end
+    subgraph mem_host [Ollama on port 11434]
+        POST["POST /api/generate"]
+    end
+    P -->|"first message"| W
+    L -->|"injected facts"| W
+    S -->|"same session list"| W
+    W --> POST
 ```
 
+Walkthrough of one fact that must survive a new session:
+
+1. Session A finishes. You INSERT `{ "key": "preferred_name", "value": "Ada" }` into a SQLite table or a JSON facts file. That is episodic write.
+2. Session B starts with a new `messages` list. You SELECT (or load) that row and insert a system or user message that states the fact.
+3. You POST `{ "model": "...", "messages": [...] }` to `{OLLAMA_HOST}/api/generate` or `/v1/chat/completions`.
+4. Procedural text (the job instructions) was already in the system `content` or in `SKILL.md`. It was not the fact row.
+
+Nothing in that walkthrough embeds a document corpus. That is `02_private_rag.md`.
+
 ## Data contract
-Fact row: `{ "key": "string", "value": "string" }`
+
+**Fact row** (episodic, intended)
+
+```json
+{ "key": "string", "value": "string" }
+```
+
+**Working POST** (after you inject facts and the system prompt)
+
+```json
+{
+  "model": "qwen3.6:35b-a3b-65k",
+  "messages": [
+    { "role": "system", "content": "string" },
+    { "role": "user", "content": "string" }
+  ]
+}
+```
+
+There is no episodic-vs-procedural `.py` in this folder. The intended contract is still one fact row and a separate system `content` string.
 
 ## Lab
-Private RAG lab below.
+Done when you can point at a POST, a session file, a fact row, and a system prompt and name which store each is.
+
+- Module: [this file](./01_agentic_memory.md)
+- Lab 2 (missing): write and read one episodic fact, keep procedural text in the system prompt. See [STUB_lab2_episodic_vs_procedural.md](./STUB_lab2_episodic_vs_procedural.md) after it is added.
+- Lab 3 (this folder): [lab3_local_private_rag.py](./lab3_local_private_rag.py) / [lab3_local_private_rag.md](./lab3_local_private_rag.md) — vector RAG, not the four-store split.
 
 ## Related
-- **Chapter 05 checkpoints:** short-term persistence.
+- **Chapter 05 checkpoints:** short-term persistence. Same session, not cross-session facts.
+- **00_context_engine.md:** shrinks working memory. Does not add a fact table.
+- **02_private_rag.md:** one long-term store (vectors). Not procedural memory.
+- **Chapter 14 SKILL.md:** procedural files. Not fact rows.
 
 ## Notes
-Leftover memory from 01/03 lives here.
+- Leftover memory notes from old 01/03 folders live here. The four names are the idea.
+- No paired `.py` for the four-store split. Do not treat lab 3 as that lab.
