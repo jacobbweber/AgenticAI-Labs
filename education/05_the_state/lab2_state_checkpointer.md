@@ -71,21 +71,20 @@ python education/05_the_state/lab2_state_checkpointer.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/05_the_state/lab2_state_checkpointer.py
 ```
 
-This script ignores `OLLAMA_HOST` and `OLLAMA_MODEL`. They are listed so the lab Run block matches the other chapters. Optional: `$env:CHECKPOINT_DB` to point at another `.db` file.
+This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`. Do not set those vars for this lab. Optional: `$env:CHECKPOINT_DB` to point at another `.db` file.
 
 ## What you should see
 `[CHECKPOINT SAVED]` after draft, after the first test (`[FAIL]`), after refactor, and after the second test (`[PASS]`). Then `=== FINAL PERSISTED WORKFLOW STATE ===` with JSON that has `test_passed: true` and `attempts: 2`. Then `[CHECKPOINT LOADED]` and `Restored Code:` followed by the refactored `calculate_total` that checks `price < 0`. If the DB path is wrong, create the directory or set `CHECKPOINT_DB`. If load prints nothing for `code`, the SELECT did not find `task_session_101`.
 
 ## Stop here
-This is not RAG. Do not add a vector store. Do not compact old rows. Do not POST to the model. Chapter 06 uses a dict like this as graph state. Chapter 13 adds compaction and long-term memory.
+This is not RAG. Do not add a vector store. Do not compact old rows. Do not POST to the model. The lesson is INSERT and SELECT of a state dict. Do not invent a graph of named edges here. Next: [00_deterministic_dags.md](../06_the_workflow/00_deterministic_dags.md).
 
 ## Notes
 - Schema is `thread_id`, `step_name`, `checkpoint_id`, `state_data`, `timestamp`.
 - Emoji in prints broke Windows cp1252. The script uses `[FAIL]` / `[PASS]`.
 - `checkpoints.db` is gitignored. Do not commit it.
 - Keys written and read match this brief. Do not edit the `.py` in the repo.
+- Chapter 06 adds the named edge between these same nodes. Chapter 13 adds compaction and long-term memory.
