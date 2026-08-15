@@ -1,32 +1,27 @@
 # Lab {N}: {Title}
 
-One-line job of this lab. What you can do after it that you could not do before.
+One sentence. What you will have running when this lab is done.
+This file is the brief. It is short. It does not reteach the module. Read the module first.
 
-## Data
-The literal thing this script touches. File, URL, JSON keys, function names.
+## What you touch
+Bullets only. The literals this script uses.
 
-## Information
-What happens when you run it. One sentence for the path the data takes.
+- Script: `labN_name.py`
+- URL / path:
+- Keys sent:
+- Keys read:
 
-## Knowledge
-What the script does, in the order it does it. Numbered. No extra theory.
+## Steps
+The procedure. Numbered. This is the only long section.
+Each step is one action. No extra paragraphs.
+A small mermaid is optional, above the numbers, if the hops help.
 
-## Wisdom
-What this lab is *not*. The next chapter that reuses this script.
-
-## The When and Why
-- **When:** you run this lab.
-- **Why:** this is the smallest script that proves the idea.
-
-## How it works
-
-```mermaid
-flowchart LR
-    A["Script"] --> B["Next hop"]
-```
+1.
+2.
+3.
 
 ## Data contract
-The exact JSON or args this script sends and reads.
+Only the keys this script sends and reads. Not the full provider catalog.
 
 **Request**
 
@@ -44,24 +39,24 @@ The exact JSON or args this script sends and reads.
 From the repo root:
 
 ```bash
-python education/00_atoms/labN_name.py
+python education/{chapter}/labN_name.py
 ```
 
-Optional env:
-
-```bash
-export OLLAMA_HOST=http://192.168.1.29:11434
-export OLLAMA_MODEL=qwen3.6:35b-a3b-65k
+```powershell
+$env:OLLAMA_HOST="http://192.168.1.29:11434"
+$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
+python education/{chapter}/labN_name.py
 ```
 
 ## What you should see
 Expected prints. One "if this fails" line.
 
-## What this becomes later
-One sentence pointing at the next chapter that reuses this script.
-
-## Related
-One or two sentences each. Delete the header if empty.
+## Stop here
+What this lab is not. What not to add.
+One sentence on the next lab or chapter that reuses this script.
 
 ## Notes
-Questions and results from a real run. Metrics if you have them. No asides.
+Results from a real run. Metrics if you have them. Questions that came up while running.
+Do not put module teaching here.
+
+<!-- Related is optional. Default: omit. Add it only if this script touches a sibling (example: /api/chat vs /api/generate). One or two sentences. -->
