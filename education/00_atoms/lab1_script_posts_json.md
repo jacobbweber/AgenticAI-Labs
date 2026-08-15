@@ -1,40 +1,28 @@
 # Lab 1: Script posts JSON
 
-After this lab a Python file on disk has received text from a model. No wrapper function. No streaming. No tools.
+A Python file on disk has received text from a model. No wrapper function. No streaming. No tools.
 
-## Data
+## What you touch
 - Script: `lab1_script_posts_json.py`
-- URL: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
-- Model name string: `OLLAMA_MODEL` (default `qwen3.6:35b-a3b-65k`)
-- Request keys used: `model`, `prompt`, `stream`
-- Response key printed: `response`
+- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
+- Keys sent: `model`, `prompt`, `stream` (`false`)
+- Keys read: `response`
 
-## Information
-The script POSTs one JSON object and prints one string. If the print works, the three boxes from the module are wired.
-
-## Knowledge
-1. Read host and model from env, or use the defaults.
-2. Build the JSON body with `stream` set to `false`.
-3. POST it with `Content-Type: application/json`.
-4. Decode the response JSON.
-5. Print `result["response"]`.
-
-## Wisdom
-This is not a client library. If you want `def query_llm(prompt) -> str`, that is chapter 01. If the POST fails, fix the provider or the URL before writing more code.
-
-## The When and Why
-- **When:** you have a provider running and you have never sent it a request from your own script.
-- **Why:** a one-file POST is the smallest proof that the script, the API, and the weights are three separate things.
-
-## How it works
-
+## Steps
 ```mermaid
 flowchart LR
     A["lab1_script_posts_json.py"] -->|"POST /api/generate"| B["Ollama :11434"]
     B -->|"JSON.response"| A
 ```
 
+1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://192.168.1.29:11434` and `qwen3.6:35b-a3b-65k`.
+2. Build one JSON body: `model`, `prompt` ("In 2 sentences, explain what an HTTP POST request is."), `stream: false`. Do not send `options`.
+3. POST it to `{host}/api/generate` with header `Content-Type: application/json`.
+4. Decode the response JSON.
+5. Print `result["response"]`. If that field is missing or empty, exit with an error. If the host is unreachable, exit with the URL and the connection error.
+
 ## Data contract
+Only the keys this script sends and reads.
 
 **Request**
 
@@ -46,7 +34,7 @@ flowchart LR
 }
 ```
 
-**Response** (fields this lab reads)
+**Response**
 
 ```json
 {
@@ -61,21 +49,17 @@ From the repo root:
 python education/00_atoms/lab1_script_posts_json.py
 ```
 
-```bash
-set OLLAMA_HOST=http://192.168.1.29:11434
-set OLLAMA_MODEL=qwen3.6:35b-a3b-65k
+```powershell
+$env:OLLAMA_HOST="http://192.168.1.29:11434"
+$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/00_atoms/lab1_script_posts_json.py
 ```
 
 ## What you should see
-A short paragraph about HTTP POST. If you see `URLError` or `Connection refused`, the provider process is not reachable at that host. If you see HTTP 404, the model name is wrong or not pulled.
+Two sentences about HTTP POST. If you see `URLError` or `Connection refused`, the provider process is not reachable at that host. If you see HTTP 404, the model name is wrong or not pulled. If you see `empty 'response' field`, you hit the wrong route or the model returned no visible text.
 
-## What this becomes later
-Chapter 01 wraps this POST in `query_llm(prompt) -> str` and then streams tokens. Lab 2 of this chapter stays on the same POST and names every JSON key.
-
-## Related
-- **Ollama `/api/chat`:** same server, `messages[]` instead of `prompt`. Chapter 02.
-- **OpenAI `/v1/chat/completions`:** same job, different URL and keys. Ollama also exposes this route.
+## Stop here
+This is not a client library. Do not add `def query_llm(prompt) -> str`. That is chapter 01. Do not stream. Do not add tools. Lab 2 of this chapter stays on the same POST and names every JSON key.
 
 ## Notes
-- A prior run against the LAN host saw ~13s wall time with `stream: false`, plus a high `eval_count` from thinking tokens. Those numbers belong in chapter 01 notes, not here.
+Results from a real run. Questions that came up while running. Do not put module teaching here.
