@@ -4,14 +4,17 @@ Hands-on course for building AI agents from ordinary scripts. Open the repo root
 
 The markdown is the course. The Python is what you and the IDE write.
 
+New here? Start at [`getting_started/`](./getting_started/). You can do these labs on a tiny laptop model. Answers will vary. The concepts do not.
+
 ## How to use it
 
-1. Clone the repo. Open the repo root so the IDE reads `AGENTS.md`.
-2. Start at `education/00_atoms/`.
-3. Read the module `.md`. Then open the `labN_*.md` brief.
-4. Write the `labN_*.py` with the IDE, or write it yourself and have the IDE check it.
-5. Run the script. Put real output under **Notes** in the lab brief.
-6. Go to the next numbered folder.
+1. Read [`getting_started/README.md`](./getting_started/README.md). Install Python, pick a model, start Ollama or set a cloud key.
+2. Clone the repo (or download the ZIP). Open the repo root so the IDE reads `AGENTS.md`.
+3. Start at `education/00_atoms/`.
+4. Read the module `.md`. Then open the `labN_*.md` brief.
+5. Write the `labN_*.py` with the IDE, or write it yourself and have the IDE check it.
+6. Run the script. Put real output under **Notes** in the lab brief.
+7. Go to the next numbered folder.
 
 That is the whole workflow.
 
@@ -30,10 +33,11 @@ Existing `.py` files in the chapter folders are optional reference solutions.
 ```
 AGENTS.md                 # rules for the AI IDE
 README.md
+getting_started/          # Python, models, Ollama, cloud keys, first run
 education/
   PATH.md                 # the numbered path, plus "when you want X"
   00_atoms/ ... 15_synthesis/
-  optional_training/      # LoRA / GGUF / GRPO — not on the main path
+  optional_training/      # LoRA / GGUF / GRPO, not on the main path
 resources/
   term_glossary.md        # optional lookup
   templates/              # MODULE.md and LAB.md for new chapters
@@ -41,8 +45,12 @@ resources/
 
 ## Local model
 
-- `OLLAMA_HOST` (default `http://192.168.1.29:11434`)
-- `OLLAMA_MODEL` (default `qwen3.6:35b-a3b-65k`)
+Set these on your machine. The numbers below are course defaults, not a requirement.
+
+- `OLLAMA_HOST` (your machine: `http://127.0.0.1:11434`)
+- `OLLAMA_MODEL` (example: `llama3.2:1b` on a small laptop)
+
+See [`getting_started/01_pick_a_model.md`](./getting_started/01_pick_a_model.md).
 
 ## Share it
 

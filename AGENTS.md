@@ -4,6 +4,8 @@ Open this repository at the repo root in Cursor, Claude Code, Antigravity, or an
 
 This is a learn-by-building course. The markdown is the course. The Python is the work.
 
+If the user is new to Python, local models, or this repo, point them at `getting_started/` and stay there until one script has printed model text. Then start chapter 00.
+
 ## Pairing
 
 Each chapter folder under `education/` has:
@@ -45,7 +47,7 @@ Do not delete modules, lab briefs, or `resources/templates/`.
 - Do not add "Btw" asides. **The When and Why** is a header in the module template.
 - Do not use metaphors. Name the file, the port, the JSON key, the function.
 - Do not pull in LangGraph, MCP, FastAPI, or a second model until the current brief says so.
-- Do not open a second instruction file. This file and `education/PATH.md` are the whole map.
+- Do not open a second instruction file for yourself. This file and `education/PATH.md` are the map for the IDE. `getting_started/` is for the human setup. Point at it. Do not copy it into a new rules file.
 
 ## Templates
 
@@ -62,9 +64,11 @@ Related is 1–2 sentences per sibling tool (example: Ollama, LM Studio, vLLM). 
 
 When a lab talks to a model, default to the local provider unless the user says otherwise.
 
-- Host: `OLLAMA_HOST` or `http://192.168.1.29:11434`
-- Model: `OLLAMA_MODEL` or `qwen3.6:35b-a3b-65k`
+- Host: `OLLAMA_HOST` (the user's machine is usually `http://127.0.0.1:11434`)
+- Model: `OLLAMA_MODEL` (the user picks this; a 1B model is enough to learn)
 - Read those from the environment in every script. Do not hardcode the URL in new labs.
+
+If they have not set these yet, open `getting_started/01_pick_a_model.md` with them.
 
 ## Intent to code
 
