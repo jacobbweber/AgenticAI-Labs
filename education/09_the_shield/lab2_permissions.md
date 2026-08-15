@@ -29,7 +29,7 @@ flowchart TD
 2. Write `lookup_permission(tool_name)`. Look up `high_risk = TOOL_HIGH_RISK.get(tool_name, True)`. If `high_risk` is false, return `{ "allowed": True }`. If true, return `{ "needs_hitl": True, "tool": tool_name }`.
 3. Do not call a tool function. Do not import `rbac_tool_interceptor` or `AgentHITLEngine`. Do not build a modal.
 4. In `__main__`, call `lookup_permission` on `read_file`, `write_file`, `run_command`, and `apply_db_migration`. Print each name and the return dict.
-5. Confirm `read_file` is allowed and the other three need HITL. This lab sits after [lab1_code_sandbox.md](./lab1_code_sandbox.md) and before the two lab3 files. Do not rename those lab3 files.
+5. Confirm `read_file` is allowed and the other three need HITL. This lab sits after [lab1_code_sandbox.md](./lab1_code_sandbox.md) and before [lab3_agent_rbac.md](./lab3_agent_rbac.md) and [lab4_hitl_generative_ui.md](./lab4_hitl_generative_ui.md).
 
 ## Data contract
 Only the keys this script writes and reads.
@@ -67,20 +67,19 @@ python education/09_the_shield/lab2_permissions.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/09_the_shield/lab2_permissions.py
 ```
 
-This script ignores `OLLAMA_HOST` and `OLLAMA_MODEL`. They are listed so the lab Run block matches the other chapters. There is no HTTP call.
+This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`. Do not set those vars for this lab. There is no HTTP call.
 
 ## What you should see
 `read_file` prints `{ "allowed": true }`. `write_file`, `run_command`, and `apply_db_migration` each print `{ "needs_hitl": true, "tool": "..." }`. If a high-risk name prints `allowed`, the bool in the map is wrong. If you see `403`, `PAUSED`, or a child-process `stdout`, you opened the wrong lab.
 
 ## Stop here
-This is not RBAC and not a HITL gate. Do not call the tool. Do not build a React modal. Do not start a WebSocket. Lab 1 is the sandbox. The two lab3 files stay named lab3: `lab3_agent_rbac` enforces the role list, `lab3_hitl_generative_ui` pauses a write. Chapter 10 is the socket.
+This is not RBAC and not a HITL gate. Do not call the tool. Do not build a React modal. Do not start a WebSocket. Next: [lab3_agent_rbac.md](./lab3_agent_rbac.md).
 
 ## Notes
 - Write `lab2_permissions.py` next to this brief. There is no reference `.py` in the repo yet.
 - A missing name is treated as `high_risk` true so a new tool does not run free.
-- Keys written and read match this brief. Do not edit other `.py` files in the repo. Do not rename the two lab3 files.
+- Keys written and read match this brief. Do not edit other `.py` files in the repo.
+- [lab3_agent_rbac.md](./lab3_agent_rbac.md) enforces the role list. [lab4_hitl_generative_ui.md](./lab4_hitl_generative_ui.md) pauses a write. Chapter 10 is the socket.

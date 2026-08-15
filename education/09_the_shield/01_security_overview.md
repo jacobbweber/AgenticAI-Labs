@@ -11,13 +11,13 @@ After this page you can name injection, redaction, and least privilege as separa
 
 **Sandbox** is `execute_sandboxed_python` in `lab1_code_sandbox.py`. It stops code from running in the agent PID.
 
-**Allowlist** is `TOOL_HIGH_RISK` in lab 2. A dict from tool name to a `high_risk` bool. `lookup_permission` returns `{ "allowed": true }` or `{ "needs_hitl": true, "tool": name }`. It does not call the tool. It sits after the sandbox and before the two lab3 files.
+**Allowlist** is `TOOL_HIGH_RISK` in lab 2. A dict from tool name to a `high_risk` bool. `lookup_permission` returns `{ "allowed": true }` or `{ "needs_hitl": true, "tool": name }`. It does not call the tool. It sits after the sandbox and before lab 3 RBAC and lab 4 HITL.
 
 **RBAC** is the role-to-tool list. A name not on the list returns status `403` and the function does not run.
 
-**HITL** is a pause before a write. `AgentHITLEngine.execute_action_with_hitl_gate` in `lab3_hitl_generative_ui.py` checks `is_high_risk`. If true, it stores a checkpoint and returns a pause object. `resume_agent_execution` continues after a human `decision`.
+**HITL** is a pause before a write. `AgentHITLEngine.execute_action_with_hitl_gate` in `lab4_hitl_generative_ui.py` checks `is_high_risk`. If true, it stores a checkpoint and returns a pause object. `resume_agent_execution` continues after a human `decision`.
 
-This chapter's labs do not POST to Ollama. `OLLAMA_HOST` should still default to `http://192.168.1.29:11434` and `OLLAMA_MODEL` to `qwen3.6:35b-a3b-65k` when a tool later calls the model.
+This chapter's labs do not POST to Ollama. `OLLAMA_HOST` should still default to `http://127.0.0.1:11434` and `OLLAMA_MODEL` to `llama3.2:1b` when a tool later calls the model.
 
 ## Information
 Sandbox stops code. The allowlist names which tools must pause. RBAC stops the wrong tool. HITL stops the write you did not approve. Injection is a string problem in the prompt. Redaction is a string problem before the prompt. One control is not the others.
@@ -29,7 +29,7 @@ A writer that is sandboxed can still call `run_command` if RBAC is missing. An a
 2. Grant the smallest tool list. Store it as `dict[str, list[str]]`.
 3. Run model-emitted code in `execute_sandboxed_python`, not with `eval`.
 4. Look up `TOOL_HIGH_RISK` with `lookup_permission` before a write. Destructive names (`apply_db_migration`, `run_command`, `write_file`) return `{ "needs_hitl": true, "tool": name }`.
-5. Use the existing scripts. Do not invent a new red-team lab. Do not rename the two lab3 files.
+5. Use the existing scripts. Do not invent a new red-team lab.
 
 ## Wisdom
 Do not invent a new red-team lab. Use the existing scripts. A WAF or input filter is the same job in front of HTTP and is not this chapter. Chapter 10 is the socket that can stream the HITL pause to a browser.
@@ -51,10 +51,10 @@ flowchart TD
     subgraph sec_sand [lab1_code_sandbox.py]
         SAND["execute_sandboxed_python"]
     end
-    subgraph sec_perm [lab2_permissions.py]
+    subgraph sec_perm [lab2_permissions]
         LOOK["lookup_permission"]
     end
-    subgraph sec_hitl [lab3_hitl_generative_ui.py]
+    subgraph sec_hitl [lab4_hitl_generative_ui.py]
         HITL["execute_action_with_hitl_gate"]
     end
     TXT --> RBAC
@@ -99,7 +99,7 @@ or
 }
 ```
 
-**What `lab3_hitl_generative_ui.py` actually returns** on a high-risk call
+**What `lab4_hitl_generative_ui.py` actually returns** on a high-risk call
 
 ```json
 {
@@ -133,10 +133,10 @@ See Notes.
 Done when you can name which script stops code, which names a high-risk tool, which stops the wrong tool, and which pauses a write.
 
 - Module: [this file](./01_security_overview.md)
-- Lab 1: [lab1_code_sandbox.py](./lab1_code_sandbox.py) / [lab1_code_sandbox.md](./lab1_code_sandbox.md) — child process. Covered on the sandbox page.
-- Lab 2: [lab2_permissions.md](./lab2_permissions.md) — write `lab2_permissions.py`. `TOOL_HIGH_RISK` plus `lookup_permission`. Done when `read_file` is `{ "allowed": true }` and `apply_db_migration` is `{ "needs_hitl": true, "tool": "apply_db_migration" }`.
-- Lab 3 RBAC: [lab3_agent_rbac.py](./lab3_agent_rbac.py) / [lab3_agent_rbac.md](./lab3_agent_rbac.md) — `rbac_tool_interceptor`. Done when Architect `run_command` is `403`.
-- Lab 3 HITL: [lab3_hitl_generative_ui.py](./lab3_hitl_generative_ui.py) / [lab3_hitl_generative_ui.md](./lab3_hitl_generative_ui.md) — `execute_action_with_hitl_gate` then `resume_agent_execution`. Done when a high-risk action returns `PAUSED` and resume prints `RESUMED_SUCCESS`.
+- Lab 1: [lab1_code_sandbox.py](./lab1_code_sandbox.py) / [lab1_code_sandbox.md](./lab1_code_sandbox.md) - child process. Covered on the sandbox page.
+- Lab 2: [lab2_permissions.md](./lab2_permissions.md) - write `lab2_permissions.py`. `TOOL_HIGH_RISK` plus `lookup_permission`. Done when `read_file` is `{ "allowed": true }` and `apply_db_migration` is `{ "needs_hitl": true, "tool": "apply_db_migration" }`.
+- Lab 3 RBAC: [lab3_agent_rbac.py](./lab3_agent_rbac.py) / [lab3_agent_rbac.md](./lab3_agent_rbac.md) - `rbac_tool_interceptor`. Done when Architect `run_command` is `403`.
+- Lab 4 HITL: [lab4_hitl_generative_ui.py](./lab4_hitl_generative_ui.py) / [lab4_hitl_generative_ui.md](./lab4_hitl_generative_ui.md) - `execute_action_with_hitl_gate` then `resume_agent_execution`. Done when a high-risk action returns `PAUSED` and resume prints `RESUMED_SUCCESS`.
 
 ## Related
 - **WAF / input filter:** same job in front of HTTP. Not in the labs.
@@ -146,5 +146,5 @@ Done when you can name which script stops code, which names a high-risk tool, wh
 
 ## Notes
 - Moved from modules/15. No new advanced topics.
-- Contract drift vs the two lab3 scripts: HITL does not return `{ "action": "approval_required" }`. It returns `{ "status": "PAUSED", "approval_id", "sdui_frame" }`. RBAC does not return `{ "error": "Execution rejected by policy engine" }`. It returns `{ "status": 403, "error": "Permission Denied: ..." }`. Neither script POSTs. Neither reads `OLLAMA_HOST`. The intended teaching objects stay on this page. Write those in your copy. Leave the reference files as-is.
-- Lab 2 has no reference `.py` yet. Do not rename the two lab3 files.
+- Contract drift vs lab 3 RBAC and lab 4 HITL: HITL does not return `{ "action": "approval_required" }`. It returns `{ "status": "PAUSED", "approval_id", "sdui_frame" }`. RBAC does not return `{ "error": "Execution rejected by policy engine" }`. It returns `{ "status": 403, "error": "Permission Denied: ..." }`. Neither script POSTs. Neither reads `OLLAMA_HOST`. The intended teaching objects stay on this page. Write those in your copy. Leave the reference files as-is.
+- Lab 2 has no reference `.py` yet. Write `lab2_permissions.py` next to the brief.
