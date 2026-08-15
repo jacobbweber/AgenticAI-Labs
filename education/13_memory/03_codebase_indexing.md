@@ -9,9 +9,11 @@ An **index** maps `path` to text, or `path` to a list of symbols. A **hit** is o
 
 This is the same retrieve job as `02_private_rag.md`, pointed at a source tree instead of a document folder. Grep (`rg`, ripgrep) is the simple form: walk files, match a string, print `path` and the matching lines. A symbol index is grep plus a parse.
 
-This file was moved from `modules/16/00_codebase_indexing_overview.md`. There is no indexer `.py` in this folder. Lab 3 is private RAG on hardcoded strings, not a repo walk.
+Lab 4 is `lab4_codebase_index.py`. Functions: `iter_files`, `index_file`, `search_index`. The root is this folder. The query is `run_airgapped_private_rag`. Hits print `path` and `span`. Lab 4 does not POST and does not embed.
 
-`OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. The POST happens after you have hits. Indexing itself is file I/O.
+This file was moved from `modules/16/00_codebase_indexing_overview.md`. Lab 3 is private RAG on hardcoded strings, not a repo walk.
+
+`OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. The POST happens after you have hits. Indexing itself is file I/O. Lab 4 stops at the printed hits.
 
 ## Information
 When an agent must find a function, it should not POST the whole repo. It should query the index, take a few hits, and put those `{ path, span }` snippets in `prompt` or `messages`.
@@ -21,10 +23,10 @@ Grep is enough to prove the idea: `rg -n "def run_airgapped" education/13_memory
 Private RAG (`02_private_rag.md`) indexes prose and redacts PII. This page indexes code and keeps `path`. Do not merge the two stores.
 
 ## Knowledge
-1. Walk the tree (`os.walk` or `rg --files`). Skip `.git`, `node_modules`, and binary files.
+1. Walk the tree (`os.walk` or `rg --files`). Skip `.git`, `node_modules`, and binary files. Lab 4 keeps `.py` and `.md` only.
 2. For each file, store `{ "path": "education/13_memory/lab3_local_private_rag.py", "text": "..." }` or a symbol list from a parse.
 3. Query by string or by symbol name. Collect hits `{ "path": "string", "span": "string" }`.
-4. Stuff the top hits into `prompt` and POST to `{OLLAMA_HOST}/api/generate` with `model`, `stream: false`.
+4. Stuff the top hits into `prompt` and POST to `{OLLAMA_HOST}/api/generate` with `model`, `stream: false`. Lab 4 does not POST.
 5. Do not build a language-server plugin or a new indexer product on this page.
 
 ## Wisdom
@@ -66,6 +68,13 @@ Walkthrough of one "find this function" query:
 3. You get hits `{ "path": "education/13_memory/lab3_local_private_rag.py", "span": "66:104" }` (line range or snippet).
 4. You put those spans in `prompt` and POST to `{OLLAMA_HOST}/api/generate`.
 
+Walkthrough of lab 4:
+
+1. `iter_files` walks this folder and yields `.py` and `.md` paths.
+2. `index_file` stores `text` and `def` / `class` names.
+3. `search_index(..., "run_airgapped_private_rag")` prints at least one `HIT` whose path ends with `lab3_local_private_rag.py`.
+4. `span` is `N:N` for the matching line. No POST.
+
 Nothing in that walkthrough redacts PII or opens Chroma. The new work is the tree and the hit.
 
 ## Data contract
@@ -87,14 +96,14 @@ Nothing in that walkthrough redacts PII or opens Chroma. The new work is the tre
 }
 ```
 
-There is no codebase-index `.py` in this folder. The intended contract is still a hit with `path` and `span`.
+Lab 4 prints the hit and does not POST. The intended contract is still a hit with `path` and `span`.
 
 ## Lab
-Done when you can name walk, store, and hit, and say how that differs from lab 3's document strings.
+Done when a query for `run_airgapped_private_rag` prints at least one `HIT` with `path` and `span`.
 
 - Module: [this file](./03_codebase_indexing.md)
-- Lab 4 (missing): walk a small tree, print hits `{ path, span }`. See [STUB_lab4_codebase_index.md](./STUB_lab4_codebase_index.md) after it is added.
-- Lab 3 (this folder): [lab3_local_private_rag.py](./lab3_local_private_rag.py) / [lab3_local_private_rag.md](./lab3_local_private_rag.md) — document RAG, not a repo walk.
+- Lab 4: [lab4_codebase_index.md](./lab4_codebase_index.md) - write `lab4_codebase_index.py`. Walk this folder. Done when `hit_count` is greater than 0 and a path ends with `lab3_local_private_rag.py`.
+- Lab 3 (this folder): [lab3_local_private_rag.py](./lab3_local_private_rag.py) / [lab3_local_private_rag.md](./lab3_local_private_rag.md) - document RAG, not a repo walk.
 
 ## Related
 - **ripgrep:** the simple sibling. `rg -n` already returns path and line.
@@ -102,4 +111,4 @@ Done when you can name walk, store, and hit, and say how that differs from lab 3
 
 ## Notes
 - Extra module page as specified. Moved from modules/16.
-- No paired `.py`. Do not treat lab 3 as the indexer lab.
+- Lab 4 has no reference `.py` yet. Do not treat lab 3 as the indexer lab. Do not edit the `.py` files in the repo.
