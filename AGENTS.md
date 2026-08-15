@@ -9,7 +9,7 @@ This is a learn-by-building course. The markdown is the course. The Python is th
 Each chapter folder under `education/` has:
 
 | File | Who writes it | Role |
-|---|---|---|
+|---|---|
 | `NN_*.md` (the module) | Course author | The concept. Read first. |
 | `labN_*.md` | Course author | The brief. This is the whole assignment. |
 | `labN_*.py` | Learner or AI, during the session | The artifact. Proof the chapter is done. |
@@ -45,7 +45,7 @@ Do not delete modules, lab briefs, or `education/templates/`.
 - Do not add "Btw" asides. **The When and Why** is a header in the template.
 - Do not use metaphors. Name the file, the port, the JSON key, the function.
 - Do not pull in LangGraph, MCP, FastAPI, or a second model until the current brief says so.
-- Do not read `reference/` unless the user asks to compare with a worked solution.
+- Do not open a second instruction file. This file and `education/PATH.md` are the whole map.
 
 ## Templates
 
@@ -68,4 +68,4 @@ When a lab talks to a model, default to the local provider unless the user says 
 
 ## Intent to code
 
-If the user describes a feature in plain English, stay inside the current chapter. Map the request to the data contract in the lab brief. Do not assemble a full harness until they are in a synthesis chapter or a `demos/` folder.
+If the user describes a feature in plain English, stay inside the current chapter. Map it to the lab brief. If they need a different chapter, point at `education/PATH.md` and stop. Do not assemble a full harness until chapter 15.
