@@ -1,6 +1,6 @@
 # Lab 3: Enterprise harness app
 
-One process uses the chapter 11 router, a chapter 09 HITL gate, and a span list. Snap, do not invent. Do not add demos/.
+One process uses the chapter 11 router, a chapter 09 HITL gate, and a span list. Compose existing pieces. Do not add a new primitive. Do not add demos/.
 
 ## What you touch
 - Script: `lab3_enterprise_harness_app.py`
@@ -94,5 +94,5 @@ python education/15_synthesis/lab3_enterprise_harness_app.py
 Do not add a new primitive; compose what you already have. Router plus HITL plus spans is enough. Do not add a `demos/` folder or a new UI. Optional blueprints are the other labs in this folder. A new host would hide whether the miss came from the POST, the gate, or the extra.
 
 ## Notes
-- Snap, do not invent. Reuse chapter 11 router, chapter 09 HITL, chapter 12 / 00 trace. Chapter 07 lab1 is the kernel this page is meant to wrap.
+- Compose existing pieces. Do not add a new primitive. Reuse chapter 11 router, chapter 09 HITL, chapter 12 / 00 trace. Chapter 07 lab1 is the kernel this page is meant to wrap.
 - Contract drift vs `lab3_enterprise_harness_app.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and models are literals). Route is `/api/generate`, not `/api/chat`. No `messages`, no `tools`, no `state_store` write. `process_request` takes `proposed_action` from the caller. `temperature` is `0.2`. `FAST_MODEL` is `qwen2.5:7b`. `llm_response` is truncated. Spans live only in the return dict. The intended contract is session JSON plus one shield plus one reliability piece. Write that in your copy. Leave the reference file as-is.

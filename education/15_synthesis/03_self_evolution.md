@@ -83,7 +83,7 @@ There is no reference `.py` in this folder for this page.
 Module only. No lab. Do not add a new primitive.
 
 - Module: [this file](./03_self_evolution.md)
-- Gate: chapter 09 [lab3_hitl_generative_ui.py](../09_the_shield/lab3_hitl_generative_ui.py) / [lab3_hitl_generative_ui.md](../09_the_shield/lab3_hitl_generative_ui.md) and the HITL class in [lab3_enterprise_harness_app.py](./lab3_enterprise_harness_app.py).
+- Gate: chapter 09 [lab4_hitl_generative_ui.py](../09_the_shield/lab4_hitl_generative_ui.py) / [lab4_hitl_generative_ui.md](../09_the_shield/lab4_hitl_generative_ui.md) and the HITL class in [lab3_enterprise_harness_app.py](./lab3_enterprise_harness_app.py).
 
 ## Related
 - **Chapter 09:** the gate.
