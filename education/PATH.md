@@ -2,6 +2,8 @@
 
 Work these folders in order. One chapter per session. Open the repo root so the IDE reads `AGENTS.md`.
 
+If you have not run a script yet, start at [../getting_started/](../getting_started/).
+
 A `labN_*.py` on disk is a reference solution. Delete the `.py` files to start from scratch.
 
 | Folder | What you can do after it |
