@@ -94,8 +94,8 @@ data: {"event_id": 1, "event_type": "session_started", "timestamp": 0.0, "data":
 Done when you can name the frame format and the client has printed every `event_type`.
 
 - Module: [this file](./00_fastapi_sse.md)
-- Lab 1: [lab1_sse_streaming_api.py](./lab1_sse_streaming_api.py) / [lab1_sse_streaming_api.md](./lab1_sse_streaming_api.md) — yield SSE frames, print them. Done when you see `session_started` through `turn_complete`.
-- Lab 2: [lab2_websocket_interrupt.py](./lab2_websocket_interrupt.py) / [lab2_websocket_interrupt.md](./lab2_websocket_interrupt.md) — inbound interrupt. Not this page.
+- Lab 1: [lab1_sse_streaming_api.py](./lab1_sse_streaming_api.py) / [lab1_sse_streaming_api.md](./lab1_sse_streaming_api.md) - yield SSE frames, print them. Done when you see `session_started` through `turn_complete`.
+- Lab 2: [lab2_websocket_interrupt.py](./lab2_websocket_interrupt.py) / [lab2_websocket_interrupt.md](./lab2_websocket_interrupt.md) - inbound interrupt. Not this page.
 
 ## Related
 - **WebSocket:** lab 2. Same tokens, plus a client-to-server message.
