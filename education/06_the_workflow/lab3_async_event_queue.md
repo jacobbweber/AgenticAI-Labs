@@ -6,7 +6,7 @@ A submit returns `status_code` 202 immediately and a worker later emits `agent.c
 - Script: `lab3_async_event_queue.py`
 - Functions: `emit_event`, `async_agent_worker`, `event_stream_subscriber`, `api_submit_task`, `main`
 - Queues: `task_queue`, `event_bus` (both `asyncio.Queue()`)
-- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
+- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://127.0.0.1:11434/api/generate`)
 - Keys sent (worker only): `model`, `prompt`, `stream` (`false`), `options.temperature` (`0.0`)
 - Keys read: `response`
 - Event types: `job.started`, `agent.thought`, `agent.completed`, `agent.failed`
@@ -38,7 +38,7 @@ flowchart LR
     EB --> SUB
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://192.168.1.29:11434` and `qwen3.6:35b-a3b-65k`. The route is `{host}/api/generate`.
+1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://127.0.0.1:11434` and `llama3.2:1b`. The route is `{host}/api/generate`.
 2. Create `task_queue = asyncio.Queue()` and `event_bus = asyncio.Queue()`.
 3. Write `emit_event(event_type, job_id, data)`. Put `{ "event_type", "job_id", "timestamp": time.time(), "data" }` on `event_bus`.
 4. Write `async_agent_worker(worker_id)`. Loop: `job = await task_queue.get()`. Read `job["job_id"]` and `job["prompt"]`. Emit `job.started`. Build a POST body: `model`, `prompt` (`Analyze in 1 sentence how async queues prevent timeouts: {prompt}`), `stream: false`, `options.temperature: 0.0`. Emit `agent.thought`. Run `urllib.request.urlopen(req, timeout=30)` inside `loop.run_in_executor`. On success emit `agent.completed` with `{ "result": answer, "status": "SUCCESS" }`. On exception emit `agent.failed`. Call `task_queue.task_done()`.
@@ -71,7 +71,7 @@ Only the keys this script sends and reads.
 
 ```json
 {
-  "model": "qwen3.6:35b-a3b-65k",
+  "model": "llama3.2:1b",
   "prompt": "string",
   "stream": false,
   "options": { "temperature": 0.0 }
@@ -93,12 +93,12 @@ Only the keys this script sends and reads.
 From the repo root:
 
 ```bash
-python education/06_the_workflow/lab3_async_event_queue.py
+OLLAMA_HOST=http://127.0.0.1:11434 OLLAMA_MODEL=llama3.2:1b python education/06_the_workflow/lab3_async_event_queue.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
+$env:OLLAMA_HOST="http://127.0.0.1:11434"
+$env:OLLAMA_MODEL="llama3.2:1b"
 python education/06_the_workflow/lab3_async_event_queue.py
 ```
 
@@ -106,9 +106,10 @@ python education/06_the_workflow/lab3_async_event_queue.py
 `[CLIENT] Received HTTP 202 response in 0.00xxs!` then a `job_id`, then `[STREAM EVENT]` lines for `job.started`, `agent.thought`, and `agent.completed` (or `agent.failed`). The 202 line must print before the completed event. If 202 takes many seconds, submit is waiting on the POST. If you see no stream lines, the subscriber task was not started. If you see `URLError` inside submit, the POST is in the wrong function.
 
 ## Stop here
-This is not FastAPI. Do not open a port. Do not add Redis, Kafka, or Celery. Chapter 10 serves these frames over SSE on a real socket.
+This is not FastAPI. Do not open a port. Do not add Redis, Kafka, or Celery. Next: [00_persona_tools_loop_state.md](../07_one_agent/00_persona_tools_loop_state.md).
 
 ## Notes
 - 202 avoids a gateway 504. The subscriber is a stand-in for SSE or a WebSocket.
 - `status_url` is a string. Nothing listens on it in this lab.
 - Keys sent and read match this brief. Do not edit the `.py` in the repo.
+- Chapter 10 serves these frames over SSE on a real socket.

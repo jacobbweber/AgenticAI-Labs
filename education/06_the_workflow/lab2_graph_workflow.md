@@ -38,6 +38,8 @@ flowchart TD
 6. Write `run_graph`. Keep a dict of names to functions: `draft`, `run_tests`, `refactor`. Start at `"draft"`. After `draft`, go to `"run_tests"`. After `run_tests`, call `edge_after_tests` and jump to that name. After `refactor`, go to `"run_tests"`. Stop when the edge returns `"finish"` or `attempts` hits `max_retries`. Print each node name you call and each edge return.
 7. In `__main__`, call `run_graph` with the empty start dict. Do not open SQLite. Do not POST. Do not add a queue.
 
+These are the same nodes as chapter 05 lab 2. Only add the named edge.
+
 ## Data contract
 Only the keys this script writes and reads.
 
@@ -59,20 +61,20 @@ python education/06_the_workflow/lab2_graph_workflow.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/06_the_workflow/lab2_graph_workflow.py
 ```
 
-This script ignores `OLLAMA_HOST` and `OLLAMA_MODEL`. They are listed so the lab Run block matches the other chapters. There is no HTTP call.
+This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`. Do not set those vars for this lab. There is no HTTP call.
 
 ## What you should see
 `draft`, then `run_tests`, then edge `refactor`, then `refactor`, then `run_tests`, then edge `finish`. `attempts` is 2 and `test_passed` is true. If the script never returns to `run_tests`, the edge did not return a node name. If you see a SQLite path or a queue, you opened the wrong lab.
 
 ## Stop here
-This is not a checkpointer. Do not add SQLite. Do not add a queue (that is lab 3). Do not POST to the model. Chapter 05 `lab2_state_checkpointer.py` is this graph plus INSERT. Human-approval gates are chapter 09.
+This is not a checkpointer. Do not add SQLite. Do not add a queue. Do not POST to the model. Next: [lab3_async_event_queue.md](./lab3_async_event_queue.md).
 
 ## Notes
 - Write `lab2_graph_workflow.py` next to this brief. There is no reference `.py` in the repo yet.
 - Nodes update keys. The edge picks the next name. Do not put the branch inside `run_tests`.
+- Same nodes as [lab2_state_checkpointer.md](../05_the_state/lab2_state_checkpointer.md). Only add the named edge.
 - Keys written and read match this brief. Do not edit other `.py` files in the repo.
+- Human-approval gates are chapter 09.
