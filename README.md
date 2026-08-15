@@ -1,4 +1,4 @@
-# AgenticAI-Labs
+# Script to Agent
 
 Hands-on course for building AI agents from ordinary scripts. Open the repo root in an AI IDE (Cursor, Claude Code, Antigravity) and work one chapter at a time.
 
@@ -24,6 +24,10 @@ Delete the lab scripts. Keep the markdown.
 
 ```powershell
 Get-ChildItem -Path education -Recurse -Filter lab*.py | Remove-Item
+```
+
+```bash
+find education -name 'lab*.py' -delete
 ```
 
 Existing `.py` files in the chapter folders are optional reference solutions.
