@@ -89,7 +89,7 @@ There is no HTTP body. See Notes.
 Done when two prompts printed two different tier or model names.
 
 - Module: [this file](./01_multi_model_router.md)
-- Lab 2: [lab2_multi_model_router.py](./lab2_multi_model_router.py) / [lab2_multi_model_router.md](./lab2_multi_model_router.md) — keyword rule, three scenarios. Done when you see `FAST_TIER`, `DEEP_TIER`, and one fallback.
+- Lab 2: [lab2_multi_model_router.py](./lab2_multi_model_router.py) / [lab2_multi_model_router.md](./lab2_multi_model_router.md) - keyword rule, three scenarios. Done when you see `FAST_TIER`, `DEEP_TIER`, and one fallback.
 - Lab 3 retries a failed POST. Not this page.
 
 ## Related
