@@ -13,9 +13,9 @@ Chapter 05 writes the `messages` list to a file or a SQLite row. That list is th
 2. **Summary:** replace the dropped middle with one assistant (or system) message that states what happened.
 3. **Prune:** trim long tool stdout or other bulky `content` strings so one turn is smaller.
 
-There is no compaction script in this folder. The idea is still the list, the count, and the smaller list you POST.
+Lab 1 is `lab1_context_window.py`. Functions: `count_chars`, `window_messages`, `summarize_dropped`, `compact_messages`. The fixture is 9 items. `last_n` is 4. The summary is a local join. Lab 1 does not POST.
 
-`OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. The route is still `POST /api/generate` or `POST /v1/chat/completions`. Compaction changes the body, not the host.
+`OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. The route is still `POST /api/generate` or `POST /v1/chat/completions`. Compaction changes the body, not the host. Lab 1 only prints the smaller list.
 
 ## Information
 Chapter 05 saves the list so a restart can load it. This chapter makes the loaded list smaller so the next POST still fits.
@@ -25,16 +25,16 @@ A long `messages` list has two costs:
 1. **TTFT** (time to first token) grows because the provider must read every token in the prompt before it starts the reply.
 2. **Cost and context limit:** more tokens in means more money on a cloud API, or an HTTP 400 / context overflow when the local window is full.
 
-Count tokens if you have a tokenizer. Count characters if you do not. Either number is a size. When the size is too large, compact, then POST.
+Count tokens if you have a tokenizer. Count characters if you do not. Either number is a size. When the size is too large, compact, then POST. Lab 1 prints `before_count` / `before_chars` and `after_count` / `after_chars`.
 
 Vector search (RAG) is `02_private_rag.md` and `lab3_local_private_rag.py`. Do not add a vector DB on this page. This page only shrinks the list you already have.
 
 ## Knowledge
 1. After you load or build `messages`, measure size: `len(json.dumps(messages))` for characters, or a token count if you have one.
 2. Keep the system message (first item with `role: "system"`) and the last N turns (user/assistant pairs). Drop the middle.
-3. Optionally POST the dropped middle to `{OLLAMA_HOST}/api/generate` with a prompt that asks for a short summary, then insert one message in the gap.
+3. Optionally POST the dropped middle to `{OLLAMA_HOST}/api/generate` with a prompt that asks for a short summary, then insert one message in the gap. Lab 1 joins the dropped `role` and `content` into one `Summary:` string instead.
 4. Optionally trim long `content` on tool-result messages (stdout, file dumps) to a character cap.
-5. POST the smaller list. Do not add Chroma, embeddings, or a retrieval query here.
+5. POST the smaller list when you need a model reply. Lab 1 stops at the printed counts. Do not add Chroma, embeddings, or a retrieval query here.
 
 ## Wisdom
 Stop when the next POST uses a shorter list and still has the system message plus recent turns. Do not add a vector database, episodic memory, or a codebase index on this page. Those are the next files in this folder. If you add them now, a bad answer could come from the window, the summary, or retrieval.
@@ -72,6 +72,13 @@ Walkthrough of one compact-then-POST:
 4. If a tool message has a huge `content` string, you slice it to a max length.
 5. You POST the new list. The host and model are unchanged.
 
+Walkthrough of lab 1:
+
+1. The fixture is 9 items: system plus four add-number turns.
+2. `window_messages(..., 4)` keeps the system item and the last two turns. The first two turns are dropped.
+3. `summarize_dropped` joins those dropped items into one `Summary:` string. No POST.
+4. `compact_messages` returns 6 items. `after_count` is 6. `after_chars` is less than `before_chars`.
+
 Nothing in that walkthrough opens a vector store. The new work is the smaller list.
 
 ## Data contract
@@ -91,16 +98,27 @@ Keep: system + last N messages.
 }
 ```
 
-On native generate, the same list is flattened into `prompt`. `stream` can be false. `options.temperature` can be `0.0` if you want a repeatable summary.
+**Lab 1 compact result** (printed, not POSTed)
 
-There is no compaction `.py` in this folder. The intended contract is still system + last N, optional summary message, then POST.
+```json
+[
+  { "role": "system", "content": "You add numbers." },
+  { "role": "assistant", "content": "Summary: string" },
+  { "role": "user", "content": "What is 3 plus 3?" },
+  { "role": "assistant", "content": "6" },
+  { "role": "user", "content": "What is 4 plus 4?" },
+  { "role": "assistant", "content": "8" }
+]
+```
+
+On native generate, the same list is flattened into `prompt`. `stream` can be false. `options.temperature` can be `0.0` if you want a repeatable summary. Lab 1 does not POST.
 
 ## Lab
-Done when you can name the three compaction moves (window, summary, prune) and say which keys stay in the POST.
+Done when `after_count` is 6 and the last turn is still `What is 4 plus 4?` / `8`.
 
 - Module: [this file](./00_context_engine.md)
-- Lab 1 (missing): compact a long `messages` list, then POST. See [STUB_lab1_context_window.md](./STUB_lab1_context_window.md) after it is added.
-- Lab 3 (this folder): [lab3_local_private_rag.py](./lab3_local_private_rag.py) / [lab3_local_private_rag.md](./lab3_local_private_rag.md) — vector RAG, not compaction.
+- Lab 1: [lab1_context_window.md](./lab1_context_window.md) - write `lab1_context_window.py`. Window plus local summary. Done when before/after counts print and the system item stays.
+- Lab 3 (this folder): [lab3_local_private_rag.py](./lab3_local_private_rag.py) / [lab3_local_private_rag.md](./lab3_local_private_rag.md) - vector RAG, not compaction.
 
 ## Related
 - **Chapter 05:** saves the list. This chapter shrinks it.
@@ -109,4 +127,4 @@ Done when you can name the three compaction moves (window, summary, prune) and s
 
 ## Notes
 - Moved from modules/12. The old folder name does not change the idea.
-- No paired `.py` for compaction. Do not treat lab 3 as the compaction lab. Lab 3 is RAG.
+- Lab 1 has no reference `.py` yet. Do not treat lab 3 as the compaction lab. Lab 3 is RAG. Do not edit the `.py` files in the repo.
