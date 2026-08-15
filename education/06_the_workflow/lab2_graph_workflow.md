@@ -5,7 +5,7 @@ A runner calls named nodes until an edge function returns `"finish"`. Each node 
 ## What you touch
 - Script: `lab2_graph_workflow.py` (write it next to this brief; there is no reference `.py` yet)
 - Nodes: `draft(state)`, `run_tests(state)`, `refactor(state)` each `dict -> dict`
-- Edge: `edge_after_tests(state)` returns a string node name (`"refactor"` or `"finish"`)
+- Edge: `edge_after_tests(state, max_retries=3)` returns a string node name (`"refactor"` or `"finish"`)
 - Runner: `run_graph(state, max_retries=3)` looks up the next name and calls that function
 - State keys: `code` (string), `attempts` (int), `test_passed` (bool)
 - No HTTP. This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`.
@@ -34,7 +34,7 @@ flowchart TD
 2. Write `draft`. Set `code` to `def calculate_total(price, tax): return price + tax` and `test_passed` to false. Return the dict.
 3. Write `run_tests`. Increment `attempts`. If `attempts < 2`, set `test_passed` false. Else set `test_passed` true. Return the dict.
 4. Write `refactor`. Replace `code` with a version that raises `ValueError` when `price < 0`. Return the dict.
-5. Write `edge_after_tests`. If `test_passed` is false and `attempts < max_retries`, return `"refactor"`. Else return `"finish"`. Do not call a node from this function.
+5. Write `edge_after_tests(state, max_retries=3)`. If `test_passed` is false and `attempts < max_retries`, return `"refactor"`. Else return `"finish"`. Do not call a node from this function.
 6. Write `run_graph`. Keep a dict of names to functions: `draft`, `run_tests`, `refactor`. Start at `"draft"`. After `draft`, go to `"run_tests"`. After `run_tests`, call `edge_after_tests` and jump to that name. After `refactor`, go to `"run_tests"`. Stop when the edge returns `"finish"` or `attempts` hits `max_retries`. Print each node name you call and each edge return.
 7. In `__main__`, call `run_graph` with the empty start dict. Do not open SQLite. Do not POST. Do not add a queue.
 
