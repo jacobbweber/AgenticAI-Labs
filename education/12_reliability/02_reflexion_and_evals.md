@@ -117,8 +117,8 @@ Walkthrough of evals (intended):
 Done when a failed check is appended and retried, and a second script prints a pass count.
 
 - Module: [this file](./02_reflexion_and_evals.md)
-- Lab 5: [lab5_reflexion_loop.py](./lab5_reflexion_loop.py) / [lab5_reflexion_loop.md](./lab5_reflexion_loop.md) — generate, run `solution.py`, append `stderr`, retry. Done when you see `SUCCESS` or `FAILED_MAX_TURNS`.
-- Lab 4 (evals): [lab4_agent_evals.py](./lab4_agent_evals.py) / [lab4_agent_evals.md](./lab4_agent_evals.md) — fixture list plus score. Done when a pass count prints.
+- Lab 5: [lab5_reflexion_loop.py](./lab5_reflexion_loop.py) / [lab5_reflexion_loop.md](./lab5_reflexion_loop.md) - generate, run `solution.py`, append `stderr`, retry. Done when you see `SUCCESS` or `FAILED_MAX_TURNS`.
+- Lab 4 (evals): [lab4_agent_evals.py](./lab4_agent_evals.py) / [lab4_agent_evals.md](./lab4_agent_evals.md) - fixture list plus score. Done when a pass count prints.
 
 ## Related
 - **unit test:** the checker. Exit code `0` or a boolean. Not a dashboard.

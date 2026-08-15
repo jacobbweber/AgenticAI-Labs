@@ -103,7 +103,7 @@ Nothing in that walkthrough changes the port or the weight file. The new work is
 Done when thinking and the answer print on two channels and the answer string has no `<think>` tags.
 
 - Module: [this file](./00_cot_and_reasoning.md)
-- Lab 1: [lab1_cot_demuxer.py](./lab1_cot_demuxer.py) / [lab1_cot_demuxer.md](./lab1_cot_demuxer.md) — stream, split, print both channels. Done when the think log and the answer are separate.
+- Lab 1: [lab1_cot_demuxer.py](./lab1_cot_demuxer.py) / [lab1_cot_demuxer.md](./lab1_cot_demuxer.md) - stream, split, print both channels. Done when the think log and the answer are separate.
 
 ## Related
 - **Chapter 01 metrics:** 766 `eval_count` for two sentences. Those extra tokens are this chapter.
