@@ -5,9 +5,11 @@ After this chapter a skill is a markdown file (or a small helper script) loaded 
 ## Data
 A **skill** is a file bundle. The usual file is `SKILL.md`: a markdown string with extra instructions for one workflow (how to format a PR, how to query a table, how to write a test). A plugin can also include a helper script next to that file. The body you care about is still a string.
 
-A **trigger** is the rule that says "load this file now". It can be a keyword in the user text, a path match, or an explicit name. If the trigger does not match, you do not read the file.
+A **trigger** is the rule that says "load this file now". It can be a keyword in the user text, a path match, or an explicit name. If the trigger does not match, you do not read the file. Lab 2 uses the keyword `pr-review`.
 
-Loading means: `open("SKILL.md").read()`, then append that string to `messages` as `role: "system"` (or as extra `content` on the user turn). The next POST includes it. The model is the same `OLLAMA_MODEL`.
+Loading means: `open("SKILL.md").read()`, then append that string to `messages` as `role: "system"` (or as extra `content` on the user turn). The next POST includes it. The model is the same `OLLAMA_MODEL`. Lab 2 prints the body and does not POST.
+
+Lab 2 is `lab2_skills.py` plus `SKILL.md`. Function: `load_skill(user_text, skill_path)`. Match return: `{ "loaded": true, "path", "body" }`. Miss return: `{ "loaded": false }`.
 
 This file was moved from `modules/01/02_skills_plugins_and_mcp.md`. The MCP half lives on `00_mcp_overview.md`. Chapter 13 called this procedural memory: how to do a job, not a fact row.
 
@@ -24,7 +26,7 @@ A skill is not a second model. You do not start another provider. You do not cha
 1. Detect the trigger (a keyword, a path, or a name the user typed).
 2. Read the file: `SKILL.md` or the helper script's docstring. The body is a markdown string.
 3. Append that string to the system message (`role: "system"`, key `content`) or to the user message.
-4. POST `model` and `messages` (or `prompt`) to `{OLLAMA_HOST}/api/generate` or `/v1/chat/completions`.
+4. POST `model` and `messages` (or `prompt`) to `{OLLAMA_HOST}/api/generate` or `/v1/chat/completions`. Lab 2 stops after the print.
 5. Do not start an MCP server and do not `import` a tool function as a substitute for the file.
 
 ## Wisdom
@@ -63,6 +65,13 @@ Walkthrough of one load:
 4. You POST the updated `messages` to `{OLLAMA_HOST}/api/generate` or `/v1/chat/completions`.
 5. Unused skill files stay on disk. They are not in this POST.
 
+Walkthrough of lab 2:
+
+1. `SKILL.md` holds `# PR review` and `Check the diff. List risks. Do not merge.`
+2. `load_skill("Please do a pr-review on this branch", path)` returns `{ "loaded": true, "path", "body" }`.
+3. `load_skill("What is 2+2?", path)` returns `{ "loaded": false }` and does not open the file.
+4. No POST. No `tools/list`.
+
 Nothing in that walkthrough opens a JSON-RPC socket. The new work is the file in the prompt.
 
 ## Data contract
@@ -71,6 +80,12 @@ Nothing in that walkthrough opens a JSON-RPC socket. The new work is the file in
 
 ```json
 { "path": "SKILL.md", "body": "markdown string" }
+```
+
+**Lab 2 match**
+
+```json
+{ "loaded": true, "path": "SKILL.md", "body": "# PR review\nCheck the diff. List risks. Do not merge.\n" }
 ```
 
 **Request after load** `POST /v1/chat/completions` (or flatten into `prompt` on `/api/generate`)
@@ -85,14 +100,14 @@ Nothing in that walkthrough opens a JSON-RPC socket. The new work is the file in
 }
 ```
 
-There is no skills `.py` in this folder. The intended contract is still a markdown string in `content`.
+Lab 2 prints the body and does not POST. The intended contract is still a markdown string in `content`.
 
 ## Lab
-Done when you can name trigger, file, and append, and say how that differs from `tools/call`.
+Done when a `pr-review` line prints the `SKILL.md` body and a math line prints `skipped`.
 
 - Module: [this file](./01_skills_and_plugins.md)
-- Lab 2 (missing): detect a trigger, read `SKILL.md`, POST with the body in `content`. See [STUB_lab2_skills.md](./STUB_lab2_skills.md) after it is added.
-- Lab 1 (this folder): [lab1_mcp_brief.md](./lab1_mcp_brief.md) — JSON-RPC, not a file load.
+- Lab 2: [lab2_skills.md](./lab2_skills.md) - write `lab2_skills.py` and `SKILL.md`. Trigger `pr-review`. Done when the body prints on a match and the miss does not open the file.
+- Lab 1 (this folder): [lab1_mcp_brief.md](./lab1_mcp_brief.md) - JSON-RPC, not a file load.
 
 ## Related
 - **Chapter 13 procedural memory:** the same file idea. This page is the load step.
@@ -100,4 +115,4 @@ Done when you can name trigger, file, and append, and say how that differs from 
 
 ## Notes
 - MCP half of the old tool-use page is on `00_mcp_overview.md`.
-- No paired `.py`. Do not treat lab 1 as the skills lab.
+- Lab 2 has no reference `.py` yet. Do not treat lab 1 as the skills lab. Do not edit the `.py` files in the repo.

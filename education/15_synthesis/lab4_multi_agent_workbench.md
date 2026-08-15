@@ -1,9 +1,9 @@
-# Lab 1: Multi-agent workbench
+# Lab 4: Multi-agent workbench
 
 A supervisor, a coder, and a QA reviewer share one temp dir. This reuses chapter 08 roles and the chapter 09 sandbox. Not a new topology.
 
 ## What you touch
-- Script: `lab1_multi_agent_workbench.py`
+- Script: `lab4_multi_agent_workbench.py`
 - Functions: `SupervisorAgent.plan`, `CoderAgent.write_code`, `QAReviewerAgent.review`, `run_local_multi_agent_workbench`, `llm_call`
 - URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
 - Keys sent: `model`, `prompt`, `stream` (`false`), `options.temperature` (`0.0`)
@@ -13,7 +13,7 @@ A supervisor, a coder, and a QA reviewer share one temp dir. This reuses chapter
 ## Steps
 ```mermaid
 flowchart TD
-    subgraph wb_roles [lab1_multi_agent_workbench.py]
+    subgraph wb_roles [lab4_multi_agent_workbench.py]
         SUP["SupervisorAgent.plan"]
         COD["CoderAgent.write_code"]
         QA["QAReviewerAgent.review"]
@@ -85,13 +85,13 @@ flowchart TD
 From the repo root:
 
 ```bash
-python education/15_synthesis/lab1_multi_agent_workbench.py
+python education/15_synthesis/lab4_multi_agent_workbench.py
 ```
 
 ```powershell
 $env:OLLAMA_HOST="http://192.168.1.29:11434"
 $env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
-python education/15_synthesis/lab1_multi_agent_workbench.py
+python education/15_synthesis/lab4_multi_agent_workbench.py
 ```
 
 ## What you should see
@@ -102,4 +102,4 @@ Do not add a new primitive; compose what you already have. Three roles in one pr
 
 ## Notes
 - Reference blueprint. Reuse chapter 08 roles and chapter 09 `subprocess.Popen`.
-- Contract drift vs `lab1_multi_agent_workbench.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`. No handoff JSON. `plan` is hardcoded. `llm_call` strips a leading ` ```python ` fence. QA returns only `exit_code` and `stderr` (stdout is discarded). Timeout is 5 seconds. Temp dir prefix is `workbench_`. The intended contract is chapter 08 handoff JSON plus a sandbox run of `test_calculator.py`. Write that in your copy. Leave the reference file as-is.
+- Contract drift vs `lab4_multi_agent_workbench.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`. No handoff JSON. `plan` is hardcoded. `llm_call` strips a leading ` ```python ` fence. QA returns only `exit_code` and `stderr` (stdout is discarded). Timeout is 5 seconds. Temp dir prefix is `workbench_`. The intended contract is chapter 08 handoff JSON plus a sandbox run of `test_calculator.py`. Write that in your copy. Leave the reference file as-is.

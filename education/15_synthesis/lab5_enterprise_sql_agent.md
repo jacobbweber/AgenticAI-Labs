@@ -1,9 +1,9 @@
-# Lab 2: Enterprise SQL agent
+# Lab 5: Enterprise SQL agent
 
 Natural language becomes a SQL string, a keyword check runs, then SQLite returns rows. This reuses chapter 02 structured text, chapter 09 keyword block, and chapter 12 reflexion. Not a new database product.
 
 ## What you touch
-- Script: `lab2_enterprise_sql_agent.py`
+- Script: `lab5_enterprise_sql_agent.py`
 - Functions: `llm_generate_sql`, `validate_sql_security`, `init_sample_database`, `EnterpriseSQLAgent.process_query`
 - URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
 - Keys sent: `model`, `prompt`, `stream` (`false`), `options.temperature` (`0.0`)
@@ -13,7 +13,7 @@ Natural language becomes a SQL string, a keyword check runs, then SQLite returns
 ## Steps
 ```mermaid
 flowchart TD
-    subgraph sql_agent [lab2_enterprise_sql_agent.py]
+    subgraph sql_agent [lab5_enterprise_sql_agent.py]
         PQ["process_query"]
         GEN["llm_generate_sql"]
         SEC["validate_sql_security"]
@@ -84,13 +84,13 @@ flowchart TD
 From the repo root:
 
 ```bash
-python education/15_synthesis/lab2_enterprise_sql_agent.py
+python education/15_synthesis/lab5_enterprise_sql_agent.py
 ```
 
 ```powershell
 $env:OLLAMA_HOST="http://192.168.1.29:11434"
 $env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
-python education/15_synthesis/lab2_enterprise_sql_agent.py
+python education/15_synthesis/lab5_enterprise_sql_agent.py
 ```
 
 ## What you should see
@@ -101,4 +101,4 @@ Do not add a new primitive; compose what you already have. A POST plus a keyword
 
 ## Notes
 - Reference blueprint. Structured SQL out. Reuse chapter 02, chapter 09 keyword block, chapter 12 reflexion.
-- Contract drift vs `lab2_enterprise_sql_agent.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`. `llm_generate_sql` strips ` ```sql ` or ` ``` ` fences. Security is a keyword scan, not a real AST. `CREATE` is forbidden even though `init_sample_database` uses it before the agent runs. Healing loop max is 3. In-memory DB only. The intended contract is a SQL string you can validate. Write that in your copy. Leave the reference file as-is.
+- Contract drift vs `lab5_enterprise_sql_agent.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`. `llm_generate_sql` strips ` ```sql ` or ` ``` ` fences. Security is a keyword scan, not a real AST. `CREATE` is forbidden even though `init_sample_database` uses it before the agent runs. Healing loop max is 3. In-memory DB only. The intended contract is a SQL string you can validate. Write that in your copy. Leave the reference file as-is.

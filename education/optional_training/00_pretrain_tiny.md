@@ -5,13 +5,13 @@ This folder is optional. It is not on the 00–15 path. After this page you can 
 ## Data
 Three objects exist, and they are not the same as chapter 00.
 
-A **corpus** is text you tokenize into tensors (arrays of token IDs). Those IDs are the data. There is no HTTP POST. There is no `OLLAMA_HOST`.
+A **corpus** is text you tokenize into tensors (arrays of token IDs). Those IDs are the data. There is no HTTP POST. There is no `OLLAMA_HOST`. Lab 0 uses three strings: `aba`, `abc`, `cab`. Tokens are characters. Vocab size is 3.
 
-A **train loop** is a Python process that reads a batch of those IDs, predicts the next ID, compares the prediction to the real next ID, and computes a **loss** (one float). It then updates the weight numbers so the next prediction is closer.
+A **train loop** is a Python process that reads a batch of those IDs, predicts the next ID, compares the prediction to the real next ID, and computes a **loss** (one float). It then updates the weight numbers so the next prediction is closer. Lab 0 is a `V` by `V` logit table plus `softmax` and a mean `-log(p[next])`.
 
-A **weight file** is the same kind of file chapter 00 named (`.safetensors` or `.gguf`). After a train step the numbers inside it have changed. Chapter 00 never writes that file. This page does.
+A **weight file** is the same kind of file chapter 00 named (`.safetensors` or `.gguf`). After a train step the numbers inside it have changed. Chapter 00 never writes that file. This page does. Lab 0 writes `weights.json` with `stoi` and `W`.
 
-There is no `lab0_pretrain_tiny.py` in this folder. The old notes lived under `modules/10/00`. The runnable labs that did move here are LoRA, GGUF, and GRPO.
+Lab 0 is `lab0_pretrain_tiny.py`. Functions: `build_vocab`, `make_pairs`, `softmax`, `train_step`, `train`. `steps` is 40. `lr` is 0.5. CPU only. No Hugging Face. The runnable labs that also live here are LoRA, GGUF, and GRPO.
 
 ## Information
 The only path on this page is:
@@ -26,7 +26,7 @@ If you are calling Ollama with `OLLAMA_HOST` (`http://192.168.1.29:11434`) and `
 
 ## Knowledge
 1. Confirm you actually want to train. The 00–15 line never requires this folder.
-2. Tokenize a small text file into token IDs. A first pretrain uses a small file, not a large crawl.
+2. Tokenize a small text file into token IDs. A first pretrain uses a small file, not a large crawl. Lab 0 tokenizes three short strings.
 3. Run a loop: take a window of IDs, predict the next ID, compute `loss` as a float, step the optimizer, write weights.
 4. Read `loss` after each step. If it is not a number, the loop is not training.
 5. Stop when `loss` has gone down on that small file. Do not start LoRA, GGUF, or GRPO on this page.
@@ -65,6 +65,14 @@ Walkthrough of one train step:
 4. It updates the weight numbers so `loss` is smaller on the next batch.
 5. It writes the new numbers to a weight file.
 
+Walkthrough of lab 0:
+
+1. `build_vocab` maps `a` / `b` / `c` to 0 / 1 / 2.
+2. `make_pairs` builds next-char pairs from `aba`, `abc`, `cab`.
+3. `train_step` does softmax plus `-log(p[next])` and a gradient step on `W`.
+4. After 40 steps, `last_loss` is smaller than `first_loss` (about `math.log(3)` on a zero matrix).
+5. `weights.json` holds `stoi` and `W`. No POST. No GPU.
+
 Nothing in that walkthrough opens a port. Nothing sends `model`, `prompt`, or `stream`. Those keys belong to chapter 00.
 
 ## Data contract
@@ -78,13 +86,23 @@ A train step produces one number. There is no request JSON and no HTTP route.
 }
 ```
 
-`loss` is a float. If a later lab adds a script, that script should print this field.
+**Lab 0 train return**
+
+```json
+{
+  "first_loss": 1.098612,
+  "last_loss": 0.4
+}
+```
+
+`loss` is a float. Lab 0 prints `first_loss` and `last_loss` and writes `weights.json`.
 
 ## Lab
-There is no `lab0_pretrain_tiny.py` in this folder. Do not invent a train script here. The LoRA lab is [lab1_lora_qlora.md](./lab1_lora_qlora.md).
+Done when `last_loss` is a smaller float than `first_loss` and `weights.json` exists.
 
 - Module: [this file](./00_pretrain_tiny.md)
-- Next module: [01_lora_qlora.md](./01_lora_qlora.md)
+- Lab 0: [lab0_pretrain_tiny.md](./lab0_pretrain_tiny.md) - write `lab0_pretrain_tiny.py`. Next-token table on three strings. Done when `last_loss < first_loss`.
+- Next module: [01_lora_qlora.md](./01_lora_qlora.md) / [lab1_lora_qlora.md](./lab1_lora_qlora.md) - adapter math, not pretrain.
 
 ## Related
 - **Chapter 00:** you usually just call. Script, provider, weights. POST to `/api/generate`.
@@ -94,4 +112,4 @@ There is no `lab0_pretrain_tiny.py` in this folder. Do not invent a train script
 
 ## Notes
 - This page was moved from `modules/10/00`. The LoRA, GGUF, and GRPO labs were moved from `modules/10` and `labs/10` into this folder.
-- There is no paired `.py` for this module. The intended contract is `loss` as a number. Nothing to drift against.
+- Lab 0 has no reference `.py` yet. The intended contract is `loss` as a number. CPU lists (or numpy) only. Do not edit the `.py` files in the repo.

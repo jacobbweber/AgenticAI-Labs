@@ -3,9 +3,9 @@
 After this page a failed check is appended and the loop retries, and a second script scores outputs. The checker is a unit test (or an exit code). The score is a list of cases plus a pass count.
 
 ## Data
-**Reflexion** is: run, check, if the check fails append the error to the next prompt, retry, stop at a cap. The lab file is `lab3_reflexion_loop.py`. Class `ReflexionEngine` has `run_reflexion_loop(task_goal)` and `max_turns` (default 3). The checker is `run_sandboxed_critic`: it writes `solution.py` in a temp dir and runs it. Exit code `0` is pass. Nonzero is fail, and `stderr` is the error you append.
+**Reflexion** is: run, check, if the check fails append the error to the next prompt, retry, stop at a cap. The lab file is `lab5_reflexion_loop.py`. Class `ReflexionEngine` has `run_reflexion_loop(task_goal)` and `max_turns` (default 3). The checker is `run_sandboxed_critic`: it writes `solution.py` in a temp dir and runs it. Exit code `0` is pass. Nonzero is fail, and `stderr` is the error you append.
 
-**Evals** are a fixture list plus a score function. The intended row is `{ "case": "string", "pass": true }`. Print how many passed. The lab file is `lab2_agent_evals.py` (another lab2 name in this folder).
+**Evals** are a fixture list plus a score function. The intended row is `{ "case": "string", "pass": true }`. Print how many passed. The lab file is `lab4_agent_evals.py`.
 
 `OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. Both labs use `POST /api/generate`.
 
@@ -37,7 +37,7 @@ Append the error and retry inside a small cap. Score with a list of cases. If yo
 
 ```mermaid
 flowchart TD
-    subgraph reflex_lab [lab3_reflexion_loop.py]
+    subgraph reflex_lab [lab5_reflexion_loop.py]
         GEN["llm_generate"]
         CRIT["run_sandboxed_critic"]
         ENG["ReflexionEngine"]
@@ -45,7 +45,7 @@ flowchart TD
     subgraph reflex_host [Ollama on port 11434]
         GENAPI["POST /api/generate"]
     end
-    subgraph eval_lab [lab2_agent_evals.py]
+    subgraph eval_lab [lab4_agent_evals.py]
         CASES["fixture list"]
         SCORE["score function"]
     end
@@ -117,14 +117,14 @@ Walkthrough of evals (intended):
 Done when a failed check is appended and retried, and a second script prints a pass count.
 
 - Module: [this file](./02_reflexion_and_evals.md)
-- Lab 3: [lab3_reflexion_loop.py](./lab3_reflexion_loop.py) / [lab3_reflexion_loop.md](./lab3_reflexion_loop.md) — generate, run `solution.py`, append `stderr`, retry. Done when you see `SUCCESS` or `FAILED_MAX_TURNS`.
-- Lab 2 (evals): [lab2_agent_evals.py](./lab2_agent_evals.py) / [lab2_agent_evals.md](./lab2_agent_evals.md) — fixture list plus score. Done when a pass count prints.
+- Lab 5: [lab5_reflexion_loop.py](./lab5_reflexion_loop.py) / [lab5_reflexion_loop.md](./lab5_reflexion_loop.md) — generate, run `solution.py`, append `stderr`, retry. Done when you see `SUCCESS` or `FAILED_MAX_TURNS`.
+- Lab 4 (evals): [lab4_agent_evals.py](./lab4_agent_evals.py) / [lab4_agent_evals.md](./lab4_agent_evals.md) — fixture list plus score. Done when a pass count prints.
 
 ## Related
 - **unit test:** the checker. Exit code `0` or a boolean. Not a dashboard.
 - **Chapter 12 cycle hash:** previous file. Reflexion retries a new prompt. A cycle hash stops the same tool step.
 
 ## Notes
-- Moved from `modules/08/02` and `labs/04/lab2`. The evals file is still named lab2. Do not rename it here.
-- Contract drift vs `lab3_reflexion_loop.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`. `llm_generate` strips a leading ` ```python ` fence. Oscillation uses MD5 of `stderr`, not the cycle SHA-256 from the previous page.
-- Contract drift vs `lab2_agent_evals.py`: no fixture list and no `{ "case", "pass" }` rows. The script builds `AgentTracer` spans (`trace_id`, `span_id`, `duration_ms`) and calls `llm_judge_evaluator`, which POSTs a second generate and expects `{ "score", "verdict", "reason" }`. That is a mini observability stack plus an LLM judge. The intended contract on this page is still a case list and a pass count. Write that in your copy. Leave the reference files as-is.
+- Moved from `modules/08/02` and `labs/04/lab2`. Evals are lab4. Reflexion is lab5.
+- Contract drift vs `lab5_reflexion_loop.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`. `llm_generate` strips a leading ` ```python ` fence. Oscillation uses MD5 of `stderr`, not the cycle SHA-256 from the previous page.
+- Contract drift vs `lab4_agent_evals.py`: no fixture list and no `{ "case", "pass" }` rows. The script builds `AgentTracer` spans (`trace_id`, `span_id`, `duration_ms`) and calls `llm_judge_evaluator`, which POSTs a second generate and expects `{ "score", "verdict", "reason" }`. That is a mini observability stack plus an LLM judge. The intended contract on this page is still a case list and a pass count. Write that in your copy. Leave the reference files as-is.

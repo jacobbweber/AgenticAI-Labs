@@ -5,13 +5,13 @@ After this page a repeated tool signature stops the loop, and optional logit bia
 ## Data
 A **cycle** is the same tool step happening again. The signature is `tool_name` plus the args plus the tool result. `compute_step_hash` in `lab2_cycle_detection.py` builds one string `tool_name:{json.dumps(args, sort_keys=True)}:{output}` and runs SHA-256. The hash is the key. If that key is already in `seen_hashes`, the loop returns `HALTED_BY_CYCLE_DETECTOR`.
 
-**Logit bias** is a number added to a token's raw score before softmax. A large negative number (the lab uses `-100.0`) makes that token almost never win. A positive number (the lab uses `+5.0` on `{`) makes a token more likely. `apply_logit_bias_steering` in `lab2_logit_steering.py` does that add. Stop strings are the other optional halt: tell the provider to stop when it emits a given string.
+**Logit bias** is a number added to a token's raw score before softmax. A large negative number (the lab uses `-100.0`) makes that token almost never win. A positive number (the lab uses `+5.0` on `{`) makes a token more likely. `apply_logit_bias_steering` in `lab3_logit_steering.py` does that add. Stop strings are the other optional halt: tell the provider to stop when it emits a given string.
 
 The cycle lab talks to Ollama. The steering lab does not. It uses a local `VOCAB_TABLE` of token strings to integer ids.
 
 `OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. The cycle route is `POST /api/chat`.
 
-These files were moved from `modules/08` and `labs/01` lab2. The names still say lab2. Do not rename them in this pass.
+These files were moved from `modules/08` and `labs/01` lab2. Cycle stays `lab2_cycle_detection`. Steering is `lab3_logit_steering`.
 
 ## Information
 Chapter 04 stops when `tool_calls` is empty or `max_turns` is hit. If the model asks for `read_database_record({"record_id": 999})` every turn, and that tool always returns `ERROR: Record 999 not found`, `max_turns` still spends those turns. Hashing each step (the lab keeps every hash in `seen_hashes`) stops the repeat as soon as it appears.
@@ -46,7 +46,7 @@ flowchart TD
     subgraph cycle_host [Ollama on port 11434]
         CHAT["POST /api/chat"]
     end
-    subgraph steer_lab [lab2_logit_steering.py]
+    subgraph steer_lab [lab3_logit_steering.py]
         BIAS["apply_logit_bias_steering"]
         SOFT["softmax"]
     end
@@ -113,13 +113,13 @@ Done when a repeated tool hash stops the loop, and a bias map changes token prob
 
 - Module: [this file](./01_cycle_and_steering.md)
 - Lab 2 (cycle): [lab2_cycle_detection.py](./lab2_cycle_detection.py) / [lab2_cycle_detection.md](./lab2_cycle_detection.md) — hash each tool step, halt on a repeat. Done when you see `HALTED_BY_CYCLE_DETECTOR`.
-- Lab 2 (steering): [lab2_logit_steering.py](./lab2_logit_steering.py) / [lab2_logit_steering.md](./lab2_logit_steering.md) — add bias, print softmax before and after. Done when `apologize` drops and `{` rises.
+- Lab 3 (steering): [lab3_logit_steering.py](./lab3_logit_steering.py) / [lab3_logit_steering.md](./lab3_logit_steering.md) — add bias, print softmax before and after. Done when `apologize` drops and `{` rises.
 
 ## Related
 - **max_turns:** the blunt stop from chapter 04. Still keep it. The hash is the early stop.
 - **Chapter 12 CoT:** previous file. Split thinking first. Then stop loops.
 
 ## Notes
-- Moved from `modules/08` and `labs/01` lab2. Three files in this folder are named lab2. Do not rename them here. A later cleanup can renumber.
+- Moved from `modules/08` and `labs/01` lab2. Cycle is lab2. Steering is lab3.
 - Contract drift vs `lab2_cycle_detection.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/chat`. The print says the hash was "repeated consecutively" even though the check is "hash in the full `seen_hashes` list".
-- Contract drift vs `lab2_logit_steering.py`: no HTTP and no Ollama. The script also runs `GuardrailInterceptor.inspect_prompt` and `validate_output`. Those are extra. The intended idea on this page is the hash plus optional logit bias / stop strings. Write that in your copy. Leave the reference files as-is.
+- Contract drift vs `lab3_logit_steering.py`: no HTTP and no Ollama. The script also runs `GuardrailInterceptor.inspect_prompt` and `validate_output`. Those are extra. The intended idea on this page is the hash plus optional logit bias / stop strings. Write that in your copy. Leave the reference files as-is.

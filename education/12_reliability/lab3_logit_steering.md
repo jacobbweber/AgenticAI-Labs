@@ -1,9 +1,9 @@
-# Lab 2: Logit steering
+# Lab 3: Logit steering
 
 After this lab a banned token is near-zero probability. Prompt-only bans are not enough. A number on the token id is.
 
 ## What you touch
-- Script: `lab2_logit_steering.py`
+- Script: `lab3_logit_steering.py`
 - Functions: `apply_logit_bias_steering(raw_logits, logit_bias)`, `softmax(logits)`
 - Table: `VOCAB_TABLE` (`{` is 101, `I` is 201, `apologize` is 202, `cannot` is 203)
 - Intended URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
@@ -13,7 +13,7 @@ After this lab a banned token is near-zero probability. Prompt-only bans are not
 ## Steps
 ```mermaid
 flowchart LR
-    subgraph steer_lab2_script [This script]
+    subgraph steer_lab3_script [This script]
         R["raw_logits"]
         B["apply_logit_bias_steering"]
         S["softmax"]
@@ -60,13 +60,13 @@ Ollama may not honor `logit_bias`. A `stop` list on `options` is the portable ha
 From the repo root:
 
 ```bash
-python education/12_reliability/lab2_logit_steering.py
+python education/12_reliability/lab3_logit_steering.py
 ```
 
 ```powershell
 $env:OLLAMA_HOST="http://192.168.1.29:11434"
 $env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
-python education/12_reliability/lab2_logit_steering.py
+python education/12_reliability/lab3_logit_steering.py
 ```
 
 The env vars are unused by the reference script. They are here so a POST copy matches the other labs.
@@ -75,8 +75,8 @@ The env vars are unused by the reference script. They are here so a POST copy ma
 Un-steered probabilities, then steered ones. `apologize` and `cannot` should be about `0.00%`. `{` should be the largest. If the banned tokens stay high, the bias was not added. The reference also prints two extra guardrail checks (prompt injection and JSON). Those are not this lab's idea.
 
 ## Stop here
-This is not a CFG engine and not a full guardrail product. Do not add cycle hashing or a reflexion retry on this script. Evals (the next lab2 file) can score whether a banned token appeared. Do not rename this file even though two other files in this folder are also named lab2.
+This is not a CFG engine and not a full guardrail product. Do not add cycle hashing or a reflexion retry on this script. Evals (lab4) can score whether a banned token appeared.
 
 ## Notes
 - Mechanism: add a float to a token id, then softmax. Prompt-only bans fail because the model can still emit the word.
-- Contract drift vs `lab2_logit_steering.py`: no HTTP, no Ollama, no `OLLAMA_HOST` / `OLLAMA_MODEL`. The script also runs `GuardrailInterceptor.inspect_prompt` and `validate_output`. Those are extra. The intended contract is a bias map or stop string on the request, then a reply without the banned token. Write that in your copy. Leave the reference file as-is.
+- Contract drift vs `lab3_logit_steering.py`: no HTTP, no Ollama, no `OLLAMA_HOST` / `OLLAMA_MODEL`. The script also runs `GuardrailInterceptor.inspect_prompt` and `validate_output`. Those are extra. The intended contract is a bias map or stop string on the request, then a reply without the banned token. Write that in your copy. Leave the reference file as-is.

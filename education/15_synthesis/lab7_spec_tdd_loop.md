@@ -1,9 +1,9 @@
-# Lab 3: Spec TDD loop
+# Lab 7: Spec TDD loop
 
 A failing spec becomes a passing check. This reuses chapter 02 structured text, the chapter 09 sandbox, and chapter 12 evals (the score is the exit code). Not a new agent.
 
 ## What you touch
-- Script: `lab3_spec_tdd_loop.py`
+- Script: `lab7_spec_tdd_loop.py`
 - Functions: `compile_ears_spec`, `run_test_suite`, `run_spec_tdd_pipeline`, `llm_call`
 - URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
 - Keys sent: `model`, `prompt`, `stream` (`false`), `options.temperature` (`0.0`)
@@ -13,7 +13,7 @@ A failing spec becomes a passing check. This reuses chapter 02 structured text, 
 ## Steps
 ```mermaid
 flowchart TD
-    subgraph tdd_lab [lab3_spec_tdd_loop.py]
+    subgraph tdd_lab [lab7_spec_tdd_loop.py]
         SPEC["compile_ears_spec"]
         RED["run_test_suite red"]
         GREEN["run_test_suite green"]
@@ -82,13 +82,13 @@ WHEN two numbers are passed, the system SHALL return their product.
 From the repo root:
 
 ```bash
-python education/15_synthesis/lab3_spec_tdd_loop.py
+python education/15_synthesis/lab7_spec_tdd_loop.py
 ```
 
 ```powershell
 $env:OLLAMA_HOST="http://192.168.1.29:11434"
 $env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
-python education/15_synthesis/lab3_spec_tdd_loop.py
+python education/15_synthesis/lab7_spec_tdd_loop.py
 ```
 
 ## What you should see
@@ -99,4 +99,4 @@ Do not add a new primitive; compose what you already have. A spec plus a failing
 
 ## Notes
 - Red then green. Reuse chapter 02, chapter 09 sandbox, chapter 12 evals.
-- Contract drift vs `lab3_spec_tdd_loop.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`. Only the EARS spec is model output. `test_suite.py` and both versions of `solution.py` are hardcoded. No session JSON. No `tool_calls`. Temp dir prefix is `sdd_tdd_`. Timeout is 10 seconds. The intended contract is spec text that drives a failing test then a fix. Write that in your copy. Leave the reference file as-is.
+- Contract drift vs `lab7_spec_tdd_loop.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`. Only the EARS spec is model output. `test_suite.py` and both versions of `solution.py` are hardcoded. No session JSON. No `tool_calls`. Temp dir prefix is `sdd_tdd_`. Timeout is 10 seconds. The intended contract is spec text that drives a failing test then a fix. Write that in your copy. Leave the reference file as-is.

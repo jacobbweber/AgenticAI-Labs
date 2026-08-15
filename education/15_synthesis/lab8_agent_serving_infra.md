@@ -1,9 +1,9 @@
-# Lab 4: Agent serving infra
+# Lab 8: Agent serving infra
 
 A client request hits a gateway POST and a span list. This reuses chapter 10 (handle a request) and chapter 11 (endpoint list). Not a new cloud.
 
 ## What you touch
-- Script: `lab4_agent_serving_infra.py`
+- Script: `lab8_agent_serving_infra.py`
 - Classes: `OTelSpanCollector`, `InferenceGatewayRouter`, `ProductionAgentServingRuntime`
 - Functions: `record_span`, `dispatch`, `handle_request`
 - URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
@@ -13,7 +13,7 @@ A client request hits a gateway POST and a span list. This reuses chapter 10 (ha
 ## Steps
 ```mermaid
 flowchart TD
-    subgraph srv_lab [lab4_agent_serving_infra.py]
+    subgraph srv_lab [lab8_agent_serving_infra.py]
         RUN["handle_request"]
         GW["InferenceGatewayRouter.dispatch"]
         SPAN["record_span"]
@@ -73,13 +73,13 @@ There is no listening port and no SSE stream. See Notes.
 From the repo root:
 
 ```bash
-python education/15_synthesis/lab4_agent_serving_infra.py
+python education/15_synthesis/lab8_agent_serving_infra.py
 ```
 
 ```powershell
 $env:OLLAMA_HOST="http://192.168.1.29:11434"
 $env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
-python education/15_synthesis/lab4_agent_serving_infra.py
+python education/15_synthesis/lab8_agent_serving_infra.py
 ```
 
 ## What you should see
@@ -90,4 +90,4 @@ Do not add a new primitive; compose what you already have. A POST plus a span li
 
 ## Notes
 - Reference blueprint. Serve the kernel. Reuse chapter 10 request handle and chapter 11 gateway.
-- Contract drift vs `lab4_agent_serving_infra.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`. No listen socket, no HTTP 202, no SSE. Gateway always uses `endpoints[0]`. Sandbox span is `time.sleep(0.05)`, not `subprocess.Popen`. Session id is only a string on the return dict. The intended contract is a chapter 10 server in front of the kernel. Write that in your copy. Leave the reference file as-is.
+- Contract drift vs `lab8_agent_serving_infra.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`. No listen socket, no HTTP 202, no SSE. Gateway always uses `endpoints[0]`. Sandbox span is `time.sleep(0.05)`, not `subprocess.Popen`. Session id is only a string on the return dict. The intended contract is a chapter 10 server in front of the kernel. Write that in your copy. Leave the reference file as-is.

@@ -7,7 +7,7 @@ A **spec** is acceptance text written before the code. It can be markdown, JSON 
 
 **Red** means a test ran and failed (nonzero exit). **Green** means the same test ran and passed (exit 0). The order is: spec, then failing test, then code, then re-run.
 
-The lab file is `lab3_spec_tdd_loop.py`. Functions:
+The lab file is `lab7_spec_tdd_loop.py`. Functions:
 
 - `compile_ears_spec(user_goal)` POSTs the goal and asks for two EARS lines.
 - `run_test_suite(temp_dir)` starts `test_suite.py` with `subprocess.Popen` and returns the exit code.
@@ -52,7 +52,7 @@ flowchart TD
         TEST["test_suite.py"]
         SOL["solution.py"]
     end
-    subgraph tdd_run [lab3_spec_tdd_loop.py]
+    subgraph tdd_run [lab7_spec_tdd_loop.py]
         RED["run_test_suite red"]
         GREEN["run_test_suite green"]
     end
@@ -125,7 +125,7 @@ It reads `response`. Host and model are literals. The red and green files are li
 Done when a spec produced a failing test and then a passing test. Do not add a new primitive.
 
 - Module: [this file](./02_spec_tdd.md)
-- Lab 3: [lab3_spec_tdd_loop.py](./lab3_spec_tdd_loop.py) / [lab3_spec_tdd_loop.md](./lab3_spec_tdd_loop.md) — EARS spec, red `test_suite.py`, green `solution.py`. Done when you see a nonzero exit then exit 0.
+- Lab 7: [lab7_spec_tdd_loop.py](./lab7_spec_tdd_loop.py) / [lab7_spec_tdd_loop.md](./lab7_spec_tdd_loop.md) — EARS spec, red `test_suite.py`, green `solution.py`. Done when you see a nonzero exit then exit 0.
 - Also listed as a blueprint on [01_project_blueprints.md](./01_project_blueprints.md).
 
 ## Related
@@ -135,4 +135,4 @@ Done when a spec produced a failing test and then a passing test. Do not add a n
 
 ## Notes
 - Moved from old `modules/04/02` and `labs/04/lab3_spec_tdd_loop` as specified.
-- Contract drift vs `lab3_spec_tdd_loop.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`, not `/api/chat`. Only the EARS spec is model output. `test_suite.py` and both versions of `solution.py` are hardcoded. No session JSON. No `tool_calls`. Temp dir prefix is `sdd_tdd_`. The intended contract is a spec (markdown or JSON assertions) that drives a failing test then a fix. Write that in your copy. Leave the reference file as-is.
+- Contract drift vs `lab7_spec_tdd_loop.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`, not `/api/chat`. Only the EARS spec is model output. `test_suite.py` and both versions of `solution.py` are hardcoded. No session JSON. No `tool_calls`. Temp dir prefix is `sdd_tdd_`. The intended contract is a spec (markdown or JSON assertions) that drives a failing test then a fix. Write that in your copy. Leave the reference file as-is.

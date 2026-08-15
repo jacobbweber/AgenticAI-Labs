@@ -1,9 +1,9 @@
-# Lab 2: Agent evals
+# Lab 4: Agent evals
 
 After this lab a fixture list printed a pass count. Vibes are not a score. A number is.
 
 ## What you touch
-- Script: `lab2_agent_evals.py`
+- Script: `lab4_agent_evals.py`
 - Intended function: a score over a list of cases
 - URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
 - Keys sent: `model`, `prompt`, `stream` (`false`), `options.temperature` (`0.0`)
@@ -13,12 +13,12 @@ After this lab a fixture list printed a pass count. Vibes are not a score. A num
 ## Steps
 ```mermaid
 flowchart LR
-    subgraph eval_lab2_script [This script]
+    subgraph eval_lab4_script [This script]
         C["fixture list"]
         R["run target"]
         S["score"]
     end
-    subgraph eval_lab2_host [Ollama on port 11434]
+    subgraph eval_lab4_host [Ollama on port 11434]
         H["POST /api/generate"]
     end
     C --> R
@@ -71,21 +71,21 @@ Intended score shape. The reference script prints something else. See Notes.
 From the repo root:
 
 ```bash
-python education/12_reliability/lab2_agent_evals.py
+python education/12_reliability/lab4_agent_evals.py
 ```
 
 ```powershell
 $env:OLLAMA_HOST="http://192.168.1.29:11434"
 $env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
-python education/12_reliability/lab2_agent_evals.py
+python education/12_reliability/lab4_agent_evals.py
 ```
 
 ## What you should see
 A printed score: how many cases passed out of how many ran. The reference script instead prints an OpenTelemetry-style span list and a judge JSON with `score`, `verdict`, and `reason`. If you see `URLError` or connection refused, the provider is not reachable. If you see HTTP 404, the model name is wrong or not pulled. If `json.loads` fails on the judge reply, the model did not return a single JSON object.
 
 ## Stop here
-This is not LangSmith and not a release dashboard. Chapter 15 can gate a release on a pass count. Do not add reflexion retries on this script. Do not rename this file even though two other files in this folder are also named lab2.
+This is not LangSmith and not a release dashboard. Chapter 15 can gate a release on a pass count. Do not add reflexion retries on this script.
 
 ## Notes
 - Mechanism: cases in, boolean per case, N/M out. Same job as pytest, for model text.
-- Contract drift vs `lab2_agent_evals.py`: no fixture list and no `{ "pass", "total" }`. No `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). The script builds `AgentTracer` spans (`trace_id`, `span_id`, `duration_ms`, a mock `tool.execution` span) and calls `llm_judge_evaluator`, which POSTs a second generate and expects `{ "score": 0 to 100, "verdict": "PASSED" or "FAILED", "reason": "string" }`. The baked task is one factorial prompt, not a list. The intended contract is still a case list and a pass count. Write that in your copy. Leave the reference file as-is.
+- Contract drift vs `lab4_agent_evals.py`: no fixture list and no `{ "pass", "total" }`. No `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). The script builds `AgentTracer` spans (`trace_id`, `span_id`, `duration_ms`, a mock `tool.execution` span) and calls `llm_judge_evaluator`, which POSTs a second generate and expects `{ "score": 0 to 100, "verdict": "PASSED" or "FAILED", "reason": "string" }`. The baked task is one factorial prompt, not a list. The intended contract is still a case list and a pass count. Write that in your copy. Leave the reference file as-is.

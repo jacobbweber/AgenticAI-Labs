@@ -93,12 +93,12 @@ Done when a valid snippet prints `stdout`, an error prints `stderr`, and a loop 
 
 - Module: [this file](./00_sandbox.md)
 - Lab 1: [lab1_code_sandbox.py](./lab1_code_sandbox.py) / [lab1_code_sandbox.md](./lab1_code_sandbox.md) — `execute_sandboxed_python` on three snippets. Done when you see `COMPLETED`, `FAILED`, and `TIMEOUT_EXCEEDED`.
-- Stub: [STUB_lab2_permissions.md](./STUB_lab2_permissions.md) — allowlist between sandbox and HITL. Not runnable.
+- Lab 2: [lab2_permissions.md](./lab2_permissions.md) — high-risk allowlist. After this page, before the two lab3 files.
 - Lab 3 RBAC and Lab 3 HITL are later in this folder.
 
 ## Related
 - **Docker / gVisor / Wasm:** same job, stronger wall. Not in the lab.
-- **01_security_overview.md:** sandbox is one control. RBAC and HITL are the others.
+- **01_security_overview.md:** sandbox is one control. The allowlist, RBAC, and HITL are the others.
 - **subprocess:** the primitive. `Popen` plus `communicate(timeout=...)` plus `kill`.
 
 ## Notes

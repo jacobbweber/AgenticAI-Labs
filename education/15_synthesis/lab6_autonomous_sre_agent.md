@@ -1,9 +1,9 @@
-# Lab 3: Autonomous SRE agent
+# Lab 6: Autonomous SRE agent
 
 An alert becomes a filtered log list, a one-sentence RCA, and a HITL pause. This reuses chapter 06 phases, chapter 09 HITL, and chapter 13 filter. Not a new pager product.
 
 ## What you touch
-- Script: `lab3_autonomous_sre_agent.py`
+- Script: `lab6_autonomous_sre_agent.py`
 - Classes: `LogTriageEngine`, `SRECommandSafetyGuard`, `AutonomousSREAgent`
 - Functions: `extract_error_signatures`, `evaluate_command`, `investigate_and_remediate`, `llm_call`
 - URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
@@ -13,7 +13,7 @@ An alert becomes a filtered log list, a one-sentence RCA, and a HITL pause. This
 ## Steps
 ```mermaid
 flowchart TD
-    subgraph sre_lab [lab3_autonomous_sre_agent.py]
+    subgraph sre_lab [lab6_autonomous_sre_agent.py]
         TRI["extract_error_signatures"]
         RCA["llm_call RCA"]
         GATE["evaluate_command"]
@@ -88,13 +88,13 @@ The input is a list of log strings, not an alert JSON object. Commands are liter
 From the repo root:
 
 ```bash
-python education/15_synthesis/lab3_autonomous_sre_agent.py
+python education/15_synthesis/lab6_autonomous_sre_agent.py
 ```
 
 ```powershell
 $env:OLLAMA_HOST="http://192.168.1.29:11434"
 $env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
-python education/15_synthesis/lab3_autonomous_sre_agent.py
+python education/15_synthesis/lab6_autonomous_sre_agent.py
 ```
 
 ## What you should see
@@ -105,4 +105,4 @@ Do not add a new primitive; compose what you already have. A filter plus a POST 
 
 ## Notes
 - Reference blueprint. Alarm to action. Reuse chapter 06 phases, chapter 09 HITL, chapter 13 filter.
-- Contract drift vs `lab3_autonomous_sre_agent.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`. Input is a `List[str]`, not alert JSON. The three kubectl strings are hardcoded after the RCA. The whitelist regexes are lowercase and require `-n <ns>`. No command is executed. The intended contract is alert JSON plus a HITL pause. Write that in your copy. Leave the reference file as-is.
+- Contract drift vs `lab6_autonomous_sre_agent.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`. Input is a `List[str]`, not alert JSON. The three kubectl strings are hardcoded after the RCA. The whitelist regexes are lowercase and require `-n <ns>`. No command is executed. The intended contract is alert JSON plus a HITL pause. Write that in your copy. Leave the reference file as-is.
