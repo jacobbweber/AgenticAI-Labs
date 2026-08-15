@@ -1,41 +1,36 @@
 # Lab 2: Stream tokens
 
-After this lab you print tokens as they arrive and you have a TTFT number.
+Tokens print as they arrive and the script has a TTFT number.
 
-## Data
+## What you touch
 - Script: `lab2_streaming_tokens.py`
-- Same URL as lab 1
-- Request change: `stream: true`
-- Each line is one JSON object with `response` and `done`
+- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
+- Keys sent: `model`, `prompt`, `stream` (`true`), `options.temperature` (`0.0`)
+- Keys read: each line `response` and `done`; on `done: true`, `eval_count` and `eval_duration`
 
-## Information
-The TCP connection stays open. The provider writes one JSON line per chunk. The script prints each chunk and records the time of the first line.
-
-## Knowledge
-1. POST with `stream: true`.
-2. `for line in response:`
-3. On the first line, store TTFT.
-4. `sys.stdout.write(chunk["response"]); sys.stdout.flush()`
-5. On `done: true`, read `eval_count` / `eval_duration` and print TPS.
-
-## Wisdom
-This is not a browser SSE server. Chapter 10 puts this stream behind FastAPI.
-
-## The When and Why
-- **When:** a non-stream call takes many seconds and the user sees nothing until the end.
-- **Why:** first token at ~0.44s is the smallest proof that streaming changes the wait.
-
-## How it works
-
+## Steps
 ```mermaid
-flowchart TD
-    A["Client Request (stream=True)"] --> B["Ollama Host (192.168.1.29:11434)"]
-    B -- "Token 1 generated (t = 0.44s)" --> C["Read Line 1 & Print Immediately (TTFT)"]
-    B -- "Token 2 generated" --> D["Read Line 2 & Print Immediately"]
-    B -- "Token N generated (done=True)" --> E["Calculate Final Metrics (TPS)"]
+flowchart LR
+    subgraph lab2_script [This script]
+        S["lab2_streaming_tokens.py"]
+    end
+    subgraph lab2_host [Ollama on port 11434]
+        H["POST /api/generate"]
+    end
+    S -->|"stream true"| H
+    H -->|"NDJSON line with response"| S
 ```
 
+1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. Same defaults as lab 1.
+2. Build one JSON body: `model`, `prompt` (`Write a 3-step technical summary of why streaming HTTP responses reduces perceived latency.`), `stream: true`, `options.temperature: 0.0`.
+3. POST it to `{host}/api/generate` with header `Content-Type: application/json`. Start `time.time()` before the POST.
+4. Iterate `for line in response`. Skip empty lines. Parse each line with `json.loads`.
+5. On the first non-empty line, store TTFT as now minus the start time.
+6. Write `chunk["response"]` with `sys.stdout.write` and `sys.stdout.flush()` so text appears before the next line.
+7. When `chunk["done"]` is true, read `eval_count` and `eval_duration`. Print TTFT, total duration, `eval_count`, and TPS = `eval_count / (eval_duration / 1e9)`.
+
 ## Data contract
+Only the keys this script sends and reads.
 
 **Request**
 
@@ -48,7 +43,7 @@ flowchart TD
 }
 ```
 
-**One stream line**
+**Response** (one stream line)
 
 ```json
 {
@@ -57,21 +52,28 @@ flowchart TD
 }
 ```
 
+The last line sets `done: true` and adds `eval_count` and `eval_duration`.
+
 ## Run
+From the repo root:
 
 ```bash
 python education/01_the_call/lab2_streaming_tokens.py
 ```
 
+```powershell
+$env:OLLAMA_HOST="http://192.168.1.29:11434"
+$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
+python education/01_the_call/lab2_streaming_tokens.py
+```
+
 ## What you should see
-Text appearing incrementally, then TTFT, total duration, token count, TPS. If you see nothing until the end, `stream` is still false or you buffered stdout.
+Text appearing incrementally, then TTFT, total duration, token count, and tokens/sec. If you see nothing until the end, `stream` is still false or stdout is buffered (you skipped `flush`). If you see `Error reading stream`, the provider closed the connection or a line was not JSON. If TTFT is close to total duration, you waited for the full body.
 
-## What this becomes later
-Chapter 10 serves this stream over SSE or a WebSocket. Chapter 12 demuxes thinking tokens out of the same stream.
-
-## Related
-- **OpenAI SSE:** `data: {"choices":[{"delta":{"content":"..."}}]}` then `data: [DONE]`.
+## Stop here
+This is not a browser SSE server. Do not add FastAPI, a WebSocket, or a thinking-token filter. Chapter 10 serves this stream over SSE. Chapter 12 demuxes thinking tokens out of the same stream.
 
 ## Notes
 - Mechanism: iterate the HTTP body line by line, parse JSON, write `response`, flush.
-- A prior run recorded TTFT near 0.44s versus 13s for the non-stream call.
+- A prior run recorded TTFT near 0.44 seconds versus 13.01 seconds for the lab 1 non-stream call.
+- The reference script increments a `token_count` once per JSON line, then prints `eval_count` from the final line. The printed token number is `eval_count`, not the line counter. No key drift.
