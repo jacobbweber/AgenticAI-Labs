@@ -125,7 +125,7 @@ It reads `response`. Host and model are literals. The red and green files are li
 Done when a spec produced a failing test and then a passing test. Do not add a new primitive.
 
 - Module: [this file](./02_spec_tdd.md)
-- Lab 7: [lab7_spec_tdd_loop.py](./lab7_spec_tdd_loop.py) / [lab7_spec_tdd_loop.md](./lab7_spec_tdd_loop.md) — EARS spec, red `test_suite.py`, green `solution.py`. Done when you see a nonzero exit then exit 0.
+- Lab 7: [lab7_spec_tdd_loop.py](./lab7_spec_tdd_loop.py) / [lab7_spec_tdd_loop.md](./lab7_spec_tdd_loop.md) - EARS spec, red `test_suite.py`, green `solution.py`. Done when you see a nonzero exit then exit 0.
 - Also listed as a blueprint on [01_project_blueprints.md](./01_project_blueprints.md).
 
 ## Related
