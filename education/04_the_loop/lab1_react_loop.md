@@ -5,7 +5,7 @@ A `for` loop has called `add_numbers` then `multiply_numbers` and printed a fina
 ## What you touch
 - Script: `lab1_react_loop.py`
 - Function: `run_react_agent(user_prompt, max_turns=5)`
-- URL / path: `{OLLAMA_HOST}/api/chat` (default `http://192.168.1.29:11434/api/chat`)
+- URL / path: `{OLLAMA_HOST}/api/chat` (default `http://127.0.0.1:11434/api/chat`)
 - Registry: `TOOL_REGISTRY` maps `add_numbers` and `multiply_numbers` to Python functions
 - Schema: `TOOLS_SCHEMA` is the same two functions, sent as the `tools` key
 - Keys sent: `model`, `messages`, `tools`, `stream` (`false`), `options.temperature` (`0.0`)
@@ -28,7 +28,7 @@ flowchart TD
     REG -->|"role tool content"| LOOP
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://192.168.1.29:11434` and `qwen3.6:35b-a3b-65k`. The route is `{host}/api/chat`.
+1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://127.0.0.1:11434` and `llama3.2:1b`. The route is `{host}/api/chat`.
 2. Define `add_numbers(a, b)` and `multiply_numbers(a, b)`. Each returns `str(a + b)` or `str(a * b)`. Put both in `TOOL_REGISTRY` by name. Put the same names and parameter keys `a` and `b` in `TOOLS_SCHEMA`.
 3. Write `run_react_agent(user_prompt: str, max_turns: int = 5)`. Start `messages` with `{ "role": "system", "content": "You are a helpful assistant. Use tools when calculations are required." }` and `{ "role": "user", "content": user_prompt }`.
 4. Loop `for turn in range(1, max_turns + 1)`. Each turn POST `model`, `messages`, `tools` (`TOOLS_SCHEMA`), `stream: false`, and `options.temperature: 0.0` with header `Content-Type: application/json`.
@@ -44,7 +44,7 @@ Only the keys this script sends and reads.
 
 ```json
 {
-  "model": "qwen3.6:35b-a3b-65k",
+  "model": "llama3.2:1b",
   "messages": [],
   "tools": [],
   "stream": false,
@@ -85,12 +85,12 @@ Only the keys this script sends and reads.
 From the repo root:
 
 ```bash
-python education/04_the_loop/lab1_react_loop.py
+OLLAMA_HOST=http://127.0.0.1:11434 OLLAMA_MODEL=llama3.2:1b python education/04_the_loop/lab1_react_loop.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
+$env:OLLAMA_HOST="http://127.0.0.1:11434"
+$env:OLLAMA_MODEL="llama3.2:1b"
 python education/04_the_loop/lab1_react_loop.py
 ```
 
@@ -98,9 +98,10 @@ python education/04_the_loop/lab1_react_loop.py
 Three turns. Turn 1 prints `[ACTION]` for `add_numbers` with `a=42` and `b=58`, then `[OBSERVATION]` `100`. Turn 2 prints `multiply_numbers` with `a=100` and `b=3`, then `300`. Turn 3 prints `[FINAL ANSWER]` containing 300 and `ReAct Loop completed successfully in 3 turn(s).` If it stops after one tool, the `role: tool` message was not appended. If you see `[WARNING] ReAct loop reached max turns threshold.`, the model kept emitting `tool_calls` or the stop check is wrong. If you see `URLError`, the provider is not reachable at that host.
 
 ## Stop here
-This is not cycle detection. Do not hash repeated tool signatures. Do not save `messages` to disk. Do not add a persona or a second agent. Chapter 05 saves the list. Chapter 07 treats this loop as an agent. Chapter 12 hashes cycles.
+This is not cycle detection. Do not hash repeated tool signatures. Do not save `messages` to disk. Do not add a persona or a second agent. Next: [00_save_the_messages.md](../05_the_state/00_save_the_messages.md).
 
 ## Notes
 - ReAct is a software design pattern (Reason + Act), not a framework.
 - Real run: `add_numbers(a=42, b=58)` then `multiply_numbers(a=100, b=3)` then final text with no tool calls.
 - The reference `lab1_react_loop.py` appends `{ "role": "tool", "content": result }` and does not send `tool_call_id`. Keys sent and read match this brief. Do not edit the `.py` in the repo.
+- Chapter 05 saves the list. Chapter 07 treats this loop as an agent. Chapter 12 hashes cycles.

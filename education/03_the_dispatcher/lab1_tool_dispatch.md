@@ -4,7 +4,7 @@ One local function has run because the model asked for it in `tool_calls`, and a
 
 ## What you touch
 - Script you will write: `lab1_tool_dispatch.py`
-- URL / path: `{OLLAMA_HOST}/api/chat` (default `http://192.168.1.29:11434/api/chat`)
+- URL / path: `{OLLAMA_HOST}/api/chat` (default `http://127.0.0.1:11434/api/chat`)
 - Registry: `TOOL_REGISTRY = {"add_numbers": add_numbers}`
 - Keys sent: `model`, `messages`, `tools`, `stream` (`false`)
 - Keys read: `message.tool_calls[0].function.name`, `message.tool_calls[0].function.arguments`
@@ -26,7 +26,7 @@ flowchart LR
     R --> T
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. Defaults: `http://192.168.1.29:11434` and `qwen3.6:35b-a3b-65k`.
+1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://127.0.0.1:11434` and `llama3.2:1b`.
 2. Define `add_numbers(a, b) -> str` that returns the sum as a string. Put it in `TOOL_REGISTRY`.
 3. Build a `tools` list with one function schema: name `add_numbers`, properties `a` and `b` (numbers), `required: ["a", "b"]`.
 4. POST `{ "model", "messages": [{ "role": "user", "content": "What is 2 plus 3? Use the tool." }], "tools", "stream": false }` to `{host}/api/chat` with header `Content-Type: application/json`.
@@ -41,7 +41,7 @@ Only the keys this script sends and reads.
 
 ```json
 {
-  "model": "qwen3.6:35b-a3b-65k",
+  "model": "llama3.2:1b",
   "messages": [{ "role": "user", "content": "What is 2 plus 3? Use the tool." }],
   "tools": [
     {
@@ -86,12 +86,12 @@ Only the keys this script sends and reads.
 From the repo root, after you write the script:
 
 ```bash
-python education/03_the_dispatcher/lab1_tool_dispatch.py
+OLLAMA_HOST=http://127.0.0.1:11434 OLLAMA_MODEL=llama3.2:1b python education/03_the_dispatcher/lab1_tool_dispatch.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
+$env:OLLAMA_HOST="http://127.0.0.1:11434"
+$env:OLLAMA_MODEL="llama3.2:1b"
 python education/03_the_dispatcher/lab1_tool_dispatch.py
 ```
 
@@ -99,7 +99,7 @@ python education/03_the_dispatcher/lab1_tool_dispatch.py
 A printed tool name, arguments, and the function return value (for example `5`). If `tool_calls` is empty, the model answered in prose. Tighten the user prompt. Do not invent a call. If `arguments` is a string and you pass it to `**` without `json.loads`, Python will raise `TypeError`. If you see `URLError`, the provider is not reachable. If `name` is missing from the registry, print the name and exit. Do not catch that by calling a random function.
 
 ## Stop here
-Do not write a `while` loop. That is chapter 04 (ReAct). Do not add MCP, a second tool, or parallel calls. This script is one dispatch and one optional follow-up POST.
+Do not write a `while` loop. That is chapter 04 (ReAct). Do not add MCP, a second tool, or parallel calls. This script is one dispatch and one optional follow-up POST. Next: [00_the_react_loop.md](../04_the_loop/00_the_react_loop.md).
 
 ## Notes
 There is no reference `.py` in this folder. Paste a real run here: the printed name, arguments, return value, and whether you needed a second POST for a final sentence.
