@@ -43,7 +43,7 @@ Same rule: the lab brief is the whole assignment. Do not let it skip to a later 
 You can do the whole course with a text editor and a terminal.
 
 ```powershell
-cd path\to\AgenticAI-Labs
+cd path\to\script-to-agent-labs
 python --version
 ```
 
@@ -58,8 +58,8 @@ To get the files without git:
 To get the files with git:
 
 ```text
-git clone https://github.com/jacobbweber/AgenticAI-Labs.git
-cd AgenticAI-Labs
+git clone https://github.com/jacobbweber/script-to-agent-labs.git
+cd script-to-agent-labs
 ```
 
 ## How to ask the AI for help
