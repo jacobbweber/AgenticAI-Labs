@@ -1,6 +1,8 @@
 # Path
 
-Work these folders in order. One chapter per session. A `labN_*.py` on disk means that lab has a reference solution. Delete the `.py` files to start from scratch.
+Work these folders in order. One chapter per session. Open the repo root so the IDE reads `AGENTS.md`.
+
+A `labN_*.py` on disk is a reference solution. Delete the `.py` files to start from scratch.
 
 | Folder | What you can do after it |
 |---|---|
@@ -23,4 +25,28 @@ Work these folders in order. One chapter per session. A `labN_*.py` on disk mean
 
 Side folder, not on this line: [optional_training](./optional_training/) (LoRA, GGUF, GRPO).
 
-To add a chapter, add a numbered folder and one row here. Do not keep a separate roadmap or tracker.
+Terms: [../resources/term_glossary.md](../resources/term_glossary.md).
+
+## When you want X
+
+Stay on the current chapter until you finish it. Use this only to find the chapter, not to skip ahead.
+
+| When you want | Go to |
+|---|---|
+| A script that talks to a model | [00_atoms](./00_atoms/), then [01_the_call](./01_the_call/) |
+| JSON that always parses | [02_the_contract](./02_the_contract/) |
+| The model to run a local function | [03_the_dispatcher](./03_the_dispatcher/) |
+| Multi-step tool use | [04_the_loop](./04_the_loop/) |
+| Survive a crash / reload | [05_the_state](./05_the_state/) |
+| Fixed phases (recon, then diagnose, then fix) | [06_the_workflow](./06_the_workflow/) |
+| One agent with a persona | [07_one_agent](./07_one_agent/) |
+| Two agents, or a skill vs a second agent | [08_two_agents](./08_two_agents/) |
+| Approval before a dangerous command | [09_the_shield](./09_the_shield/) |
+| A browser or Discord talking to the script | [10_the_front_door](./10_the_front_door/) |
+| Small model vs large model | [11_engine_room](./11_engine_room/) |
+| Stop loops, hide `<think>`, auto-retry on traceback | [12_reliability](./12_reliability/) |
+| Compact history or private RAG | [13_memory](./13_memory/) |
+| Tools in a separate process | [14_mcp](./14_mcp/) |
+| Put the pieces together | [15_synthesis](./15_synthesis/) |
+
+To add a chapter, add a numbered folder and one row in both tables.
