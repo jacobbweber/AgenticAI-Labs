@@ -9,7 +9,7 @@ This is a learn-by-building course. The markdown is the course. The Python is th
 Each chapter folder under `education/` has:
 
 | File | Who writes it | Role |
-|---|---|
+|---|---|---|
 | `NN_*.md` (the module) | Course author | The concept. Read first. |
 | `labN_*.md` | Course author | The brief. This is the whole assignment. |
 | `labN_*.py` | Learner or AI, during the session | The artifact. Proof the chapter is done. |
@@ -42,21 +42,21 @@ Do not delete modules, lab briefs, or `education/templates/`.
 
 - Do not update `README.md` after a lab.
 - Do not maintain a global lab tracker or roadmap file as part of normal work. The chapter folders are the path. A `.py` on disk is progress.
-- Do not add "Btw" asides. **The When and Why** is a header in the template.
+- Do not add "Btw" asides. **The When and Why** is a header in the module template.
 - Do not use metaphors. Name the file, the port, the JSON key, the function.
 - Do not pull in LangGraph, MCP, FastAPI, or a second model until the current brief says so.
 - Do not open a second instruction file. This file and `education/PATH.md` are the whole map.
 
 ## Templates
 
-New modules and lab briefs copy the headers in:
+New modules copy the headers in `education/templates/MODULE.md`.
+Required on a module: Data, Information, Knowledge, Wisdom, The When and Why, How it works, Data contract, Lab, Related, Notes.
 
-- `education/templates/MODULE.md`
-- `education/templates/LAB.md`
+New lab briefs copy the headers in `education/templates/LAB.md`.
+Required on a lab: What you touch, Steps, Data contract, Run, What you should see, Stop here, Notes.
+Do not put Data, Information, Knowledge, or Wisdom on a lab. Those live on the module.
 
-Required headers: Data, Information, Knowledge, Wisdom, The When and Why, How it works, Data contract, Lab or Run, Related, Notes.
-
-Related is 1–2 sentences per sibling tool (example: Ollama, LM Studio, vLLM). If there are no siblings, omit the header.
+Related is 1–2 sentences per sibling tool (example: Ollama, LM Studio, vLLM). If there are no siblings, omit the header. On a lab, omit Related by default.
 
 ## Environment
 
