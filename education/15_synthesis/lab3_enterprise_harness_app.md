@@ -91,7 +91,7 @@ python education/15_synthesis/lab3_enterprise_harness_app.py
 `=== STARTING ENTERPRISE AGENT APP HARNESS: 'ent_session_701' ===`, `[ROUTER] Prompt Triage -> Selected Tier: DEEP_TIER (qwen3.6:35b-a3b-65k)`, `[SAFETY GATE] ... -> Status: PAUSED_FOR_HITL_APPROVAL`, then a JSON payload with two `telemetry_spans`. Intended: a multi-turn run that loads state. The reference script is one `process_request` call. If you see `URLError` or `Connection refused`, the provider is not reachable. If you see HTTP 404, a model name is wrong (`qwen3.6:35b-a3b-65k` or `qwen2.5:7b`).
 
 ## Stop here
-Do not add a new primitive; compose what you already have. Router plus HITL plus spans is enough. Do not add a `demos/` folder or a new UI. Optional blueprints are the other labs in this folder. A new host would hide whether the miss came from the POST, the gate, or the extra.
+Do not add a new primitive; compose what you already have. Router plus HITL plus spans is enough. Do not add a `demos/` folder or a new UI. Blueprints in this folder are optional, not next. Next: [../16_the_job/00_the_job.md](../16_the_job/00_the_job.md).
 
 ## Notes
 - Compose existing pieces. Do not add a new primitive. Reuse chapter 11 router, chapter 09 HITL, chapter 12 / 00 trace. Chapter 07 lab1 is the kernel this page is meant to wrap.
