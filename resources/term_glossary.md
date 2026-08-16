@@ -2,6 +2,8 @@
 
 Optional lookup. Short definitions for words used in the chapters.
 
+For a mapping that matches the labs (hosts and files, not staff names), see [notes/](./notes/).
+
 It demystifies industry marketing jargon into exact computer science and software engineering terms, making it easy to understand what technologies *actually are*, how they differ, and where they fit into real-world software architecture.
 
 ---
@@ -187,4 +189,4 @@ To evaluate AI systems objectively, software engineers use the **Autonomy Spectr
 | **Context Window** | Sliding memory buffer array of message objects. | Fixed-Capacity Memory Buffer |
 | **Guardrails** | Input/output sanitization and jailbreak interceptors. | Web Application Firewall (WAF) |
 | **Sandboxing** | Ephemeral container isolation enforcing memory/syscall limits. | Docker Container / Wasm MicroVM |
-| **Quantization** | Converting float32 weights to int4 or 1.58-bit integers. | Memory Compression & Precision Reduction |
+| **Quantization** | Converting float32 weights to int4 or 1.58-bit ternary integers. | Memory Compression & Precision Reduction |
