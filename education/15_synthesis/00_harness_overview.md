@@ -1,6 +1,6 @@
 # 15: Harness synthesis
 
-After this page the pieces from chapters 07–14 sit in one host process: hydrate, route, sandbox, cycle, HITL, and trace. This page does not add a new primitive.
+After this page the pieces from chapters 07-14 sit in one host process: hydrate, route, sandbox, cycle, HITL, and trace. This page does not add a new primitive.
 
 ## Data
 A **harness** here is one Python process that already owns the chapter 07 kernel and then calls functions you already wrote.
@@ -19,7 +19,7 @@ Lab 1 of the kernel is already in chapter 07 (`lab1_core_harness_kernel.py`). Th
 `OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. The intended model route is still `POST /api/chat` with `messages` and `tool_calls`.
 
 ## Information
-Do not start the path here. Open this folder after you have run 00–14. Each script in 00–14 is one piece. This page wires those pieces in one process so a session file, a model pick, a sandbox, a cycle halt, an approval gate, and a span list share the same `session_id`.
+Do not start the path here. Open this folder after you have run 00-14. Each script in 00-14 is one piece. This page wires those pieces in one process so a session file, a model pick, a sandbox, a cycle halt, an approval gate, and a span list share the same `session_id`.
 
 Scattered scripts are not a product. One host that calls `run_turn`, then `select_tier`, then `execute_code`, then `evaluate_action`, then `record_span` is the product shape. A browser demo app is optional and is not added in this PR.
 
@@ -34,10 +34,10 @@ Do not invent a new loop, a new protocol, or a new store. If a piece is missing,
 6. Append a span dict for the POST and for the gate. Do not add a new advanced topic.
 
 ## Wisdom
-Do not add a new primitive; compose what you already have. A second kernel, a new RPC, or a new database would hide which old piece broke. Stop when one process has called hydrate, route, sandbox, cycle, HITL, and trace on the same session.
+Do not add a new primitive; compose what you already have. A second kernel, a new RPC, or a new database would hide which old piece broke. Stop when one process has called hydrate, route, sandbox, cycle, HITL, and trace on the same session. After lab2 and lab3, the next required chapter is 16_the_job, not the blueprints. Blueprints stay optional.
 
 ## The When and Why
-- **When:** you have finished 00–14 and the scripts still live in separate folders.
+- **When:** you have finished 00-14 and the scripts still live in separate folders.
 - **Why:** scattered scripts are not a product. One host is how a session, a model pick, and a gate share state.
 
 ## How it works
@@ -154,20 +154,22 @@ The assistant message may include `tool_calls`. That is the same key as chapter 
 See Notes.
 
 ## Lab
-Done when one process has reused hydrate, route, sandbox, cycle, HITL, and trace. Do not add a new primitive.
+Done when one process has reused hydrate, route, sandbox, cycle, HITL, and trace. Do not add a new primitive. After lab2 and lab3, the next required chapter is 16_the_job. Blueprints stay optional.
 
 - Module: [this file](./00_harness_overview.md)
 - Lab 1: already in chapter 07, [lab1_core_harness_kernel.py](../07_one_agent/lab1_core_harness_kernel.py) / [lab1_core_harness_kernel.md](../07_one_agent/lab1_core_harness_kernel.md) - hydrate. Done when turn 2 remembers the name.
 - Lab 2: [lab2_resilient_executor.py](./lab2_resilient_executor.py) / [lab2_resilient_executor.md](./lab2_resilient_executor.md) - sandbox plus cycle plus a mock fix. Done when a ZeroDivisionError run returns `SUCCESS` after a second attempt.
 - Lab 3: [lab3_enterprise_harness_app.py](./lab3_enterprise_harness_app.py) / [lab3_enterprise_harness_app.md](./lab3_enterprise_harness_app.md) - route plus HITL plus spans. Done when `ent_session_701` prints `DEEP_TIER` and `PAUSED_FOR_HITL_APPROVAL`.
-- Other projects in this folder (workbench, SQL, SRE, spec TDD, serving) are [01_project_blueprints.md](./01_project_blueprints.md) and [02_spec_tdd.md](./02_spec_tdd.md).
+- Next required chapter: [../16_the_job/00_the_job.md](../16_the_job/00_the_job.md).
+- Other projects in this folder (workbench, SQL, SRE, spec TDD, serving) are optional: [01_project_blueprints.md](./01_project_blueprints.md) and [02_spec_tdd.md](./02_spec_tdd.md).
 
 ## Related
 - **Chapter 07:** the kernel this wraps (`run_turn`, `SessionStateHydrator`).
 - **Chapter 09:** sandbox and HITL.
 - **Chapter 11:** the router that sets `model`.
 - **Chapter 12:** cycle hash and reflexion.
-- **01_project_blueprints.md:** extra vertical slices. Not required to finish this page.
+- **Chapter 16:** next required chapter after lab2 and lab3. [00_the_job.md](../16_the_job/00_the_job.md).
+- **01_project_blueprints.md:** extra vertical slices. Optional. Not next.
 
 ## Notes
 - Moved from the old `modules/11` tree. Lab 1 stayed in chapter 07 on purpose.
