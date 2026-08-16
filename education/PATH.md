@@ -24,6 +24,9 @@ A `labN_*.py` on disk is a reference solution. Delete the `.py` files to start f
 | [13_memory](./13_memory/) | Compaction, RAG, episodic vs procedural. |
 | [14_mcp](./14_mcp/) | The dispatcher, extracted into its own process. |
 | [15_synthesis](./15_synthesis/) | Compose the pieces into one harness. |
+| [16_the_job](./16_the_job/) | A job row in a file. A worker claims it. Work outlives the terminal. |
+| [17_the_budget](./17_the_budget/) | Stop a loop with a reason (max turns or max tokens). |
+| [18_park_and_resume](./18_park_and_resume/) | Write `needs_hitl`, approve later, same row continues. |
 
 Side folder, not on this line: [optional_training](./optional_training/) (pretrain, LoRA, GGUF, GRPO).
 
@@ -50,5 +53,8 @@ Stay on the current chapter until you finish it. Use this only to find the chapt
 | Compact history or private RAG | [13_memory](./13_memory/) |
 | Tools in a separate process | [14_mcp](./14_mcp/) |
 | Put the pieces together | [15_synthesis](./15_synthesis/) |
+| Work that outlives the terminal | [16_the_job](./16_the_job/) |
+| A stop reason for a long loop | [17_the_budget](./17_the_budget/) |
+| Approve later, then continue | [18_park_and_resume](./18_park_and_resume/) |
 
 To add a chapter, add a numbered folder and one row in both tables.
