@@ -74,7 +74,7 @@ What `GRPOAlignmentEngine.run_alignment_step` actually returns:
 {
   "status": "SUCCESS",
   "group_rewards": [1.0, 0.0, 1.0, 0.0],
-  "group_advantages": [0.0, 0.0, 0.0, 0.0]
+  "group_advantages": [1.0, -1.0, 1.0, -1.0]
 }
 ```
 
@@ -84,7 +84,7 @@ What `GRPOAlignmentEngine.run_alignment_step` actually returns:
 Done when you can name `group_rewards` and `group_advantages` and say what a positive advantage means.
 
 - Module: [this file](./03_grpo.md)
-- Lab 3: [lab3_grpo_preference_alignment.py](./lab3_grpo_preference_alignment.py) / [lab3_grpo_preference_alignment.md](./lab3_grpo_preference_alignment.md) — score four snippets, print advantages.
+- Lab 3: [lab3_grpo_preference_alignment.py](./lab3_grpo_preference_alignment.py) / [lab3_grpo_preference_alignment.md](./lab3_grpo_preference_alignment.md) - score four snippets, print advantages.
 
 ## Related
 - **Chapter 12 evals:** the checker can be a reward. Same float, used to score a run, not to train.

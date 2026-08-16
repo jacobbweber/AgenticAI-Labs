@@ -157,9 +157,9 @@ See Notes.
 Done when one process has reused hydrate, route, sandbox, cycle, HITL, and trace. Do not add a new primitive.
 
 - Module: [this file](./00_harness_overview.md)
-- Lab 1: already in chapter 07, [lab1_core_harness_kernel.py](../07_one_agent/lab1_core_harness_kernel.py) / [lab1_core_harness_kernel.md](../07_one_agent/lab1_core_harness_kernel.md) — hydrate. Done when turn 2 remembers the name.
-- Lab 2: [lab2_resilient_executor.py](./lab2_resilient_executor.py) / [lab2_resilient_executor.md](./lab2_resilient_executor.md) — sandbox plus cycle plus a mock fix. Done when a ZeroDivisionError run returns `SUCCESS` after a second attempt.
-- Lab 3: [lab3_enterprise_harness_app.py](./lab3_enterprise_harness_app.py) / [lab3_enterprise_harness_app.md](./lab3_enterprise_harness_app.md) — route plus HITL plus spans. Done when `ent_session_701` prints `DEEP_TIER` and `PAUSED_FOR_HITL_APPROVAL`.
+- Lab 1: already in chapter 07, [lab1_core_harness_kernel.py](../07_one_agent/lab1_core_harness_kernel.py) / [lab1_core_harness_kernel.md](../07_one_agent/lab1_core_harness_kernel.md) - hydrate. Done when turn 2 remembers the name.
+- Lab 2: [lab2_resilient_executor.py](./lab2_resilient_executor.py) / [lab2_resilient_executor.md](./lab2_resilient_executor.md) - sandbox plus cycle plus a mock fix. Done when a ZeroDivisionError run returns `SUCCESS` after a second attempt.
+- Lab 3: [lab3_enterprise_harness_app.py](./lab3_enterprise_harness_app.py) / [lab3_enterprise_harness_app.md](./lab3_enterprise_harness_app.md) - route plus HITL plus spans. Done when `ent_session_701` prints `DEEP_TIER` and `PAUSED_FOR_HITL_APPROVAL`.
 - Other projects in this folder (workbench, SQL, SRE, spec TDD, serving) are [01_project_blueprints.md](./01_project_blueprints.md) and [02_spec_tdd.md](./02_spec_tdd.md).
 
 ## Related

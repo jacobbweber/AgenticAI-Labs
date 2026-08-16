@@ -9,7 +9,7 @@ A tool call not on the role list is rejected.
 - Mock executors: `mock_read_file`, `mock_write_file`, `mock_run_tests`, `mock_run_command` in `TOOL_EXECUTORS`
 - Reference grants: `ARCHITECT` → `read_file`, `list_dir`; `DEVELOPER` → `read_file`, `write_file`; `AUDITOR` → `read_file`, `run_tests`
 - Four calls in `__main__`: Architect `read_file` (allow), Architect `run_command` (deny), Developer `write_file` (allow), Developer `run_tests` (deny)
-- This script does not POST. Env defaults still apply to the rest of the chapter: `OLLAMA_HOST` `http://192.168.1.29:11434`, `OLLAMA_MODEL` `qwen3.6:35b-a3b-65k`
+- This script does not POST. It does not read `OLLAMA_HOST` or `OLLAMA_MODEL`.
 
 ## Steps
 ```mermaid
@@ -76,19 +76,18 @@ python education/09_the_shield/lab3_agent_rbac.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/09_the_shield/lab3_agent_rbac.py
 ```
 
-The reference script does not read those env vars and does not POST. They are listed so the Run block matches the other chapters.
+This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`. Do not set those vars for this lab.
 
 ## What you should see
 `=== STARTING AGENT ROLE-BASED ACCESS CONTROL (RBAC) LAB ===`. Architect `read_file` prints `[GRANTED]` and `status` 200. Architect `run_command` prints `[DENIED] PERMISSION DENIED (HTTP 403 Forbidden)` and `status` 403. Developer `write_file` is 200. Developer `run_tests` is 403. If `run_command` prints `Executed bash command`, the interceptor did not check the list.
 
 ## Stop here
-Do not add a model POST, a sandbox, or a HITL pause. Persona text is not enough; the list is the control. The HITL lab in this folder is a different file also named lab3. Chapter 08 named the grant. This lab enforces it.
+Do not add a model POST, a sandbox, or a HITL pause. Persona text is not enough; the list is the control. Next: [lab4_hitl_generative_ui.md](./lab4_hitl_generative_ui.md).
 
 ## Notes
 - `run_command` exists in `TOOL_EXECUTORS` but is on no grant, so every role that calls it gets 403.
 - Contract drift vs `lab3_agent_rbac.py`: deny is `{ "status": 403, "error": "Permission Denied: ..." }`, not `{ "error": "Execution rejected by policy engine" }`. Allow includes `status` 200. Role keys are uppercase. Tool names are `read_file`, `list_dir`, `write_file`, `run_tests`, not the chapter 08 teaching names (`view_file`, `write_spec`, `write_to_file`). No POST. The intended teaching deny is a rejected call that does not run the function. Write that in your copy. Do not edit the `.py` in the repo.
+- Chapter 08 named the grant. This lab enforces it.

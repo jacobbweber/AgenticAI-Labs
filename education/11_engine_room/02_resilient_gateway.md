@@ -94,7 +94,7 @@ Intended extras not in the script: jitter, a circuit-breaker flag, a second host
 Done when a forced fail retried and then succeeded or raised.
 
 - Module: [this file](./02_resilient_gateway.md)
-- Lab 3: [lab3_resilient_gateway.py](./lab3_resilient_gateway.py) / [lab3_resilient_gateway.md](./lab3_resilient_gateway.md) — tiny timeout on attempt 1, backoff, fallback model. Done when you see `[Attempt 1/2]` then text or a final `RuntimeError`.
+- Lab 3: [lab3_resilient_gateway.py](./lab3_resilient_gateway.py) / [lab3_resilient_gateway.md](./lab3_resilient_gateway.md) - tiny timeout on attempt 1, backoff, fallback model. Done when you see `[Attempt 1/2]` then text or a final `RuntimeError`.
 - Chapter 15 can call this wrapper from the harness.
 
 ## Related

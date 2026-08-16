@@ -10,7 +10,7 @@ A second inbound signal stopped the run at a node boundary.
 - If all three finish: `{ "status": "COMPLETED", "completed_nodes": 3 }`
 - Function: `simulate_client_interrupt_receiver(interrupt_event, delay_seconds)` sleeps, prints `INTERRUPT_TURN`, then `interrupt_event.set()`
 - `__main__` scenario 1: no interrupt. Scenario 2: `delay_seconds=0.15` concurrent with the graph
-- This script does not open a WebSocket and does not POST. Env defaults still apply: `OLLAMA_HOST` `http://192.168.1.29:11434`, `OLLAMA_MODEL` `qwen3.6:35b-a3b-65k`
+- This script does not open a WebSocket and does not POST. It does not read `OLLAMA_HOST` or `OLLAMA_MODEL`.
 
 ## Steps
 ```mermaid
@@ -69,19 +69,18 @@ python education/10_the_front_door/lab2_websocket_interrupt.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/10_the_front_door/lab2_websocket_interrupt.py
 ```
 
-The reference script does not read those env vars and does not POST. They are listed so the Run block matches the other chapters.
+This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`. Do not set those vars for this lab.
 
 ## What you should see
 `=== STARTING WEBSOCKET INTERACTIVE INTERRUPTION LAB ===`. Scenario 1 prints three `[NODE EXECUTION]` lines and `Result: {'status': 'COMPLETED', 'completed_nodes': 3}`. Scenario 2 prints `[WEBSOCKET CLIENT] Pushing Inbound Control Frame: 'INTERRUPT_TURN'`, then `[INTERRUPT HANDLER] [STOP] Interrupt Flag SET! Pausing graph execution at boundary before 'Node 3: Security Verification'.`, then `Status: AGENT_INTERRUPTED_AWAITING_USER_INPUT`, then `Result: {'status': 'INTERRUPTED', 'stopped_at_node': 'Node 3: Security Verification', 'completed_nodes': 2}`. If both scenarios print `COMPLETED`, the receiver task did not run or `is_set` was not checked.
 
 ## Stop here
-Do not add FastAPI, `websockets`, or a browser. Do not send the interrupt over SSE. Chapter 09 HITL can use this stop later. Chapter 06 events are the same idea on a queue.
+Do not add FastAPI, `websockets`, or a browser. Do not send the interrupt over SSE. Next: [lab3_frontend_client.md](./lab3_frontend_client.md).
 
 ## Notes
 - Keep the three node names, the 0.1s node sleep, and scenario 2 `delay_seconds=0.15`.
 - Contract drift vs `lab2_websocket_interrupt.py`: no WebSocket server, no port, no JSON frame `{ "type": "interrupt" }`. The inbound signal is `asyncio.Event.set()` after a sleep. The print string is `INTERRUPT_TURN`. No POST to Ollama. The intended contract is a two-way socket that accepts `{ "type": "interrupt" }` and stops the loop. Write that in your copy. Do not edit the `.py` in the repo.
+- Chapter 09 HITL can use this stop later. Chapter 06 events are the same idea on a queue.

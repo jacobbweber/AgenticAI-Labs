@@ -23,7 +23,7 @@ The tokenizer turns your sentence into token IDs (small integers). The matrix ma
 If the provider is not running, the script fails with a connection error (`URLError`, connection refused). If the weight file is missing or the model name is wrong, the provider is running but it returns an HTTP error (often 404). Those are two different failures. Fix the process first, then the model name.
 
 ## Knowledge
-1. Start the provider, or confirm it is already running. On this workspace Ollama listens at `192.168.1.29:11434`.
+1. Start the provider, or confirm it is already running. Default host is http://127.0.0.1:11434 (Ollama).
 2. Read the host and model from the environment (`OLLAMA_HOST`, `OLLAMA_MODEL`) so the URL is not hardcoded.
 3. Build a JSON body with the keys that provider documents for that route.
 4. POST it to the generate or chat route with `Content-Type: application/json`.
@@ -126,8 +126,8 @@ OpenAI-compatible chat (same job, different keys; you will use this in chapter 0
 Done when you can name the three things and one POST has printed model text.
 
 - Module: [this file](./00_script_provider_weights.md)
-- Lab 1: [lab1_script_posts_json.py](./lab1_script_posts_json.py) / [lab1_script_posts_json.md](./lab1_script_posts_json.md) — POST, print the text. Done when you see two sentences from the model.
-- Lab 2: [lab2_read_the_json.py](./lab2_read_the_json.py) / [lab2_read_the_json.md](./lab2_read_the_json.md) — print request keys and response keys. Done when you can name every required key without looking.
+- Lab 1: [lab1_script_posts_json.py](./lab1_script_posts_json.py) / [lab1_script_posts_json.md](./lab1_script_posts_json.md) - POST, print the text. Done when you see two sentences from the model.
+- Lab 2: [lab2_read_the_json.py](./lab2_read_the_json.py) / [lab2_read_the_json.md](./lab2_read_the_json.md) - print request keys and response keys. Done when you can name every required key without looking.
 
 ## Related
 - **Ollama:** local HTTP server. Default port `11434`. Easy model pull. Native `/api/generate` and OpenAI-style `/v1/chat/completions`.

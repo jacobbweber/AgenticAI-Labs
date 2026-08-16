@@ -113,7 +113,7 @@ It reads `choices[0].message.content` and `usage`. See Notes.
 Done when you have named the process and one POST has printed model text.
 
 - Module: [this file](./00_local_servers.md)
-- Lab 1: [lab1_local_llm_server.py](./lab1_local_llm_server.py) / [lab1_local_llm_server.md](./lab1_local_llm_server.md) — POST `/v1/chat/completions`, print `response` and TPS. Done when you see two sentences from the model.
+- Lab 1: [lab1_local_llm_server.py](./lab1_local_llm_server.py) / [lab1_local_llm_server.md](./lab1_local_llm_server.md) - POST `/v1/chat/completions`, print `response` and TPS. Done when you see two sentences from the model.
 - Lab 2 picks a model id. Lab 3 retries a failed POST.
 
 ## Related

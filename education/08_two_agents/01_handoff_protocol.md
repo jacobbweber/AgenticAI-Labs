@@ -129,7 +129,7 @@ The new fact is the five-key object between the two roles. The model call is the
 Done when the five keys validate and the developer return includes `HANDOFF_COMPLETED`.
 
 - Module: [this file](./01_handoff_protocol.md)
-- Lab 2: [lab2_agent_handoff.py](./lab2_agent_handoff.py) / [lab2_agent_handoff.md](./lab2_agent_handoff.md) — `create_a2a_handoff_payload`, then `validate_handoff_middleware`, then `agent_developer`. Done when you see `HANDOFF_COMPLETED` and a `correlation_id`.
+- Lab 2: [lab2_agent_handoff.py](./lab2_agent_handoff.py) / [lab2_agent_handoff.md](./lab2_agent_handoff.md) - `create_a2a_handoff_payload`, then `validate_handoff_middleware`, then `agent_developer`. Done when you see `HANDOFF_COMPLETED` and a `correlation_id`.
 
 ## Related
 - **Chapter 02 JSON:** same `json.loads` habit, more keys.

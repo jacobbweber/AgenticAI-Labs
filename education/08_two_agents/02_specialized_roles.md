@@ -97,7 +97,7 @@ The new fact is the list next to the prompt. The reject is chapter 09.
 This page has no lab in chapter 08. The grant is named here. The reject is chapter 09.
 
 - Module: [this file](./02_specialized_roles.md)
-- Chapter 09 lab: [lab3_agent_rbac.py](../09_the_shield/lab3_agent_rbac.py) / [lab3_agent_rbac.md](../09_the_shield/lab3_agent_rbac.md) — `ROLE_TOOL_PERMISSIONS` plus `rbac_tool_interceptor`. Done when Architect `run_command` returns `403` and Developer `write_file` returns `200`.
+- Chapter 09 lab: [lab3_agent_rbac.py](../09_the_shield/lab3_agent_rbac.py) / [lab3_agent_rbac.md](../09_the_shield/lab3_agent_rbac.md) - `ROLE_TOOL_PERMISSIONS` plus `rbac_tool_interceptor`. Done when Architect `run_command` returns `403` and Developer `write_file` returns `200`.
 
 ## Related
 - **Chapter 09:** the interceptor that enforces the list.

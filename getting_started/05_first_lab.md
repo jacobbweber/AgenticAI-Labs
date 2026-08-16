@@ -57,16 +57,16 @@ A short paragraph about HTTP POST. That is success.
 
 | What you see | What it means |
 |---|---|
-| A few sentences of text | You are done. Go to chapter 00. |
+| A few sentences of text | Setup works. Read the chapter 00 module next. |
 | `URLError` or connection refused | Nothing is listening at `OLLAMA_HOST`. Start Ollama or LM Studio, or fix the URL. |
 | HTTP 404 | The model name is wrong or not pulled. Run `ollama list`. |
 | Empty `response` | The model returned no visible text. Try a larger model, or a shorter prompt. The script still taught you the keys. |
 
 ## 4. Write it yourself
 
-Open [`education/00_atoms/lab1_script_posts_json.md`](../education/00_atoms/lab1_script_posts_json.md). That file is the whole assignment. Write `lab1_script_posts_json.py` next to it. Keep it short.
+Open [`education/00_atoms/lab1_script_posts_json.md`](../education/00_atoms/lab1_script_posts_json.md). That file is the whole assignment.
 
-Then read the module [`education/00_atoms/00_script_provider_weights.md`](../education/00_atoms/00_script_provider_weights.md). After that, [`education/PATH.md`](../education/PATH.md) is the rest of the course.
+Read the module [education/00_atoms/00_script_provider_weights.md](../education/00_atoms/00_script_provider_weights.md) first. Then write lab1 from the brief, or keep the reference and go to lab2. [education/PATH.md](../education/PATH.md) is the rest of the course.
 
 ## If the answers look bad
 

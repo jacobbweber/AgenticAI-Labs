@@ -112,8 +112,8 @@ Token ids come from `VOCAB_TABLE`: `{` is 101, `I` is 201, `apologize` is 202, `
 Done when a repeated tool hash stops the loop, and a bias map changes token probabilities.
 
 - Module: [this file](./01_cycle_and_steering.md)
-- Lab 2 (cycle): [lab2_cycle_detection.py](./lab2_cycle_detection.py) / [lab2_cycle_detection.md](./lab2_cycle_detection.md) — hash each tool step, halt on a repeat. Done when you see `HALTED_BY_CYCLE_DETECTOR`.
-- Lab 3 (steering): [lab3_logit_steering.py](./lab3_logit_steering.py) / [lab3_logit_steering.md](./lab3_logit_steering.md) — add bias, print softmax before and after. Done when `apologize` drops and `{` rises.
+- Lab 2 (cycle): [lab2_cycle_detection.py](./lab2_cycle_detection.py) / [lab2_cycle_detection.md](./lab2_cycle_detection.md) - hash each tool step, halt on a repeat. Done when you see `HALTED_BY_CYCLE_DETECTOR`.
+- Lab 3 (steering): [lab3_logit_steering.py](./lab3_logit_steering.py) / [lab3_logit_steering.md](./lab3_logit_steering.md) - add bias, print softmax before and after. Done when `apologize` drops and `{` rises.
 
 ## Related
 - **max_turns:** the blunt stop from chapter 04. Still keep it. The hash is the early stop.

@@ -55,20 +55,19 @@ python education/05_the_state/lab1_save_json.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/05_the_state/lab1_save_json.py
 ```
 
-This script ignores `OLLAMA_HOST` and `OLLAMA_MODEL`. They are listed so the lab Run block matches the other chapters. There is no HTTP call.
+This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`. Do not set those vars for this lab.
 
 ## What you should see
 The path of `messages.json`. Then one line per loaded item with `role` and `content` (`system` / `You add numbers.`, `user` / `What is 42 plus 58?`, `assistant` / `100`). If load prints nothing, the file was not written or `json.load` returned an empty list. If you see a SQLite error, you opened lab 2.
 
 ## Stop here
-This is not a checkpointer. Do not add SQLite. Do not add `thread_id`. Do not compact the list. Lab 2 of this chapter writes a state dict to `checkpoints.db`. Chapter 13 adds compaction.
+This is not a checkpointer. Do not add SQLite. Do not add `thread_id`. Do not compact the list. Next: [lab2_state_checkpointer.md](./lab2_state_checkpointer.md).
 
 ## Notes
 - Write `lab1_save_json.py` next to this brief. There is no reference `.py` in the repo yet.
 - `messages.json` sits next to the script. Do not commit a huge dump.
 - Keys written and read match this brief. Do not edit other `.py` files in the repo.
+- Chapter 13 adds compaction.

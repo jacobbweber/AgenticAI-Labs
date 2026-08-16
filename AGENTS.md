@@ -1,4 +1,4 @@
-# AgenticAI-Labs — AI IDE instructions
+# Script to Agent. AI IDE instructions
 
 Open this repository at the repo root in Cursor, Claude Code, Antigravity, or any AI IDE that reads `AGENTS.md`.
 
@@ -36,6 +36,10 @@ Delete the `labN_*.py` files. Leave every `.md`. That is a full reset.
 ```text
 # PowerShell, from the repo root
 Get-ChildItem -Path education -Recurse -Filter lab*.py | Remove-Item
+```
+
+```bash
+find education -name 'lab*.py' -delete
 ```
 
 Do not delete modules, lab briefs, or `resources/templates/`.

@@ -1,6 +1,6 @@
-# 📖 Master AI Engineering & Agentic Autonomy Glossary
+# Terms
 
-Welcome to the **Master AI Engineering Term Glossary**. This document provides an objective, full-spectrum reference defining AI concepts, system classifications, agentic architectures, and runtime primitives. 
+Optional lookup. Short definitions for words used in the chapters.
 
 It demystifies industry marketing jargon into exact computer science and software engineering terms, making it easy to understand what technologies *actually are*, how they differ, and where they fit into real-world software architecture.
 

@@ -11,7 +11,7 @@ Model-requested code ran outside the agent process.
 - Wait: `process.communicate(timeout=timeout_seconds)`. On timeout, `process.kill()`
 - Return keys: `status`, `exit_code`, `stdout`, `stderr`, `duration_seconds`
 - Three snippets in `__main__`: valid `15 * 3` print, `data[10]` IndexError, `while True` loop with `timeout_seconds=2.0`
-- This script does not POST. Env defaults still apply to the rest of the chapter: `OLLAMA_HOST` `http://192.168.1.29:11434`, `OLLAMA_MODEL` `qwen3.6:35b-a3b-65k`
+- This script does not POST. It does not read `OLLAMA_HOST` or `OLLAMA_MODEL`.
 
 ## Steps
 ```mermaid
@@ -71,19 +71,18 @@ python education/09_the_shield/lab1_code_sandbox.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/09_the_shield/lab1_code_sandbox.py
 ```
 
-The reference script does not read those env vars and does not POST. They are listed so the Run block matches the other chapters.
+This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`. Do not set those vars for this lab.
 
 ## What you should see
 `=== STARTING SUBPROCESS CODE EXECUTION SANDBOX LAB ===`. Test 1 prints `Result: 45` and `status` `COMPLETED`, `exit_code` 0. Test 2 prints an `IndexError` traceback in `stderr` and `status` `FAILED`. Test 3 prints `[TIMEOUT] [SANDBOX ALERT] Timeout Exceeded (2.0s)!` and `status` `TIMEOUT_EXCEEDED`, `exit_code` `-1`. If the loop never dies, `communicate` was called without a timeout or `kill` did not run.
 
 ## Stop here
-Do not add Docker, gVisor, Wasm, a network namespace, or a seccomp profile. Do not `eval` in-process. Chapter 15 can call this function from the harness. Lab 3 RBAC and Lab 3 HITL are separate controls.
+Do not add Docker, gVisor, Wasm, a network namespace, or a seccomp profile. Do not `eval` in-process. Next: [lab2_permissions.md](./lab2_permissions.md).
 
 ## Notes
 - Keep the three tests: valid print, `IndexError`, infinite loop.
 - Contract drift vs `lab1_code_sandbox.py`: return object adds `status` and `duration_seconds`. No `OLLAMA_HOST` / `OLLAMA_MODEL`. No CPU or memory cgroup. The child can still open the network; isolation is a temp `cwd` and a timeout. The intended contract is a child process that returns text and an exit code. Write that in your copy. Do not edit the `.py` in the repo.
+- Chapter 15 can call this function from the harness.

@@ -103,9 +103,9 @@ Lab 1 wraps tokens as `{ "event_id", "event_type": "token_delta", "timestamp", "
 Done when the proof script prints HAS EventSource, HAS tokens, HAS job_id, HAS interrupt, and NO for the generator, the graph, and `tool_calls`.
 
 - Module: [this file](./01_frontend.md)
-- Lab 1: [lab1_sse_streaming_api.md](./lab1_sse_streaming_api.md) — the outbound frames the page would read.
-- Lab 2: [lab2_websocket_interrupt.md](./lab2_websocket_interrupt.md) — the inbound stop the button would send.
-- Lab 3: [lab3_frontend_client.md](./lab3_frontend_client.md) — write `lab3_frontend_client.html` and `lab3_frontend_client.py`. EventSource, `tokens`, `job_id`, WebSocket `{ "type": "interrupt" }`. Done when the proof lines are HAS / HAS / HAS / HAS / NO / NO / NO.
+- Lab 1: [lab1_sse_streaming_api.md](./lab1_sse_streaming_api.md) - the outbound frames the page would read.
+- Lab 2: [lab2_websocket_interrupt.md](./lab2_websocket_interrupt.md) - the inbound stop the button would send.
+- Lab 3: [lab3_frontend_client.md](./lab3_frontend_client.md) - write `lab3_frontend_client.html` and `lab3_frontend_client.py`. EventSource, `tokens`, `job_id`, WebSocket `{ "type": "interrupt" }`. Done when the proof lines are HAS / HAS / HAS / HAS / NO / NO / NO.
 
 ## Related
 - **Next.js:** same client job as React. The page still does not own the loop. Lab 3 does not use Next.js.

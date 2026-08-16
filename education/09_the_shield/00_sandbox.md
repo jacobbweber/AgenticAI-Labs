@@ -5,7 +5,7 @@ After this page untrusted code runs in a subprocess (or container) with limits, 
 ## Data
 A **sandbox** is a child process that runs a code string the model (or a test) handed you. The agent process must not `eval` or `exec` that string in its own PID.
 
-**Isolation** in this lab is `subprocess.Popen`. Stronger walls are Docker, gVisor, or Wasm. Those are the same job with a thicker boundary. This lab does not start a container.
+**Isolation** in this lab is `subprocess.Popen`. Stricter isolation is Docker, gVisor, or Wasm. Those are the same job with a container runtime. This lab does not start a container.
 
 **Limits** in the lab are:
 
@@ -15,7 +15,7 @@ A **sandbox** is a child process that runs a code string the model (or a test) h
 
 The function is `execute_sandboxed_python(code_snippet, timeout_seconds=5.0)`. It writes `sandbox_script.py` inside the temp dir and runs `[sys.executable, script_path]`.
 
-This lab does not POST to Ollama. `OLLAMA_HOST` should still default to `http://192.168.1.29:11434` and `OLLAMA_MODEL` to `qwen3.6:35b-a3b-65k` when a later tool calls the model. Port `11434` is the Ollama listener.
+This lab does not POST to Ollama. `OLLAMA_HOST` should still default to `http://127.0.0.1:11434` and `OLLAMA_MODEL` to `llama3.2:1b` when a later tool calls the model. Port `11434` is the Ollama listener.
 
 ## Information
 The model can emit a Python snippet or a shell command. If you `exec` that string in the agent process, a bad line shares your memory, your open files, and your network. A child process dies when it finishes or when you kill it. The parent only sees `stdout`, `stderr`, and `exit_code`.
@@ -31,7 +31,7 @@ In-process `eval` is not a sandbox. A timeout that does not `process.kill()` is 
 6. Do not add Docker, gVisor, a network namespace, or a seccomp profile.
 
 ## Wisdom
-A subprocess with a timeout is enough to prove the code left the agent PID. Docker, gVisor, and Wasm are the same job with a stronger wall. If you add them now, a timeout failure could come from the container runtime instead of `communicate`.
+A subprocess with a timeout is enough to prove the code left the agent PID. Docker, gVisor, and Wasm are the same job with stricter isolation. If you add them now, a timeout failure could come from the container runtime instead of `communicate`.
 
 ## The When and Why
 - **When:** the model can emit a shell command or a Python snippet.
@@ -92,12 +92,13 @@ The new fact is the child process. The parent never `exec`s the string.
 Done when a valid snippet prints `stdout`, an error prints `stderr`, and a loop is killed.
 
 - Module: [this file](./00_sandbox.md)
-- Lab 1: [lab1_code_sandbox.py](./lab1_code_sandbox.py) / [lab1_code_sandbox.md](./lab1_code_sandbox.md) — `execute_sandboxed_python` on three snippets. Done when you see `COMPLETED`, `FAILED`, and `TIMEOUT_EXCEEDED`.
-- Lab 2: [lab2_permissions.md](./lab2_permissions.md) — high-risk allowlist. After this page, before the two lab3 files.
-- Lab 3 RBAC and Lab 3 HITL are later in this folder.
+- Lab 1: [lab1_code_sandbox.py](./lab1_code_sandbox.py) / [lab1_code_sandbox.md](./lab1_code_sandbox.md) - `execute_sandboxed_python` on three snippets. Done when you see `COMPLETED`, `FAILED`, and `TIMEOUT_EXCEEDED`.
+- Lab 2: [lab2_permissions.md](./lab2_permissions.md) - high-risk allowlist. After this page, before lab 3 RBAC and lab 4 HITL.
+- Lab 3: [lab3_agent_rbac.md](./lab3_agent_rbac.md) - RBAC interceptor.
+- Lab 4: [lab4_hitl_generative_ui.md](./lab4_hitl_generative_ui.md) - HITL pause.
 
 ## Related
-- **Docker / gVisor / Wasm:** same job, stronger wall. Not in the lab.
+- **Docker / gVisor / Wasm:** same job, a container runtime. Not in the lab.
 - **01_security_overview.md:** sandbox is one control. The allowlist, RBAC, and HITL are the others.
 - **subprocess:** the primitive. `Popen` plus `communicate(timeout=...)` plus `kill`.
 

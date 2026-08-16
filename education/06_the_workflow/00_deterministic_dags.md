@@ -13,7 +13,7 @@ A **DAG** is a directed acyclic graph: named steps with arrows, and no arrow tha
 - `node_worker_code_fix` or `node_worker_general_qa` (plain string stubs, no model)
 - `node_format_output` (build `final_payload`)
 
-The **router** POSTs to `{OLLAMA_HOST}/api/generate` (default host `http://192.168.1.29:11434`, model `qwen3.6:35b-a3b-65k`). It asks for a raw JSON object with `intent` (`code_fix` or `general_qa`) and `confidence` (0.0 to 1.0). It reads `response`, strips a leading ` ```json ` fence if present, then `json.loads`. On parse or HTTP error it sets `intent = "general_qa"` and `confidence = 0.0`.
+The **router** POSTs to `{OLLAMA_HOST}/api/generate` (default host `http://127.0.0.1:11434`, model `llama3.2:1b`). It asks for a raw JSON object with `intent` (`code_fix` or `general_qa`) and `confidence` (0.0 to 1.0). It reads `response`, strips a leading ` ```json ` fence if present, then `json.loads`. On parse or HTTP error it sets `intent = "general_qa"` and `confidence = 0.0`.
 
 `run_dag_pipeline` is the runner: ingest, route, `if state["intent"] == "code_fix"` else the QA worker, then format.
 
@@ -76,7 +76,7 @@ Nothing in that walkthrough goes back to ingest. There is no second router call.
 
 ```json
 {
-  "model": "qwen3.6:35b-a3b-65k",
+  "model": "llama3.2:1b",
   "prompt": "string",
   "stream": false,
   "options": { "temperature": 0.0 }
@@ -108,9 +108,9 @@ Nothing in that walkthrough goes back to ingest. There is no second router call.
 Done when a code-fix prompt takes the `code_fix` branch and prints a completed payload.
 
 - Module: [this file](./00_deterministic_dags.md)
-- Lab 1: [lab1_dag_pipeline.py](./lab1_dag_pipeline.py) / [lab1_dag_pipeline.md](./lab1_dag_pipeline.md) — ingest, route, one worker, format. Done when `processed_intent` is `code_fix` and `status` is `COMPLETED`.
-- Graph with a back edge: [01_graph_workflows.md](./01_graph_workflows.md) (no lab 2 in this folder).
-- Async 202 queue: [02_event_driven.md](./02_event_driven.md) / [lab3_async_event_queue.py](./lab3_async_event_queue.py).
+- Lab 1: [lab1_dag_pipeline.py](./lab1_dag_pipeline.py) / [lab1_dag_pipeline.md](./lab1_dag_pipeline.md) - ingest, route, one worker, format. Done when `processed_intent` is `code_fix` and `status` is `COMPLETED`.
+- Lab 2: [lab2_graph_workflow.md](./lab2_graph_workflow.md) - named edge and a back edge. Module: [01_graph_workflows.md](./01_graph_workflows.md).
+- Lab 3: [lab3_async_event_queue.md](./lab3_async_event_queue.md) / [lab3_async_event_queue.py](./lab3_async_event_queue.py) - async 202 queue. Module: [02_event_driven.md](./02_event_driven.md).
 
 ## Related
 - **Airflow / Prefect:** same topological run, heavier runtime.

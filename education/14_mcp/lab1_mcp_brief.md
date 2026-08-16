@@ -27,7 +27,7 @@ flowchart LR
     FN -->|"result"| C
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. Defaults: `http://192.168.1.29:11434` and `qwen3.6:35b-a3b-65k`. This lab does not need a model POST. The env vars stay in the run block so the workspace defaults are visible.
+1. This lab does not need a model POST. Do not set `OLLAMA_HOST` or `OLLAMA_MODEL`. The script ignores those vars.
 2. Start or mock a server that lists one tool (`add_numbers`) and implements `tools/call`. Stdio is enough: a child that reads one JSON line and writes one JSON line. Do not write a 200-line fake server.
 3. Send `{ "jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {} }`. Print each `name` in `result.tools`.
 4. Send `{ "jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": { "name": "add_numbers", "arguments": { "a": 2, "b": 3 } } }`.
@@ -73,17 +73,18 @@ python education/14_mcp/lab1_mcp_client.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/14_mcp/lab1_mcp_client.py
 ```
+
+This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`. Do not set those vars for this lab.
 
 ## What you should see
 A listed tool name (`add_numbers`) and a call result (`5` or the server's `content` text). If the child process exits before the reply, you will see an empty stdout or a broken pipe. If `method` is wrong, the server should return a JSON-RPC `error`, not a Python traceback in the client. If you imported `add_numbers` in the client and never sent JSON-RPC, you skipped the process boundary.
 
 ## Stop here
-This is not RAG-for-tools and not a skill loader. Do not add a vector search over schemas, a `SKILL.md` read, or a 200-line server. Chapter 03 already did in-process `TOOL_REGISTRY`. Chapter 15 can host MCP next to the kernel. Do not do that here.
+This is not RAG-for-tools and not a skill loader. Do not add a vector search over schemas, a `SKILL.md` read, or a 200-line server. Next: [lab2_skills.md](./lab2_skills.md), then [00_harness_overview.md](../15_synthesis/00_harness_overview.md).
 
 ## Notes
 - No existing script was in the old tree. There is no contract drift vs a `.py`.
 - Paste a real run here: the listed name, the call `arguments`, and the printed `content`.
+- Chapter 03 already did in-process `TOOL_REGISTRY`.

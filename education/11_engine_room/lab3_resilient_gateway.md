@@ -86,8 +86,9 @@ The reference script does not read those env vars. Ollama must be up on port `11
 `Starting Resilient LLM Gateway Lab 3...` then `--- ATTEMPTING PRIMARY ROUTE (qwen3.6:35b-a3b-65k) ---`. `[Attempt 1/2]` fails (timeout). Then `Retrying in 2 seconds`. `[Attempt 2/2]` usually prints `Primary route succeeded!` and `=== FINAL EXECUTED RESULT ===` plus one sentence and a duration. If attempt 2 also fails, you see `TRIGGERING FALLBACK` and either fallback text or `RuntimeError: All routes failed`. If attempt 1 succeeds, the 0.001 timeout did not fire (rare on a very fast LAN).
 
 ## Stop here
-Do not add jitter, a circuit-breaker library, LiteLLM, or multi-region balancing. Chapter 15 can call `resilient_llm_call` from the harness.
+Do not add jitter, a circuit-breaker library, LiteLLM, or multi-region balancing. Next: [lab1_cot_demuxer.md](../12_reliability/lab1_cot_demuxer.md).
 
 ## Notes
 - Keep the 0.001s first timeout, `max_retries=2`, backoff `2 ** attempt`, and the fallback model name.
 - Contract drift vs `lab3_resilient_gateway.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read. No 429/5xx branch (any exception retries). No jitter. No circuit breaker. No second host (same URL, different `model`). Fallback tag `qwen3.6:35b-a3b` may 404 if it is not pulled. The intended contract is retry on 429/5xx/connection with backoff, then raise or switch host. Write that in your copy. Do not edit the `.py` in the repo.
+- Chapter 15 can call `resilient_llm_call` from the harness.

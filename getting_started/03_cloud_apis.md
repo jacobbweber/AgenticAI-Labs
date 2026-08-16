@@ -18,6 +18,11 @@ $env:OPENAI_API_KEY="sk-..."
 $env:OPENAI_MODEL="gpt-4o-mini"
 ```
 
+```bash
+export OPENAI_API_KEY="sk-..."
+export OPENAI_MODEL="gpt-4o-mini"
+```
+
 3. The request looks like this:
 
 ```text
@@ -47,6 +52,11 @@ $env:GEMINI_API_KEY="..."
 $env:GEMINI_MODEL="gemini-2.5-flash"
 ```
 
+```bash
+export GEMINI_API_KEY="..."
+export GEMINI_MODEL="gemini-2.5-flash"
+```
+
 3. Google also accepts OpenAI-style JSON at this host:
 
 ```text
@@ -74,6 +84,11 @@ Use the model name shown in AI Studio if `gemini-2.5-flash` is not listed on you
 ```powershell
 $env:ANTHROPIC_API_KEY="sk-ant-..."
 $env:ANTHROPIC_MODEL="claude-sonnet-4-5"
+```
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."
+export ANTHROPIC_MODEL="claude-sonnet-4-5"
 ```
 
 3. Anthropic's native route is not the OpenAI URL. The header name is different:

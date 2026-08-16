@@ -104,7 +104,7 @@ The printed string is `restore(response)`, not the raw `response`.
 Done when a local chunk is in the prompt and the printed answer matches that chunk after PII restore.
 
 - Module: [this file](./02_private_rag.md)
-- Lab 3: [lab3_local_private_rag.py](./lab3_local_private_rag.py) / [lab3_local_private_rag.md](./lab3_local_private_rag.md) — redact, index, retrieve, POST, restore. Done when the diagnosis line is printed with the original name.
+- Lab 3: [lab3_local_private_rag.py](./lab3_local_private_rag.py) / [lab3_local_private_rag.md](./lab3_local_private_rag.md) - redact, index, retrieve, POST, restore. Done when the diagnosis line is printed with the original name.
 
 ## Related
 - **Chapter 00 POST:** the generate step. This page adds retrieve-and-stuff.

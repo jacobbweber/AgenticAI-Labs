@@ -4,7 +4,7 @@ You can name the request keys and the response keys without looking. That named 
 
 ## What you touch
 - Script: `lab2_read_the_json.py`
-- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
+- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://127.0.0.1:11434/api/generate`)
 - Keys sent: `model`, `prompt`, `stream` (`false`), `options.temperature` (`0.0`)
 - Keys read: top-level key list, plus `response`, `done`, `eval_count`
 
@@ -17,7 +17,7 @@ flowchart LR
     D --> E["Print response / done / eval_count"]
 ```
 
-1. Build the same route as lab 1. Add `options.temperature: 0.0`. Use a short prompt: "Reply with one sentence: what is JSON?"
+1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://127.0.0.1:11434` and `llama3.2:1b`. Build the same route as lab 1. Add `options.temperature: 0.0`. Use a short prompt: "Reply with one sentence: what is JSON?"
 2. Print the request object (pretty JSON).
 3. POST it to `{host}/api/generate` with `Content-Type: application/json`.
 4. Print `sorted(result.keys())`.
@@ -31,7 +31,7 @@ Only the keys this script sends and reads.
 
 ```json
 {
-  "model": "qwen3.6:35b-a3b-65k",
+  "model": "llama3.2:1b",
   "prompt": "Reply with one sentence: what is JSON?",
   "stream": false,
   "options": { "temperature": 0.0 }
@@ -54,12 +54,12 @@ Other keys may appear (`created_at`, `total_duration`, `eval_duration`, `context
 From the repo root:
 
 ```bash
-python education/00_atoms/lab2_read_the_json.py
+OLLAMA_HOST=http://127.0.0.1:11434 OLLAMA_MODEL=llama3.2:1b python education/00_atoms/lab2_read_the_json.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
+$env:OLLAMA_HOST="http://127.0.0.1:11434"
+$env:OLLAMA_MODEL="llama3.2:1b"
 python education/00_atoms/lab2_read_the_json.py
 ```
 
@@ -67,7 +67,9 @@ python education/00_atoms/lab2_read_the_json.py
 A printed request, a printed key list, then the text and `done: true`. If `response` is empty and `done` is true, the model returned only thinking tokens or the field name is wrong for that route. If you see `URLError`, the provider is not reachable.
 
 ## Stop here
-Do not add pydantic, a schema file, or a multi-provider wrapper. The contract is visible when you can list the keys. Chapter 02 switches this contract to `messages[]` / `role`. Chapter 03 adds `tools` on the request and `tool_calls` on the response.
+Do not add pydantic, a schema file, or a multi-provider wrapper. The contract is visible when you can list the keys. Next: [00_the_wrapper_and_the_stream.md](../01_the_call/00_the_wrapper_and_the_stream.md).
 
 ## Notes
 Leave this empty until you run it. Paste the key list from your machine here.
+
+Chapter 02 switches this contract to `messages[]` / `role`. Chapter 03 adds `tools` on the request and `tool_calls` on the response.
