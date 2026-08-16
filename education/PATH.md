@@ -32,6 +32,8 @@ Side folder, not on this line: [optional_training](./optional_training/) (pretra
 
 Terms: [../resources/term_glossary.md](../resources/term_glossary.md).
 
+Notes (jargon to objects): [../resources/notes/](../resources/notes/). Not on the path.
+
 ## When you want X
 
 Stay on the current chapter until you finish it. Use this only to find the chapter, not to skip ahead.

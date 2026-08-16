@@ -2,6 +2,8 @@
 
 Optional lookup. Short definitions for words used in the chapters.
 
+For a mapping that matches the labs (hosts and files, not staff names), see [notes/](./notes/).
+
 It demystifies industry marketing jargon into exact computer science and software engineering terms, making it easy to understand what technologies *actually are*, how they differ, and where they fit into real-world software architecture.
 
 ---
