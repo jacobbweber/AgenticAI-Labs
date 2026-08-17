@@ -9,4 +9,4 @@ These pages map marketing words to files, JSON keys, and functions already in th
 - [02_one_router.md](./02_one_router.md) - one process you talk to; its tools reach other hosts
 - [03_hosts_and_jobs.md](./03_hosts_and_jobs.md) - jarvis / nimo / net as rows and processes
 
-Decisions (when X vs Y): [../decisions/](../decisions/).
+Decisions (when X vs Y): [../decisions/](../decisions/). Which chapter for a feature: [../decisions/04_bands_and_features.md](../decisions/04_bands_and_features.md).
