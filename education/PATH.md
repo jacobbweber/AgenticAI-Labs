@@ -34,7 +34,7 @@ Terms: [../resources/term_glossary.md](../resources/term_glossary.md).
 
 Notes (jargon to objects): [../resources/notes/](../resources/notes/). Not on the path.
 
-Decisions (when X vs Y): [../resources/decisions/](../resources/decisions/). Not on the path.
+Decisions (when X vs Y): [../resources/decisions/](../resources/decisions/). Not on the path. Bands and a feature map: [04_bands_and_features.md](../resources/decisions/04_bands_and_features.md).
 
 ## When you want X
 
@@ -62,5 +62,6 @@ Stay on the current chapter until you finish it. Use this only to find the chapt
 | Approve later, then continue | [18_park_and_resume](./18_park_and_resume/) |
 | Tool vs wrapper vs two loops vs a job row | [decisions 01](../resources/decisions/01_when_x_vs_y.md) |
 | Where the provider sits vs the weight file | [decisions 00](../resources/decisions/00_script_server_weights.md) |
+| A sentence or button mapped to a lab | [decisions 04](../resources/decisions/04_bands_and_features.md) |
 
 To add a chapter, add a numbered folder and one row in both tables.
