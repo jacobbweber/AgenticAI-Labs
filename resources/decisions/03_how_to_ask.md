@@ -8,7 +8,8 @@ When you lack the word, ask about the object. Do not start from a staff title or
 - Does this need a second `messages` list? ([08](../../education/08_two_agents/03_skill_vs_two_agents.md))
 - Does this need a row that outlives the process? ([16](../../education/16_the_job/00_the_job.md))
 - Does this need a recipe file? ([14 lab2](../../education/14_mcp/lab2_skills.md))
+- What shape is this (tool vs job vs wrapper vs this loop)? ([notes 04](../notes/04_shape_tree.md))
 
 Do not ask "how do I build an observability agent." Ask "does log watch need a model, a cron that writes `jobs.json`, or a regex tool?"
 
-Fill [01_when_x_vs_y.md](./01_when_x_vs_y.md). That is the form.
+Fill [01_when_x_vs_y.md](./01_when_x_vs_y.md). That is the form. The dual-name tree is [notes 04](../notes/04_shape_tree.md).

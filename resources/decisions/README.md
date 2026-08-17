@@ -9,3 +9,5 @@ These pages are the When and Why that the labs only hint at. They do not add a p
 - [02_path_canvas.md](./02_path_canvas.md) - mermaid of the course objects plus a guided walk
 - [03_how_to_ask.md](./03_how_to_ask.md) - questions to ask when you lack the words
 - [04_bands_and_features.md](./04_bands_and_features.md) - group the numbered folders; map a sentence or button to a lab
+
+Dual-name tree (word you hear, then the object): [../notes/04_shape_tree.md](../notes/04_shape_tree.md).
