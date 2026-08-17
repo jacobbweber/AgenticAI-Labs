@@ -111,4 +111,4 @@ flowchart TD
     dec01_graph --> dec01_q8
 ```
 
-Sibling: [08 03_skill_vs_two_agents.md](../../education/08_two_agents/03_skill_vs_two_agents.md). Course map: [02_path_canvas.md](./02_path_canvas.md).
+Sibling: [08 03_skill_vs_two_agents.md](../../education/08_two_agents/03_skill_vs_two_agents.md). Course map: [02_path_canvas.md](./02_path_canvas.md). Dual-name tree: [notes 04](../notes/04_shape_tree.md).
