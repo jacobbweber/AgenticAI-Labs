@@ -45,6 +45,7 @@ education/
 resources/
   term_glossary.md        # optional lookup
   notes/                   # jargon to lab objects (optional)
+  decisions/              # when X vs Y (optional)
   templates/              # MODULE.md and LAB.md for new chapters
 ```
 
