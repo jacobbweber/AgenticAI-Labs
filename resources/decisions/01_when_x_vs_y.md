@@ -8,7 +8,7 @@ If a page disagrees with a lab brief, the brief wins.
 
 ### Q1. Does this step need a model?
 
-- No: write a function ([chapter 03](../../education/03_the_dispatcher/00_tool_dispatch.md) tool) or a fixed graph ([chapter 06](../../education/06_the_workflow/01_graph_workflows.md), [00_deterministic_dags.md](../../education/06_the_workflow/00_deterministic_dags.md)). Stop.
+- No: write a function ([chapter 03](../../education/03_the_dispatcher/00_tool_dispatch.md) tool) or a fixed graph ([chapter 06](../../education/06_the_workflow/01_graph_workflows.md), [00_deterministic_dags.md](../../education/06_the_workflow/00_deterministic_dags.md)). The function still has a host. If it must run when another box is off, put the script on the host that stays up (Q8). Stop.
 - Yes: Q2.
 
 ### Q2. Must the work outlive this chat process (run after you close the terminal, or when you are not talking)?
@@ -42,6 +42,11 @@ If a page disagrees with a lab brief, the brief wins.
 - Yes: park `needs_hitl` ([18](../../education/18_park_and_resume/00_park_and_resume.md) `park_job`).
 - No: [chapter 09](../../education/09_the_shield/01_security_overview.md) is enough if the person is here now (`lookup_permission`, `execute_action_with_hitl_gate` in [lab4](../../education/09_the_shield/lab4_hitl_generative_ui.md)).
 
+### Q8. Must this loop keep running if a given host is off?
+
+- Yes: the process (or the cron that writes the [16](../../education/16_the_job/00_the_job.md) job) lives on the host that stays up. Other machines are tool targets (`run_playbook`, SSH, HTTP). That is `host_id` ([notes 01](../notes/01_where_not_who.md)). Not a second repo and not an agent install on every box.
+- No: same host as this chat.
+
 ## Worked examples
 
 Homelab. Device keys, not people. [notes 01](../notes/01_where_not_who.md).
@@ -52,6 +57,7 @@ Homelab. Device keys, not people. [notes 01](../notes/01_where_not_who.md).
 - "Any alerts on jarvis?": one router ([notes 02](../notes/02_one_router.md)). `ask_host` wrapper ([08 03](../../education/08_two_agents/03_skill_vs_two_agents.md)). `jarvis` is `host_id` ([notes 01](../notes/01_where_not_who.md)).
 - Messy coding pipeline: Q3 wrapper. Q4 is yes, so the child dies. Memory of past fixes is [13](../../education/13_memory/01_agentic_memory.md) facts / files, not a living coding-agent chat.
 - Mutative SSH on `net`: Q5 allowlist ([09](../../education/09_the_shield/lab2_permissions.md) / [lab3](../../education/09_the_shield/lab3_agent_rbac.md)) plus [09 HITL](../../education/09_the_shield/lab4_hitl_generative_ui.md) or [18](../../education/18_park_and_resume/00_park_and_resume.md) park.
+- Watering if the GPU box is off: Q1 is no for the valve. Cron or GPIO on the Pi. A loop that reasons about pH lives on the always-on host (Q8). The Pi is a tool target.
 
 ## Decision tree
 
@@ -72,6 +78,8 @@ flowchart TD
     dec01_skill["SKILL.md"]
     dec01_q7["Q7. Approval happens later?"]
     dec01_park["park"]
+    dec01_q8["Q8. Must this loop keep running if a host is off?"]
+    dec01_host_up["process on the host that stays up"]
     dec01_q1 -->|"No: a function"| dec01_tool
     dec01_q1 -->|"No: a fixed graph"| dec01_graph
     dec01_q1 -->|"Yes"| dec01_q2
@@ -95,7 +103,12 @@ flowchart TD
     dec01_q6 -->|"No"| dec01_q7
     dec01_skill --> dec01_q7
     dec01_q7 -->|"Yes: park needs_hitl"| dec01_park
-    dec01_q7 -->|"No: chapter 09 at this stdin"| dec01_loop
+    dec01_q7 -->|"No: chapter 09 at this stdin"| dec01_q8
+    dec01_park --> dec01_q8
+    dec01_q8 -->|"Yes: host that stays up"| dec01_host_up
+    dec01_q8 -->|"No: same host as this chat"| dec01_loop
+    dec01_tool --> dec01_q8
+    dec01_graph --> dec01_q8
 ```
 
 Sibling: [08 03_skill_vs_two_agents.md](../../education/08_two_agents/03_skill_vs_two_agents.md). Course map: [02_path_canvas.md](./02_path_canvas.md).
