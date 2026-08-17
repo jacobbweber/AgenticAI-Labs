@@ -7,8 +7,12 @@ Marketing words are not extra types. Each one maps to a file, a JSON key, or a f
 | Tool | A name in `TOOLS_SCHEMA`, a function in `TOOL_REGISTRY` |
 | Skill | A `SKILL.md` file, or a wrapper tool. Not a process. |
 | Agent | One process: system prompt, tools, the chapter 04 loop, a session file |
+| Independent agent | A job row plus its own session. Not a person. [04_shape_tree.md](./04_shape_tree.md) |
+| Ephemeral subagent | An 08 wrapper: isolated loop that dies after one JSON. [04_shape_tree.md](./04_shape_tree.md) |
 | Staff / department | Not an object. A supervisor process plus a host map plus tools |
 | Control plane | Not a new primitive. The process that owns `jobs.json`, the host map, and handoff tools |
+
+The dual-name tree (word you hear, then the object): [04_shape_tree.md](./04_shape_tree.md).
 
 ## Tool
 
@@ -21,7 +25,7 @@ See [lab1_tool_dispatch.md](../../education/03_the_dispatcher/lab1_tool_dispatch
 **Skill** is three different things. Do not collapse them.
 
 1. `SKILL.md` ([chapter 14 lab2](../../education/14_mcp/lab2_skills.md)): a text file loaded when a trigger matches. It is not a process. It is not a person. See also [01_skills_and_plugins.md](../../education/14_mcp/01_skills_and_plugins.md).
-2. Skill wrapper ([chapter 08 03_skill_vs_two_agents](../../education/08_two_agents/03_skill_vs_two_agents.md)): a tool whose body runs a longer script or a child loop, then returns one JSON. The parent blocks.
+2. Skill wrapper ([chapter 08 03_skill_vs_two_agents](../../education/08_two_agents/03_skill_vs_two_agents.md)): a tool whose body runs a longer script or a child loop, then returns one JSON. The parent blocks. Marketing also calls this an ephemeral subagent.
 3. Marketing "skill": any of the above, plus a fake staff member. Ignore the staff part.
 
 The reader who wants to call "skills" "tools" is half right: the thing the model calls is a tool. Keep "skill" for the markdown file and for the wrapper pattern. Do not name a running process a skill.
