@@ -1,6 +1,6 @@
 # The harness
 
-Marketing "harness" is not a new primitive. It is the script around the POST: dispatcher, loop, session, allowlist, job row. [Chapter 15](../../education/15_synthesis/00_the_harness.md) is the compose step. If this page disagrees with a lab brief, the brief wins.
+Marketing "harness" is not a new primitive. It is the script around the POST: dispatcher, loop, session, allowlist, job row. [Chapter 15](../../education/15_synthesis/00_harness_overview.md) is the compose step. If this page disagrees with a lab brief, the brief wins.
 
 The model only emits text and `tool_calls`. The script runs the function, saves state, and stops or parks.
 
