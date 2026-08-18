@@ -24,7 +24,7 @@ Ship a per-user PowerShell Cisco Solutions Engineer agent. The CLI is the front 
 - `build_bom_draft` only after LLD; every price `[UNVERIFIED]`; never invent SKUs
 - HITL park/resume (09/18) for customer-ready, final BoM, live lab
 - Jobs table for long work (16)
-- Budget `max_turns` / `max_tokens` with a reason (17)
+- Budget `max_turns` / `max_tokens` with reason (17)
 - Cycle hash on tool name+args+result (12)
 - CoT demux strip think tags (12)
 - CLI is the front door (10)
