@@ -9,5 +9,7 @@ These pages map marketing words to files, JSON keys, and functions already in th
 - [02_one_router.md](./02_one_router.md) - one process you talk to; its tools reach other hosts
 - [03_hosts_and_jobs.md](./03_hosts_and_jobs.md) - jarvis / nimo / net as rows and processes
 - [04_shape_tree.md](./04_shape_tree.md) - the word you hear and the course object on one tree
+- [05_the_harness.md](./05_the_harness.md) - sandbox, hooks, orchestration, state, subagents, evals
+- [06_the_parts.md](./06_the_parts.md) - brain, memory, plan, tools
 
 Decisions (when X vs Y): [../decisions/](../decisions/). Which chapter for a feature: [../decisions/04_bands_and_features.md](../decisions/04_bands_and_features.md).

@@ -63,5 +63,7 @@ Stay on the current chapter until you finish it. Use this only to find the chapt
 | Tool vs wrapper vs two loops vs a job row | [decisions 01](../resources/decisions/01_when_x_vs_y.md) |
 | Where the provider sits vs the weight file | [decisions 00](../resources/decisions/00_script_server_weights.md) |
 | A sentence or button mapped to a lab | [decisions 04](../resources/decisions/04_bands_and_features.md) |
+| What a harness is | [notes 05](../resources/notes/05_the_harness.md) |
+| Brain vs memory vs plan vs tools | [notes 06](../resources/notes/06_the_parts.md) |
 
 To add a chapter, add a numbered folder and one row in both tables.
