@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <div>job_id: <span id="job"> </span></div>
+  <pre id="out"></pre>
+  <button id="start">Start</button>
+  <button id="stop">Stop</button>
+  <script>
+    let tokens = "";
+    let job_id = "";
+    let source = null;
+    document.getElementById("start").onclick = async function () {
+      const res = await fetch("/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: "Read config and summarize environment" }),
+      });
+      const body = await res.json();
+      if (body.job_id) job_id = body.job_id;
+      document.getElementById("job").textContent = job_id;
+      source = new EventSource("/jobs/" + job_id + "/stream");
+      source.onmessage = function (ev) {
+        const obj = JSON.parse(ev.data);
+        if (obj.job_id && !job_id) job_id = obj.job_id;
+        if (typeof obj.token === "string") tokens += obj.token;
+        else if (obj.data && obj.data.delta) tokens += obj.data.delta;
+        document.getElementById("out").textContent = tokens;
+        document.getElementById("job").textContent = job_id;
+      };
+    };
+    document.getElementById("stop").onclick = function () {
+      const ws = new WebSocket("ws://" + location.host + "/jobs/" + job_id + "/ws");
+      ws.onopen = function () {
+        ws.send(JSON.stringify({ type: "interrupt" }));
+      };
+    };
+  </script>
+</body>
+</html>
