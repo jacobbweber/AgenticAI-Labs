@@ -11,5 +11,6 @@ These pages map marketing words to files, JSON keys, and functions already in th
 - [04_shape_tree.md](./04_shape_tree.md) - the word you hear and the course object on one tree
 - [05_the_harness.md](./05_the_harness.md) - sandbox, hooks, orchestration, state, subagents, evals
 - [06_the_parts.md](./06_the_parts.md) - brain, memory, plan, tools
+- [07_surface_map.md](./07_surface_map.md) - Send / stream / stop / history to path, key, and script
 
 Decisions (when X vs Y): [../decisions/](../decisions/). Which chapter for a feature: [../decisions/04_bands_and_features.md](../decisions/04_bands_and_features.md).

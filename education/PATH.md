@@ -65,5 +65,6 @@ Stay on the current chapter until you finish it. Use this only to find the chapt
 | A sentence or button mapped to a lab | [decisions 04](../resources/decisions/04_bands_and_features.md) |
 | What a harness is | [notes 05](../resources/notes/05_the_harness.md) |
 | Brain vs memory vs plan vs tools | [notes 06](../resources/notes/06_the_parts.md) |
+| A button mapped to a path and a JSON key | [notes 07](../resources/notes/07_surface_map.md) |
 
 To add a chapter, add a numbered folder and one row in both tables.
