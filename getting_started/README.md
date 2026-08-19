@@ -6,7 +6,7 @@ This course is ordinary Python scripts that send JSON to a model. A tiny model o
 
 The course default model (`qwen3.6:35b-a3b-65k`) is for a strong local machine. It is not required.
 
-## Do these six things
+## Do these things
 
 1. Install [Python 3](https://www.python.org/downloads/). On the installer, check **Add python.exe to PATH**.
 2. [Pick a model that fits your machine](./01_pick_a_model.md).

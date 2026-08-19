@@ -12,26 +12,33 @@ If that fails, try `python3 --version`. Use whichever command works in the steps
 
 ## 2. Confirm the model is reachable
 
+Copy the env template if you have not yet:
+
+```bash
+cp .env.example .env
+```
+
+```powershell
+copy .env.example .env
+```
+
+Uncomment one provider in `.env`.
+
 **Ollama**
 
 ```text
 ollama list
 ```
 
-You should see the model name you pulled. Then:
-
-```powershell
-$env:OLLAMA_HOST="http://127.0.0.1:11434"
-$env:OLLAMA_MODEL="llama3.2:1b"
-```
+You should see the model name you pulled. The Ollama lines in `.env` should match it.
 
 **LM Studio**
 
-Start the local server in the app. Use its port (often `1234`) and the model name it shows.
+Start the local server in the app. Use its port (often `1234`) and the model name it shows in `.env`.
 
 **Cloud**
 
-Set the key and model from [cloud APIs](./03_cloud_apis.md). You will write the chat-style JSON from chapter 00, not the Ollama `prompt` field.
+Uncomment that provider in `.env` from [cloud APIs](./03_cloud_apis.md). You will write the chat-style JSON from chapter 00, not the Ollama `prompt` field.
 
 ## 3. Run the reference script (optional)
 
@@ -39,17 +46,11 @@ This repo already has a finished `lab1_script_posts_json.py`. You may run it onc
 
 From the repo root:
 
-```powershell
-$env:OLLAMA_HOST="http://127.0.0.1:11434"
-$env:OLLAMA_MODEL="llama3.2:1b"
+```text
 python education/00_atoms/lab1_script_posts_json.py
 ```
 
-```bash
-export OLLAMA_HOST="http://127.0.0.1:11434"
-export OLLAMA_MODEL="llama3.2:1b"
-python education/00_atoms/lab1_script_posts_json.py
-```
+The script loads `.env` from the repo root.
 
 ## What you should see
 
@@ -58,7 +59,7 @@ A short paragraph about HTTP POST. That is success.
 | What you see | What it means |
 |---|---|
 | A few sentences of text | Setup works. Read the chapter 00 module next. |
-| `URLError` or connection refused | Nothing is listening at `OLLAMA_HOST`. Start Ollama or LM Studio, or fix the URL. |
+| `URLError` or connection refused | Nothing is listening at `OLLAMA_HOST`. Start Ollama or LM Studio, or fix the URL in `.env`. |
 | HTTP 404 | The model name is wrong or not pulled. Run `ollama list`. |
 | Empty `response` | The model returned no visible text. Try a larger model, or a shorter prompt. The script still taught you the keys. |
 
