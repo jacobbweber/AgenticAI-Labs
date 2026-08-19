@@ -30,6 +30,7 @@ Start from the sentence or the control. Then open the lab.
 | Stop a running job from the page | [10 lab2](../../education/10_the_front_door/lab2_websocket_interrupt.md) `{ "type": "interrupt" }` |
 | A CLI instead of a page | [10 lab5](../../education/10_the_front_door/lab5_cli_harness.md) |
 | Hide person-facing vs model-facing text | [10 lab4](../../education/10_the_front_door/lab4_mx_vs_ux.md) |
+| A button mapped to a path and a JSON key | [notes 07](../notes/07_surface_map.md) |
 | Approve now, at this stdin | [09](../../education/09_the_shield/lab4_hitl_generative_ui.md) |
 | Approve later, same row continues | [18](../../education/18_park_and_resume/00_park_and_resume.md) `park_job` |
 | "Any alerts on jarvis?" | [notes 02](../notes/02_one_router.md), [08 wrapper](../../education/08_two_agents/03_skill_vs_two_agents.md), [16](../../education/16_the_job/00_the_job.md). `jarvis` is `host_id` |
@@ -48,4 +49,4 @@ Start from the sentence or the control. Then open the lab.
 
 The page does not run ReAct. [10](../../education/10_the_front_door/01_frontend.md) holds `tokens` and `job_id` and can send interrupt. The loop, the job row, and the allowlist stay in the script.
 
-If you are adding a button, name the key it sends or shows, then find that key in the table. Do not add a second tree of folders for UI.
+If you are adding a button, name the key it sends or shows, then find that key in [notes 07](../notes/07_surface_map.md). Do not add a second tree of folders for UI.
