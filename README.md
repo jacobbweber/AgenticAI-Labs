@@ -10,11 +10,21 @@ New here? Start at [`getting_started/`](./getting_started/). You can do these la
 
 1. Read [`getting_started/README.md`](./getting_started/README.md). Install Python, pick a model, start Ollama or set a cloud key.
 2. Clone the repo (or download the ZIP). Open the repo root so the IDE reads `AGENTS.md`.
-3. Start at `education/00_atoms/`.
-4. Read the module `.md`. Then open the `labN_*.md` brief.
-5. Write the `labN_*.py` with the IDE, or write it yourself and have the IDE check it.
-6. Run the script. Put real output under **Notes** in the lab brief.
-7. Go to the next numbered folder.
+3. Copy the env template. Uncomment one provider and fill it in:
+
+```bash
+cp .env.example .env
+```
+
+```powershell
+copy .env.example .env
+```
+
+4. Start at `education/00_atoms/`.
+5. Read the module `.md`. Then open the `labN_*.md` brief.
+6. Write the `labN_*.py` with the IDE, or write it yourself and have the IDE check it.
+7. Run the script. Put real output under **Notes** in the lab brief.
+8. Go to the next numbered folder.
 
 That is the whole workflow.
 
@@ -37,6 +47,8 @@ Existing `.py` files in the chapter folders are optional reference solutions.
 ```
 AGENTS.md                 # rules for the AI IDE
 README.md
+.env.example              # copy to .env; do not commit .env
+load_env.py               # stdlib loader used by the labs
 getting_started/          # Python, models, Ollama, cloud keys, first run
 education/
   PATH.md                 # the numbered path, plus "when you want X"
@@ -49,14 +61,18 @@ resources/
   templates/              # MODULE.md and LAB.md for new chapters
 ```
 
-## Local model
+## Provider settings
 
-Set these on your machine. The numbers below are course defaults, not a requirement.
+Labs read the repo-root `.env` (see `.env.example`). Copy it, uncomment one block, fill the URL, key, and model.
 
-- `OLLAMA_HOST` (your machine: `http://127.0.0.1:11434`)
-- `OLLAMA_MODEL` (example: `llama3.2:1b` on a small laptop)
+Local Ollama defaults if those vars are unset:
 
-See [`getting_started/01_pick_a_model.md`](./getting_started/01_pick_a_model.md).
+- `OLLAMA_HOST` = `http://127.0.0.1:11434`
+- `OLLAMA_MODEL` = `llama3.2:1b`
+
+Do not commit `.env`. It can hold a key.
+
+See [`getting_started/01_pick_a_model.md`](./getting_started/01_pick_a_model.md) and [`getting_started/03_cloud_apis.md`](./getting_started/03_cloud_apis.md).
 
 ## Share it
 

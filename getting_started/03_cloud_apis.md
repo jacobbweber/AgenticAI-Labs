@@ -6,7 +6,17 @@ Use this if you cannot run a local model, or if you want a stronger model than y
 
 These labs default to Ollama's `/api/generate` and the `prompt` key. Cloud APIs usually want `/v1/chat/completions` and a `messages` list. Chapter 00 shows both. If you start on a cloud host, use the chat shape from the first day.
 
-Set three things for the provider you use: the POST URL, the key, and the model name. Never paste a key into a file you will commit. Use an environment variable.
+Set three things in the repo-root `.env`: the POST URL, the key, and the model name. Copy the template, uncomment one provider, fill the key.
+
+```bash
+cp .env.example .env
+```
+
+```powershell
+copy .env.example .env
+```
+
+Never paste a key into a file you will commit. `.env` is gitignored. `.env.example` is the template.
 
 | Provider | POST URL | Key | Model example |
 |---|---|---|---|
@@ -17,18 +27,12 @@ Set three things for the provider you use: the POST URL, the key, and the model 
 ## OpenAI
 
 1. Create a key at [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys).
-2. Set the URL, the key, and the model:
+2. In `.env`, uncomment:
 
-```powershell
-$env:OPENAI_API_URL="https://api.openai.com/v1/chat/completions"
-$env:OPENAI_API_KEY="sk-..."
-$env:OPENAI_MODEL="gpt-4o-mini"
-```
-
-```bash
-export OPENAI_API_URL="https://api.openai.com/v1/chat/completions"
-export OPENAI_API_KEY="sk-..."
-export OPENAI_MODEL="gpt-4o-mini"
+```text
+OPENAI_API_URL=https://api.openai.com/v1/chat/completions
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o-mini
 ```
 
 3. The request looks like this:
@@ -53,18 +57,12 @@ The text you print is `choices[0].message.content`.
 ## Gemini (Google)
 
 1. Create a key in [Google AI Studio](https://aistudio.google.com/apikey).
-2. Set the URL, the key, and the model:
+2. In `.env`, uncomment:
 
-```powershell
-$env:GEMINI_API_URL="https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
-$env:GEMINI_API_KEY="..."
-$env:GEMINI_MODEL="gemini-2.5-flash"
-```
-
-```bash
-export GEMINI_API_URL="https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
-export GEMINI_API_KEY="..."
-export GEMINI_MODEL="gemini-2.5-flash"
+```text
+GEMINI_API_URL=https://generativelanguage.googleapis.com/v1beta/openai/chat/completions
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 3. Google also accepts OpenAI-style JSON at this host:
@@ -89,18 +87,12 @@ Use the model name shown in AI Studio if `gemini-2.5-flash` is not listed on you
 ## Claude (Anthropic)
 
 1. Create a key at [https://console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys).
-2. Set the URL, the key, and the model:
+2. In `.env`, uncomment:
 
-```powershell
-$env:ANTHROPIC_API_URL="https://api.anthropic.com/v1/messages"
-$env:ANTHROPIC_API_KEY="sk-ant-..."
-$env:ANTHROPIC_MODEL="claude-sonnet-4-5"
-```
-
-```bash
-export ANTHROPIC_API_URL="https://api.anthropic.com/v1/messages"
-export ANTHROPIC_API_KEY="sk-ant-..."
-export ANTHROPIC_MODEL="claude-sonnet-4-5"
+```text
+ANTHROPIC_API_URL=https://api.anthropic.com/v1/messages
+ANTHROPIC_API_KEY=sk-ant-...
+ANTHROPIC_MODEL=claude-sonnet-4-5
 ```
 
 3. Anthropic's native route is not the OpenAI URL. The header name is different:
