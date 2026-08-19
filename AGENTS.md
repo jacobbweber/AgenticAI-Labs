@@ -66,13 +66,24 @@ Related is 1–2 sentences per sibling tool (example: Ollama, LM Studio, vLLM). 
 
 ## Environment
 
-When a lab talks to a model, default to the local provider unless the user says otherwise.
+Provider URL, key, and model live in the repo-root `.env`. The committed file is `.env.example`. The user copies it:
 
-- Host: `OLLAMA_HOST` (the user's machine is usually `http://127.0.0.1:11434`)
-- Model: `OLLAMA_MODEL` (the user picks this; a 1B model is enough to learn)
-- Read those from the environment in every script. Do not hardcode the URL in new labs.
+```bash
+cp .env.example .env
+```
 
-If they have not set these yet, open `getting_started/01_pick_a_model.md` with them.
+```powershell
+copy .env.example .env
+```
+
+When a lab talks to a model:
+
+1. Call `load_env` from `load_env.py` at the repo root (stdlib, no pip). Walk up from `__file__` if you copy the helper inline.
+2. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. Defaults if unset: `http://127.0.0.1:11434` and `llama3.2:1b`.
+3. For a cloud provider, read that provider's URL, key, and model from the same `.env` (`OPENAI_*`, `GEMINI_*`, `ANTHROPIC_*`).
+4. Do not hardcode a URL, a LAN IP, or a key. Do not write `.env`. Do not commit `.env`.
+
+If they have not copied `.env.example` yet, open `getting_started/` and the root README with them.
 
 ## Intent to code
 

@@ -29,19 +29,19 @@ Those Ollama names are starting points. In LM Studio, search the same family and
 
 ## Set the name so labs use it
 
-Labs read two environment variables. They do not care how famous the model is.
-
-```powershell
-$env:OLLAMA_HOST="http://127.0.0.1:11434"
-$env:OLLAMA_MODEL="llama3.2:1b"
-```
+From the repo root, copy the template and uncomment one provider. Put the model name on `OLLAMA_MODEL` (or the cloud model var).
 
 ```bash
-export OLLAMA_HOST="http://127.0.0.1:11434"
-export OLLAMA_MODEL="llama3.2:1b"
+cp .env.example .env
 ```
 
-If you skip this, some reference scripts fall back to `qwen3.6:35b-a3b-65k` on a LAN host. That will fail on your laptop. Set both values.
+```powershell
+copy .env.example .env
+```
+
+Labs read that file. They do not care how famous the model is. If `.env` is missing, they fall back to `http://127.0.0.1:11434` and `llama3.2:1b`.
+
+Do not commit `.env`.
 
 ## If the model is "dumb"
 

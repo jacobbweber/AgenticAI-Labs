@@ -6,14 +6,24 @@ This course is ordinary Python scripts that send JSON to a model. A tiny model o
 
 The course default model (`qwen3.6:35b-a3b-65k`) is for a strong local machine. It is not required.
 
-## Do these six things
+## Do these things
 
 1. Install [Python 3](https://www.python.org/downloads/). On the installer, check **Add python.exe to PATH**.
 2. [Pick a model that fits your machine](./01_pick_a_model.md).
 3. Run it locally with [Ollama or LM Studio](./02_ollama_and_lmstudio.md), or send the same JSON to [OpenAI, Gemini, or Claude](./03_cloud_apis.md).
-4. Open this repo in [Cursor, VS Code, Claude Code, Antigravity, or a terminal](./04_editors_and_terminal.md).
-5. [Run the first lab](./05_first_lab.md).
-6. Start the course at [`education/00_atoms/`](../education/00_atoms/).
+4. From the repo root, copy the env template and uncomment one provider:
+
+```bash
+cp .env.example .env
+```
+
+```powershell
+copy .env.example .env
+```
+
+5. Open this repo in [Cursor, VS Code, Claude Code, Antigravity, or a terminal](./04_editors_and_terminal.md).
+6. [Run the first lab](./05_first_lab.md).
+7. Start the course at [`education/00_atoms/`](../education/00_atoms/).
 
 If a step fails, stay on that page. Do not skip ahead.
 
@@ -21,19 +31,19 @@ If a step fails, stay on that page. Do not skip ahead.
 
 You can open a terminal in this repo and run:
 
-```powershell
-$env:OLLAMA_HOST="http://127.0.0.1:11434"
-$env:OLLAMA_MODEL="llama3.2:1b"
-python education/00_atoms/lab1_script_posts_json.py
+```bash
+cp .env.example .env
 ```
 
-```bash
-export OLLAMA_HOST="http://127.0.0.1:11434"
-export OLLAMA_MODEL="llama3.2:1b"
+Edit `.env`. Uncomment the Ollama lines (or another provider). Then:
+
+```text
 python education/00_atoms/lab1_script_posts_json.py
 ```
 
 You see a few sentences of text. Then you are ready for chapter 00.
+
+Do not commit `.env`. It can hold a key.
 
 ## Files in this folder
 

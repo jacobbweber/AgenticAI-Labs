@@ -36,17 +36,9 @@ Only the keys this script sends and reads. Not the full provider catalog.
 ```
 
 ## Run
-From the repo root:
+From the repo root. The script loads `.env` (copy `.env.example` to `.env` first).
 
-```bash
-export OLLAMA_HOST="http://127.0.0.1:11434"
-export OLLAMA_MODEL="llama3.2:1b"
-python education/{chapter}/labN_name.py
-```
-
-```powershell
-$env:OLLAMA_HOST="http://127.0.0.1:11434"
-$env:OLLAMA_MODEL="llama3.2:1b"
+```text
 python education/{chapter}/labN_name.py
 ```
 
