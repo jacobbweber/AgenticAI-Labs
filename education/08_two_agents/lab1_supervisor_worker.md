@@ -85,6 +85,8 @@ Intended keys this lab should send and read. The reference file differs (Notes).
 It reads `response` only.
 
 ## Run
+Copy `.env.example` to `.env` in the repo root and uncomment the Ollama lines. The script loads that file (it does not override vars already set in the shell).
+
 From the repo root:
 
 ```bash
@@ -92,12 +94,8 @@ python education/08_two_agents/lab1_supervisor_worker.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/08_two_agents/lab1_supervisor_worker.py
 ```
-
-The reference script ignores those env vars. They are listed so the Run block matches the other chapters.
 
 ## What you should see
 `=== STARTING SUPERVISOR-WORKER MULTI-AGENT SWARM ===` and the `login` snippet. `[SUPERVISOR] Dispatching sub-tasks...` then two worker start/finish lines. A `CONSOLIDATED AGENT REPORT` with `--- Security Auditor Report ---` and `--- Doc Generator Report ---`, then `Total Multi-Agent Execution Duration`. If you see `URLError`, the provider is not reachable at the hardcoded host. If only one report prints, `asyncio.gather` did not wait for both coroutines.

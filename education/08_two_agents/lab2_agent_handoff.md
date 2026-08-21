@@ -96,6 +96,8 @@ Intended keys this lab should send and read. The reference file differs (Notes).
 It reads `response` only.
 
 ## Run
+Copy `.env.example` to `.env` in the repo root and uncomment the Ollama lines. The script loads that file (it does not override vars already set in the shell).
+
 From the repo root:
 
 ```bash
@@ -103,12 +105,8 @@ python education/08_two_agents/lab2_agent_handoff.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/08_two_agents/lab2_agent_handoff.py
 ```
-
-The reference script ignores those env vars. They are listed so the Run block matches the other chapters.
 
 ## What you should see
 `=== STARTING 5-COMPONENT AGENT HANDOFF LAB ===`. `[MIDDLEWARE] Schema Validated!` and a `Correlation ID`. `=== DEVELOPER AGENT RECEIVED HANDOFF ===` with goal, action, and `pytest tests/test_sql_security.py`. Then `=== FINAL VERIFIED HANDOFF RESULT ===` with `"status": "HANDOFF_COMPLETED"` and `"verification_result": "PASSED"`. If a required key is missing, `ValueError` prints and there is no POST. If you see `URLError`, the provider is not reachable at the hardcoded host.
