@@ -68,6 +68,8 @@ Intended: retry on 429, 5xx, or connection drop, then raise or switch host. The 
 Return value is the `response` string.
 
 ## Run
+Copy `.env.example` to `.env` in the repo root and uncomment the Ollama lines. The script loads that file (it does not override vars already set in the shell).
+
 From the repo root:
 
 ```bash
@@ -75,12 +77,10 @@ python education/11_engine_room/lab3_resilient_gateway.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/11_engine_room/lab3_resilient_gateway.py
 ```
 
-The reference script does not read those env vars. Ollama must be up on port `11434`. Expect about 2 seconds of backoff after attempt 1.
+Ollama must be up on port `11434`. Expect about 2 seconds of backoff after attempt 1.
 
 ## What you should see
 `Starting Resilient LLM Gateway Lab 3...` then `--- ATTEMPTING PRIMARY ROUTE (qwen3.6:35b-a3b-65k) ---`. `[Attempt 1/2]` fails (timeout). Then `Retrying in 2 seconds`. `[Attempt 2/2]` usually prints `Primary route succeeded!` and `=== FINAL EXECUTED RESULT ===` plus one sentence and a duration. If attempt 2 also fails, you see `TRIGGERING FALLBACK` and either fallback text or `RuntimeError: All routes failed`. If attempt 1 succeeds, the 0.001 timeout did not fire (rare on a very fast LAN).
