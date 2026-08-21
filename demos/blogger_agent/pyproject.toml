@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "learner-blog-poster-agent"
+version = "0.1.0"
+description = "Autonomous Headless Blogging Agent for technical note synthesis"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["core", "api", "tools", "evals"]
+
+# Exclude non-source directories such as inbox inputs, processed archives, and agent metadata
+exclude = [
+    ".git",
+    ".agents",
+    "__pycache__",
+    "inbox",
+    "processed",
+    "venv",
+    ".venv",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501", # Line length handled by formatter
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["core", "api", "tools", "evals", "config"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+pythonpath = ["."]
+

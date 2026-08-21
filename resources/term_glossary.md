@@ -30,7 +30,7 @@ To evaluate AI systems objectively, software engineers use the **Autonomy Spectr
 | **Level 1: Code Assistant** | GitHub Copilot, IDE auto-complete | Single-turn context assembly (open file tabs + cursor position) sent to LLM for instant inline completion. | Read-only suggestions; inserts text into cursor buffer when accepted. | Driver (Triggers completion, accepts/rejects suggestions inline). |
 | **Level 2: Agentic AI** | Custom ReAct Agent, Cursor Composer, Antigravity | Stateful event loop (`while` loop) evaluating LLM tool requests (`read_file`, `exec_cmd`), executing tools, and reading output observations. | Gated execution (Triggers local functions, files, or APIs under human review). | Supervisor (Approves tool calls, gives feedback, sets constraints). |
 | **Level 3: Autonomous Agent** | Autonomous Coding Subagent, SWE-bench runner | Goal-driven multi-step graph with state checkpointing, automated unit test verification, and self-correction loops. | High execution authority within isolated sandboxes (Docker/Wasm). | Reviewer (Defines spec & acceptance criteria; reviews final PR/diff). |
-| **Level 4: Agentic OS** | Multi-Agent Platform (e.g. Project Lucy) | Distributed supervisor-worker mesh with persistent background queues, event buses (Redis), and domain workspace routing. | Full platform orchestration, background daemon tasks, cron schedules. | Strategic Manager (Monitors dashboards, updates top-level specs). |
+| **Level 4: Agentic OS** | Multi-Agent Platform (Distributed Agent Mesh) | Distributed supervisor-worker mesh with persistent background queues, event buses (Redis), and domain workspace routing. | Full platform orchestration, background daemon tasks, cron schedules. | Strategic Manager (Monitors dashboards, updates top-level specs). |
 
 ---
 
@@ -94,7 +94,7 @@ To evaluate AI systems objectively, software engineers use the **Autonomy Spectr
 - **Software Primitive**: On-demand documentation file (`SKILL.md`) or executable helper script loaded into the agent's context window when triggered.
 
 ### 13. Model Context Protocol (MCP)
-- **Plain English**: An open standard created by Anthropic that lets AI agents securely connect to external tools, databases, and APIs using a universal format.
+- **Plain English**: An open standard that lets AI agents securely connect to external tools, databases, and APIs using a universal format.
 - **Software Primitive**: Client-Server JSON-RPC 2.0 protocol operating over Stdio or Server-Sent Events (SSE) for dynamic tool and resource discovery.
 
 ### 14. Tool Calling / Function Calling
@@ -129,7 +129,7 @@ To evaluate AI systems objectively, software engineers use the **Autonomy Spectr
 - **Plain English**: A strict, step-by-step workflow where step A *always* leads to step B, with no random AI deviation allowed.
 - **Software Primitive**: Standard hard-coded function pipeline / execution graph.
 
-### 20. State Graph (LangGraph)
+### 20. State Graph (State Graph Workflow)
 - **Plain English**: An agentic flowchart where the AI can loop back, retry steps, branch off, or pause for human feedback based on state transitions.
 - **Software Primitive**: Finite State Machine (FSM) with persistent checkpointer databases.
 

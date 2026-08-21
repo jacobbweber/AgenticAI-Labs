@@ -1,0 +1,16 @@
+[
+  {
+    "job_id": "job-1",
+    "status": "done",
+    "prompt": "clean tmp",
+    "result": null,
+    "proposed_action": "rm -rf /tmp/demo"
+  },
+  {
+    "job_id": "job-2",
+    "status": "failed",
+    "prompt": "clean tmp again",
+    "result": null,
+    "proposed_action": "rm -rf /tmp/demo"
+  }
+]

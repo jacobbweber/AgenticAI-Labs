@@ -1,6 +1,6 @@
 # 04: The Loop
 
-After this chapter you run a `for turn in range` over the chapter 03 dispatcher. That loop is ReAct. Cycle detection and thinking-token demux are chapter 12.
+After this chapter you run a `for turn in range` over the chapter 03 dispatcher. That loop is ReAct. Cycle detection and thinking-token demux are chapter 06.
 
 ## Data
 Chapter 03 already has one dispatch: the model returns `tool_calls`, Python looks up the name in `TOOL_REGISTRY`, runs the function, and prints the result. This chapter keeps those same objects and adds one new one.
@@ -31,7 +31,7 @@ ReAct means Reason + Act. It is a 2022 design pattern, not a product and not a l
 6. Cap the loop at 5 turns. Do not add cycle hashing, thinking-token demux, or a second agent.
 
 ## Wisdom
-A loop over one dispatcher is enough for multi-step tool use. Plan-Execute, ReWoo, and Tree of Thoughts are not this chapter. Saving `messages` to disk is chapter 05. Cycle detection and thinking-token demux are chapter 12. If you add those now, a wrong answer could come from the loop, the save, or the demux, and you will not know which.
+A loop over one dispatcher is enough for multi-step tool use. Plan-Execute, ReWoo, and Tree of Thoughts are not this chapter. Saving `messages` to disk is chapter 07. Cycle detection and thinking-token demux are chapter 06. If you add those now, a wrong answer could come from the loop, the save, or the demux, and you will not know which.
 
 ## The When and Why
 - **When:** one dispatch is not enough because the next tool needs the previous result.
@@ -114,7 +114,7 @@ Done when 42 plus 58 then times 3 becomes 300 across three turns.
 
 ## Related
 - **Chapter 03 dispatcher:** one `tool_calls` list, one registry lookup, no loop. This chapter is that dispatch inside `for turn in range`.
-- **LangChain / CrewAI ReAct wrappers:** same loop, more objects. The lab is the loop in one function.
+- **Higher-level agent frameworks:** abstract this same loop behind classes. The lab is the raw loop in one function.
 
 ## Notes
 - ReAct is a design pattern (Reason + Act), published 2022. It is not a product or a language.

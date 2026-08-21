@@ -87,4 +87,4 @@ If they have not copied `.env.example` yet, open `getting_started/` and the root
 
 ## Intent to code
 
-If the user describes a feature in plain English, stay inside the current chapter. Map it to the lab brief. If they need a different chapter, point at `education/PATH.md` and stop. Do not assemble a full harness until chapter 15.
+If the user describes a feature in plain English, stay inside the current chapter. Map it to the lab brief. If they need a different chapter, point at `education/PATH.md` and stop. Do not assemble a full harness until chapter 20 synthesis.

@@ -1,0 +1,14 @@
+[
+  {
+    "role": "system",
+    "content": "You add numbers."
+  },
+  {
+    "role": "user",
+    "content": "What is 42 plus 58?"
+  },
+  {
+    "role": "assistant",
+    "content": "100"
+  }
+]

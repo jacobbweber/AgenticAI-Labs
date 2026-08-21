@@ -38,15 +38,15 @@ A registry dict is enough for a handful of functions you wrote. Do not add MCP, 
 
 ```mermaid
 flowchart TD
-    subgraph ch03_script [Your script]
-        REQ["POST messages plus tools"]
-        REG["TOOL_REGISTRY name"]
-        APP["messages.append role tool"]
+    subgraph ch03_script [This script]
+        MSG["messages plus tools"]
+        REG["TOOL_REGISTRY add_numbers"]
+        APP["append role tool"]
     end
     subgraph ch03_host [Ollama on port 11434]
         CHAT["POST /api/chat"]
     end
-    REQ --> CHAT
+    MSG --> CHAT
     CHAT -->|"message.tool_calls"| REG
     REG -->|"add_numbers a b"| APP
     APP -->|"optional second POST"| CHAT
@@ -56,7 +56,7 @@ Walkthrough of one dispatch:
 
 1. You send a user message and a `tools` list that describes `add_numbers(a, b)`.
 2. The model returns `tool_calls: [{ "function": { "name": "add_numbers", "arguments": { "a": 2, "b": 3 } } }]`.
-3. You run `TOOL_REGISTRY["add_numbers"](a=2, b=3)` and get `"5"`.
+3. You invoke `add_numbers(a=2, b=3)` from `TOOL_REGISTRY` and get `"5"`.
 4. You append `{ "role": "tool", "content": "5" }`. A second POST is how the model sees that string. A third POST is already a loop. Stop.
 
 ## Data contract

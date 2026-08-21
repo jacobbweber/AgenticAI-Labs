@@ -42,10 +42,10 @@ flowchart TD
 | Word you hear | Course object |
 |---|---|
 | Tool | A function in `TOOL_REGISTRY`. [03](../../education/03_the_dispatcher/00_tool_dispatch.md) |
-| Independent agent | A [16](../../education/16_the_job/00_the_job.md) job row plus its own session file ([07](../../education/07_one_agent/00_persona_tools_loop_state.md)). "Own queue" is `jobs.json`. Not a person. |
-| Ephemeral subagent | An [08 wrapper](../../education/08_two_agents/03_skill_vs_two_agents.md): a child loop that returns one JSON and dies. Parent blocks. |
-| Main loop | This [04](../../education/04_the_loop/00_the_react_loop.md) / [07](../../education/07_one_agent/00_persona_tools_loop_state.md) process. Add tools. |
-| Skill | A [`SKILL.md`](../../education/14_mcp/lab2_skills.md) loaded when a trigger matches. Still not a loop. |
+| Independent agent | A [18](../../education/18_the_job/00_the_job.md) job row plus its own session file ([13](../../education/13_one_agent/00_persona_tools_loop_state.md)). "Own queue" is `jobs.json`. Not a person. |
+| Ephemeral subagent | An [14 wrapper](../../education/14_two_agents/03_skill_vs_two_agents.md): a child loop that returns one JSON and dies. Parent blocks. |
+| Main loop | This [04](../../education/04_the_loop/00_the_react_loop.md) / [13](../../education/13_one_agent/00_persona_tools_loop_state.md) process. Add tools. |
+| Skill | A [`SKILL.md`](../../education/15_mcp_and_skills/lab2_skills.md) loaded when a trigger matches. Still not a loop. |
 
 ## Not on this tree
 

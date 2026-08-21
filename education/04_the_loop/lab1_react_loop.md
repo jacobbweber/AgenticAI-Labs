@@ -98,10 +98,10 @@ python education/04_the_loop/lab1_react_loop.py
 Three turns. Turn 1 prints `[ACTION]` for `add_numbers` with `a=42` and `b=58`, then `[OBSERVATION]` `100`. Turn 2 prints `multiply_numbers` with `a=100` and `b=3`, then `300`. Turn 3 prints `[FINAL ANSWER]` containing 300 and `ReAct Loop completed successfully in 3 turn(s).` If it stops after one tool, the `role: tool` message was not appended. If you see `[WARNING] ReAct loop reached max turns threshold.`, the model kept emitting `tool_calls` or the stop check is wrong. If you see `URLError`, the provider is not reachable at that host.
 
 ## Stop here
-This is not cycle detection. Do not hash repeated tool signatures. Do not save `messages` to disk. Do not add a persona or a second agent. Next: [00_save_the_messages.md](../05_the_state/00_save_the_messages.md).
+This is not cycle detection. Do not hash repeated tool signatures. Do not save `messages` to disk. Do not add a persona or a second agent. Next: [00_the_budget.md](../05_the_budget/00_the_budget.md).
 
 ## Notes
 - ReAct is a software design pattern (Reason + Act), not a framework.
 - Real run: `add_numbers(a=42, b=58)` then `multiply_numbers(a=100, b=3)` then final text with no tool calls.
 - The reference `lab1_react_loop.py` appends `{ "role": "tool", "content": result }` and does not send `tool_call_id`. Keys sent and read match this brief. Do not edit the `.py` in the repo.
-- Chapter 05 saves the list. Chapter 07 treats this loop as an agent. Chapter 12 hashes cycles.
+- Chapter 05 bounds the budget. Chapter 06 hashes cycles. Chapter 07 saves the state. Chapter 13 treats this loop as an agent.

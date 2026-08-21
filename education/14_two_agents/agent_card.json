@@ -1,0 +1,40 @@
+{
+  "agent_id": "agent-sec-01",
+  "name": "Security Auditor Agent",
+  "version": "1.0.0",
+  "description": "Specialized agent for detecting security vulnerabilities, SQL injection, and hardcoded secrets in code.",
+  "capabilities": [
+    "security_audit",
+    "vulnerability_scan",
+    "code_review"
+  ],
+  "skills": [
+    {
+      "name": "audit_sql_injection",
+      "description": "Analyzes SQL query construction for parameterization defects.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "code_snippet": { "type": "string" }
+        },
+        "required": ["code_snippet"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "flaws": { "type": "array", "items": { "type": "string" } },
+          "severity": { "type": "string" }
+        }
+      }
+    }
+  ],
+  "transport": {
+    "type": "http_api",
+    "endpoint": "http://127.0.0.1:8001/a2a/v1/invoke"
+  },
+  "runtime_policy": {
+    "timeout_seconds": 60,
+    "max_concurrency": 2,
+    "requires_human_gate": false
+  }
+}

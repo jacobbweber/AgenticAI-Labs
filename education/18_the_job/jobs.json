@@ -1,0 +1,16 @@
+[
+  {
+    "job_id": "job-1",
+    "status": "running",
+    "prompt": "Add 2 and 3",
+    "result": null,
+    "claimed_by": "worker_a"
+  },
+  {
+    "job_id": "job-2",
+    "status": "running",
+    "prompt": "Add 4 and 5",
+    "result": null,
+    "claimed_by": "worker_b"
+  }
+]
