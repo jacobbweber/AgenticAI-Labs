@@ -1,76 +1,72 @@
-# Lab 1: Agent evals
+# Lab 1: Building an Agent Benchmark Suite and Execution Tracer
 
-After this lab a fixture list printed a pass count. Vibes are not a score. A number is.
+In this lab, you will build an automated evaluation runner that executes a dataset of test fixtures against an agent harness, records OpenTelemetry-style span traces, and computes a quantitative pass/fail scorecard.
+
+---
 
 ## What you touch
 - Script: `lab1_agent_evals.py`
-- Intended function: a score over a list of cases
-- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
-- Keys sent: `model`, `prompt`, `stream` (`false`), `options.temperature` (`0.0`)
-- Keys read: `response`
-- Intended result: `{ "pass": 0, "total": 0 }` plus one `{ "case", "pass" }` row per case
+- Main Classes & Functions:
+  - `AgentTracer` (records span latency, trace IDs, and span metadata)
+  - `llm_judge_evaluator(task_prompt, trajectory_trace) -> dict`
+  - `run_eval_suite(test_fixtures) -> dict`
+- URL / Endpoint: `{OLLAMA_HOST}/api/generate` (defaults to `http://127.0.0.1:11434/api/generate`)
+- Target Metric: Aggregated pass rate across fixture cases (`{"pass": n, "total": m}`)
+
+---
 
 ## Steps
 ```mermaid
-flowchart LR
-    subgraph eval_lab4_script [This script]
-        C["fixture list"]
-        R["run target"]
-        S["score"]
-    end
-    subgraph eval_lab4_host [Ollama on port 11434]
-        H["POST /api/generate"]
-    end
-    C --> R
-    R --> H
-    H -->|"response"| R
-    R --> S
-    S --> N["pass / total"]
+flowchart TD
+    A["Benchmark Fixtures Dataset"] --> B["AgentTracer: Start Trace"]
+    B --> C["Execute Agent on Test Case"]
+    C --> D["Record Tool Spans & Latency"]
+    D --> E["Deterministic Assertion / LLM Judge"]
+    E --> F["Record {case, pass: bool}"]
+    F --> G{"More Cases?"}
+    G -->|"Yes"| B
+    G -->|"No"| H["Compute Aggregate Pass Rate Scorecard"]
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://192.168.1.29:11434` and `qwen3.6:35b-a3b-65k`.
-2. Load a fixture list. Each case is a prompt plus a check (string contains, JSON parse, or a boolean you wrote).
-3. For each case, POST `model`, `prompt`, `stream: false`, `options.temperature: 0.0` to `{host}/api/generate`. Read `response`.
-4. Run the check. Record `{ "case": "string", "pass": true }`.
-5. Print N/M (pass count over total). That is `{ "pass": n, "total": m }`.
-6. Do not stand up LangSmith, a trace backend, or a dashboard.
+1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from environment variables, defaulting to `http://127.0.0.1:11434` and `llama3.2:1b`.
+2. Define a list of test fixtures specifying prompts and expected verification criteria (e.g. string matching or JSON key existence).
+3. Implement `AgentTracer` to collect execution traces with `trace_id`, `span_id`, tool invocations, and timing durations.
+4. Execute each fixture through the agent harness under deterministic settings (`temperature: 0.0`).
+5. Evaluate outputs against expectations using deterministic checkers or `llm_judge_evaluator`.
+6. Compute and display the overall scorecard (`pass_count / total_cases`) and failure details if any.
+
+---
 
 ## Data contract
-Intended score shape. The reference script prints something else. See Notes.
 
-**Request** `POST /api/generate`
-
-```json
-{
-  "model": "qwen3.6:35b-a3b-65k",
-  "prompt": "string",
-  "stream": false,
-  "options": { "temperature": 0.0 }
-}
-```
-
-**Intended row**
+**Fixture Case Structure**
 
 ```json
 {
-  "case": "string",
-  "pass": true
+  "case_id": "test_factorial_01",
+  "prompt": "Calculate factorial of 5",
+  "expected_substring": "120"
 }
 ```
 
-**Intended summary**
+**Scorecard Summary**
 
 ```json
 {
-  "pass": 0,
-  "total": 0
+  "total_cases": 4,
+  "passed": 4,
+  "failed": 0,
+  "pass_rate": 1.0,
+  "results": [
+    { "case_id": "test_factorial_01", "verdict": "PASSED", "duration_ms": 320 }
+  ]
 }
 ```
+
+---
 
 ## Run
-Copy `.env.example` to `.env` in the repo root and uncomment the Ollama lines. The script loads that file (it does not override vars already set in the shell).
-
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/12_agent_evals/lab1_agent_evals.py
@@ -80,12 +76,22 @@ python education/12_agent_evals/lab1_agent_evals.py
 python education/12_agent_evals/lab1_agent_evals.py
 ```
 
+---
+
 ## What you should see
-A printed score: how many cases passed out of how many ran. The reference script instead prints an OpenTelemetry-style span list and a judge JSON with `score`, `verdict`, and `reason`. If you see `URLError` or connection refused, the provider is not reachable. If you see HTTP 404, the model name is wrong or not pulled. If `json.loads` fails on the judge reply, the model did not return a single JSON object.
+- Execution trace spans showing start time, tool execution, and duration in milliseconds.
+- Evaluator verdict logs (`PASSED` / `FAILED`) per test case.
+- Summary scorecard printing overall pass rate and case totals.
+
+---
 
 ## Stop here
-This is not LangSmith and not a release dashboard. Chapter 15 can gate a release on a pass count. Do not add reflexion retries on this script.
+You have successfully benchmarked agent trajectories! In Chapter 13, we will assemble complete end-to-end agents with system kernels and persistent working memories.
+
+Next up: [Chapter 13: One Agent](../13_one_agent/00_one_agent.md).
+
+---
 
 ## Notes
-- Mechanism: cases in, boolean per case, N/M out. Same job as pytest, for model text.
-- Contract drift vs `lab1_agent_evals.py`: no fixture list and no `{ "pass", "total" }`. No `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). The script builds `AgentTracer` spans (`trace_id`, `span_id`, `duration_ms`, a mock `tool.execution` span) and calls `llm_judge_evaluator`, which POSTs a second generate and expects `{ "score": 0 to 100, "verdict": "PASSED" or "FAILED", "reason": "string" }`. The baked task is one factorial prompt, not a list. The intended contract is still a case list and a pass count. Write that in your copy. Leave the reference file as-is.
+*(Record your evaluation benchmark results and scorecard here)*
+

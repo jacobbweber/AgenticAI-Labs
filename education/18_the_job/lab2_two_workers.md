@@ -1,43 +1,49 @@
-# Lab 2: Two workers
+# Lab 2: Multi-Worker Coordination and Concurrency Safety
 
-The same `jobs.json` list. `claim_job(worker)` stores `claimed_by`. A row cannot be claimed twice. Two workers each get one job.
+In this lab, you will expand the file-based jobs table to support multiple named workers (`worker_a`, `worker_b`) using a `claimed_by` attribution field to prevent duplicate task claims across concurrent worker processes.
+
+---
 
 ## What you touch
-- Script: `lab2_two_workers.py` (write it next to this brief; there is no reference `.py` yet)
-- Functions: `enqueue_job(prompt)`, `claim_job(worker)`
-- File: `jobs.json` beside the script (`os.path.join(os.path.dirname(__file__), "jobs.json")`)
-- Row keys: `job_id`, `status`, `prompt`, `result`, `claimed_by`
-- Worker names: `worker_a`, `worker_b`
-- No HTTP. This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`.
-- No queue product.
+- Script to create: `lab2_two_workers.py`
+- Persistence File: `jobs.json` (next to the script)
+- Main Functions:
+  - `enqueue_job(prompt: str) -> dict`
+  - `claim_job(worker_name: str) -> dict | None`
+- Row Keys: `job_id`, `status`, `prompt`, `result`, `claimed_by`
+- Worker Identifiers: `"worker_a"`, `"worker_b"`
+- Pure Python logic (no network calls required)
+
+---
 
 ## Steps
 ```mermaid
-flowchart LR
-    subgraph lab2_job_script [This script]
-        ENQ2J["enqueue_job"]
-        CA2J["claim_job worker_a"]
-        CB2J["claim_job worker_b"]
-    end
-    subgraph lab2_job_file [jobs.json]
-        LIST2J["jobs list"]
-    end
-    ENQ2J -->|"two pending rows"| LIST2J
-    CA2J -->|"claimed_by worker_a"| LIST2J
-    CB2J -->|"claimed_by worker_b"| LIST2J
+flowchart TD
+    A["enqueue_job('Prompt 1') & enqueue_job('Prompt 2')"] --> DB[("jobs.json")]
+    DB --> B["claim_job('worker_a')"]
+    B --> C["Assigns Job 1 to worker_a (running)"]
+    DB --> D["claim_job('worker_b')"]
+    D --> E["Assigns Job 2 to worker_b (running)"]
+    C & E --> DB
 ```
 
-1. Reuse the `jobs.json` shape from lab 1. Add `claimed_by` (string or null).
-2. Write `enqueue_job(prompt)` as in lab 1. Set `claimed_by` to `null`.
-3. Write `claim_job(worker)`. Load the list. Find the first row with `status` `pending` and no `claimed_by`. Set `status` to `running` and `claimed_by` to `worker`. Dump the list. Return that row. If none, return `None`.
-4. A row that is already `running` or already has `claimed_by` must not be claimed again.
-5. In `__main__`, enqueue two prompts. Call `claim_job("worker_a")`. Call `claim_job("worker_b")`. Print each `job_id`, `claimed_by`, and `status`.
-6. Do not POST. Do not add Redis.
+1. Expand the `jobs.json` row schema to include `claimed_by` (string or `None`).
+2. Implement `enqueue_job(prompt)`:
+   - Create new record with `status: "pending"` and `claimed_by: None`.
+3. Implement `claim_job(worker_name)`:
+   - Find the first record where `status == "pending"` and `claimed_by is None`.
+   - Atomically assign `status: "running"` and `claimed_by: worker_name`, save to disk, and return the record.
+   - If no unclaimed jobs exist, return `None`.
+4. In `__main__`:
+   - Enqueue two distinct prompts.
+   - Invoke `claim_job("worker_a")` $\rightarrow$ verify it claims Job 1.
+   - Invoke `claim_job("worker_b")` $\rightarrow$ verify it claims Job 2 (and does not re-claim Job 1).
+
+---
 
 ## Data contract
-Only the keys this script writes and reads.
 
-**jobs.json**
+**Claimed Job Record (`jobs.json`)**
 
 ```json
 [
@@ -47,16 +53,21 @@ Only the keys this script writes and reads.
     "prompt": "Add 2 and 3",
     "result": null,
     "claimed_by": "worker_a"
+  },
+  {
+    "job_id": "job-2",
+    "status": "running",
+    "prompt": "Summarize logs",
+    "result": null,
+    "claimed_by": "worker_b"
   }
 ]
 ```
 
-**enqueue_job(prompt)** returns a row with `status` `pending` and `claimed_by` `null`.
-
-**claim_job(worker)** returns the first free `pending` row with `status` `running` and `claimed_by` set to `worker`, or `None`.
+---
 
 ## Run
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/18_the_job/lab2_two_workers.py
@@ -66,16 +77,22 @@ python education/18_the_job/lab2_two_workers.py
 python education/18_the_job/lab2_two_workers.py
 ```
 
-This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`. Do not set those vars for this lab.
+---
 
 ## What you should see
-Two enqueue rows. Then `worker_a` prints one `job_id`, `claimed_by` `worker_a`, `status` `running`. Then `worker_b` prints the other `job_id`, `claimed_by` `worker_b`, `status` `running`. If both prints show the same `job_id`, claim did not skip a claimed row.
+- `[WORKER A] Claimed job-1 (claimed_by: worker_a, status: running)`
+- `[WORKER B] Claimed job-2 (claimed_by: worker_b, status: running)`
+- Verification that each worker received a distinct task without collisions.
+
+---
 
 ## Stop here
-This is not a fleet. Two names on one file is enough. Do not add Redis or Kafka. Next: [../19_the_front_door/00_fastapi_sse.md](../19_the_front_door/00_fastapi_sse.md).
+You have successfully implemented multi-worker queue concurrency! In Chapter 19, we will build the HTTP/SSE streaming front door for agent systems.
+
+Next up: [Chapter 19: The Front Door](../19_the_front_door/00_fastapi_sse.md).
+
+---
 
 ## Notes
-- Write `lab2_two_workers.py` next to this brief. There is no reference `.py` in the repo yet.
-- `jobs.json` sits next to the script. Do not commit a huge dump.
-- Keys written and read match this brief. Do not edit other `.py` files in the repo.
-- Chapter 14 two agents is two job titles, not many workers on one table.
+*(Record your multi-worker concurrency logs here)*
+

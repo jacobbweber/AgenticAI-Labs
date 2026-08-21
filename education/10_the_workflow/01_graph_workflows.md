@@ -1,40 +1,41 @@
-# 10: Graph workflows
+# 10: State Graph Workflows: Conditional Edges and Cyclic Execution Loops
 
-After this page a state dict can loop: draft, then test, then refactor, then test again. Edges are functions that return the next node name. Checkpoints are chapter 07. This page does not require SQLite.
+By the end of this chapter, you will build state graph workflows featuring conditional edges and cyclic loops (such as drafting code, running tests, refactoring upon failure, and repeating until tests pass).
+
+In the previous module, DAGs moved strictly forward. In this chapter, we add back edges—allowing workflows to retry, correct errors, and self-heal automatically.
 
 ## Data
-The last page was a DAG: arrows go forward only. This page adds a **back edge**. A back edge is an arrow from a later node to an earlier one. Draft to test is forward. Test to refactor to test is a cycle.
-
-**Graph state** is a shared dict. The example keys are the same as chapter 07: `code` (string), `attempts` (int), `test_passed` (bool).
-
-**Nodes** are functions `dict -> dict`. They update keys and return the dict. They do not choose the next node. Lab 2 names them `draft`, `run_tests`, and `refactor`.
-
-A **conditional edge** is a function that reads the dict and returns a string node name, for example `"refactor"` or `"finish"`. Lab 2 calls this `edge_after_tests`. The runner `run_graph` calls that function after `run_tests` and jumps to the named node.
-
-A **cycle** is allowed here. A DAG forbids it. Cap the loop with `max_retries` (chapter 07 uses 3) so `attempts` cannot grow forever.
-
-The checkpointer script in chapter 07 (`lab2_state_checkpointer.py`) is this graph plus SQLite. This page is the edge and loop, not the INSERT.
+A **State Graph** introduces cyclic transitions to workflow pipelines:
+- **Shared State Dictionary**: Holds workflow attributes (e.g. `{"code": str, "attempts": int, "test_passed": bool}`).
+- **Node Functions**: Python functions taking `state: dict -> dict` (such as `draft`, `run_tests`, and `refactor`).
+- **Conditional Edge Functions**: Routing functions that evaluate state and return the next target node name (e.g. `edge_after_tests` returning `"refactor"` or `"finish"`).
+- **Execution Budget (`max_retries`)**: A safeguard ceiling preventing infinite loop cycles if tests never pass.
 
 ## Information
-A DAG has no back edge. A graph does. After `run_tests`, Python reads `test_passed` and `attempts`. If the test failed and retries remain, the next name is `refactor`. If the test passed or `attempts` hit the cap, the next name is `finish`.
+In real-world software workflows, solutions often require multiple attempts and iterative refinement. 
 
-LangGraph and XState are libraries around this same picture: a dict, node functions, and edge functions that return a name. Human-in-the-loop interrupts and time-travel forks are later chapters. Do not add them here.
-
-The model is optional. The chapter 07 nodes never POST. A later graph can put a model call inside one node. The new idea on this page is the named edge, not the POST.
+State graphs model this natural development cycle:
+- `draft` produces the initial attempt.
+- `run_tests` checks correctness.
+- The conditional edge inspects test results: if failed and attempts remain, it routes back to `refactor` and re-tests; once passed, it routes to `finish`.
 
 ## Knowledge
-1. Define nodes that update a dict (`draft`, `run_tests`, `refactor`).
-2. After `run_tests`, call `edge_after_tests`. It returns a string: `"refactor"` or `"finish"`.
-3. Loop in `run_graph` until the edge returns `"finish"` or `attempts` reaches `max_retries`. Print each node name and each edge return.
-4. Optionally call `save_checkpoint` after each node (chapter 07). That is not required to understand the edge.
-5. Do not add Temporal, Postgres locking, or a second process.
+Here is the step-by-step procedure:
+1. Define node functions that mutate and return state (`draft`, `run_tests`, `refactor`).
+2. Write a conditional edge function `edge_after_tests(state, max_retries=3)`:
+   - If `test_passed` is `False` and `attempts < max_retries`, return `"refactor"`.
+   - Otherwise, return `"finish"`.
+3. Implement `run_graph(state, max_retries=3)`:
+   - Start at `"draft"`.
+   - Follow edges dynamically until reaching `"finish"` or exhausting retry limits.
+   - Print each node execution and transition decision.
 
 ## Wisdom
-A graph is for retry and repair. A DAG is for one-pass pipelines. If the steps never need to run again, stay on the last page. Temporal, Redis locks, and human approval gates are not this page. Adding them now hides whether the edge function or the lock is what broke the loop.
+State graphs provide a clean, native Python structure for iterative self-correction without requiring complex external orchestration engines.
 
 ## The When and Why
-- **When:** a step must run again after a failure (test, then refactor, then test).
-- **Why:** an acyclic list cannot express that loop without a second script. The edge return value is how the runner knows to go back.
+- **When**: Use state graphs whenever an agent task requires iterative validation, testing, code generation, or self-correction.
+- **Why**: Pure DAG pipelines cannot loop back upon errors without duplicating code. Conditional edges allow elegant, bounded retry loops.
 
 ## How it works
 

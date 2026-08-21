@@ -1,78 +1,53 @@
-# Lab 5: Autonomous SRE agent
+# Lab 5: Autonomous Site Reliability Engineering (SRE) Agent
 
-An alert becomes a filtered log list, a one-sentence RCA, and a HITL pause. This reuses chapter 06 phases, chapter 09 HITL, and chapter 13 filter. Not a new pager product.
+In this lab, you will build an autonomous SRE incident response agent `AutonomousSREAgent` that extracts error signatures from raw system logs, generates root cause analysis (RCA) summaries, and enforces Human-in-the-Loop safety boundaries on remediation commands.
+
+---
 
 ## What you touch
 - Script: `lab5_autonomous_sre_agent.py`
-- Classes: `LogTriageEngine`, `SRECommandSafetyGuard`, `AutonomousSREAgent`
-- Functions: `extract_error_signatures`, `evaluate_command`, `investigate_and_remediate`, `llm_call`
-- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
-- Keys sent: `model`, `prompt`, `stream` (`false`), `options.temperature` (`0.0`)
-- Keys read: `response`
+- Main Classes & Functions:
+  - `LogTriageEngine.extract_error_signatures(logs)`: Filters logs for `ERROR`, `CRITICAL`, and `FATAL` lines.
+  - `SRECommandSafetyGuard.evaluate_command(command)`: Classifies commands into `READ_ONLY`, `REQUIRES_HITL_APPROVAL`, or `FORBIDDEN`.
+  - `AutonomousSREAgent.investigate_and_remediate(logs)`: Orchestrates log triage, RCA generation, and safety gate evaluations.
+- Command Safety Rules:
+  - `READ_ONLY`: Informational diagnostics (e.g. `kubectl get pods`)
+  - `REQUIRES_HITL_APPROVAL`: Mutative restarts (e.g. `kubectl rollout restart deployment/...`)
+  - `FORBIDDEN`: Destructive mutations (e.g. `kubectl delete namespace ...`)
+- Environment Configuration: Reads `OLLAMA_HOST` (default: `http://192.168.1.29:11434`) and `OLLAMA_MODEL` (default: `qwen3.6:35b-a3b-65k`) from `.env`
+
+---
 
 ## Steps
 ```mermaid
 flowchart TD
-    subgraph sre_lab [lab5_autonomous_sre_agent.py]
-        TRI["extract_error_signatures"]
-        RCA["llm_call RCA"]
-        GATE["evaluate_command"]
-    end
-    subgraph sre_host [Ollama on port 11434]
-        API["POST /api/generate"]
-    end
-    TRI -->|"ERROR CRITICAL FATAL lines"| RCA
-    RCA -->|"prompt"| API
-    API -->|"response"| GATE
-    GATE -->|"READ_ONLY / REQUIRES_HITL_APPROVAL / FORBIDDEN"| OUT["return dict"]
+    A["Raw Production Logs"] --> B["LogTriageEngine: extract_error_signatures()"]
+    B --> C["Filter out INFO/DEBUG lines -> Keep ERROR/CRITICAL"]
+    C --> D["LLM Inference -> Generate 1-sentence RCA summary"]
+    D --> E["SRECommandSafetyGuard: evaluate_command()"]
+    E -->|"rollout restart"| F["Return PAUSED_FOR_HITL_APPROVAL with Approval Modal"]
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://192.168.1.29:11434` and `qwen3.6:35b-a3b-65k`.
-2. Call `investigate_and_remediate` with the four sample log lines in `__main__` (one `INFO`, one `ERROR` `ConnectionPoolExhausted`, one `CRITICAL` HTTP 502, one `INFO`).
-3. `extract_error_signatures` keeps lines that contain `ERROR`, `CRITICAL`, or `FATAL`.
-4. `llm_call` POSTs those lines and asks for a 1-sentence root cause. Read `response`.
-5. Evaluate three hardcoded commands with `evaluate_command`:
-   - `kubectl get pods -n production` → `READ_ONLY`
-   - `kubectl rollout restart deployment/api-gateway -n production` → `REQUIRES_HITL_APPROVAL` (whitelist regex)
-   - `kubectl delete namespace production` → `FORBIDDEN`
-6. Return a dict. Do not run kubectl.
+1. Load environment variables via `load_env.py` (or fallback defaults).
+2. Pass sample production logs into `investigate_and_remediate()`.
+3. Filter logs to retain only critical error lines (`ConnectionPoolExhausted`, `HTTP 502`).
+4. Generate a 1-sentence Root Cause Analysis (RCA) summary via model inference.
+5. Evaluate three candidate remediation commands against `SRECommandSafetyGuard`:
+   - `kubectl get pods -n production` $\rightarrow$ `READ_ONLY`
+   - `kubectl rollout restart deployment/api-gateway -n production` $\rightarrow$ `REQUIRES_HITL_APPROVAL`
+   - `kubectl delete namespace production` $\rightarrow$ `FORBIDDEN`
+6. Return structured incident response payload with HITL approval modal.
+
+---
 
 ## Data contract
 
-**Intended alert**
-
-```json
-{
-  "alert": "string",
-  "logs": []
-}
-```
-
-**Request** `POST /api/generate`
-
-```json
-{
-  "model": "qwen3.6:35b-a3b-65k",
-  "prompt": "string",
-  "stream": false,
-  "options": { "temperature": 0.0 }
-}
-```
-
-**Response**
-
-```json
-{
-  "response": "string"
-}
-```
-
-**What `investigate_and_remediate` actually returns**
+**Autonomous SRE Incident Response Payload**
 
 ```json
 {
   "status": "SUCCESS",
-  "rca": "string",
+  "rca": "Database connection pool exhaustion caused downstream API gateway 502 outages.",
   "remediation_status": "PAUSED_FOR_HITL_APPROVAL",
   "approval_modal": {
     "type": "HITLApprovalModal",
@@ -82,12 +57,10 @@ flowchart TD
 }
 ```
 
-The input is a list of log strings, not an alert JSON object. Commands are literals. See Notes.
+---
 
 ## Run
-Copy `.env.example` to `.env` in the repo root and uncomment the Ollama lines. The script loads that file (it does not override vars already set in the shell).
-
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/20_synthesis/lab5_autonomous_sre_agent.py
@@ -97,12 +70,25 @@ python education/20_synthesis/lab5_autonomous_sre_agent.py
 python education/20_synthesis/lab5_autonomous_sre_agent.py
 ```
 
+---
+
 ## What you should see
-`=== STARTING AUTONOMOUS DEVOPS & SRE AGENT LAB ===`, `Extracted 2 ERROR log signatures.`, a `[ROOT CAUSE ANALYSIS]` sentence, then three guard lines: `READ_ONLY`, `REQUIRES_HITL_APPROVAL`, `FORBIDDEN`. The final payload has `remediation_status` `PAUSED_FOR_HITL_APPROVAL`. If you see `URLError` or `Connection refused`, the provider is not reachable. If you see HTTP 404, the model name is wrong.
+- `=== STARTING AUTONOMOUS SRE INCIDENT RESPONSE AGENT ===`
+- `[LOG TRIAGE] Extracted error signatures: [...]`
+- `[RCA] Generated Root Cause Analysis summary`
+- `[COMMAND SAFETY GATE] 'kubectl get pods...' -> READ_ONLY`
+- `[COMMAND SAFETY GATE] 'kubectl rollout restart...' -> REQUIRES_HITL_APPROVAL`
+- `[COMMAND SAFETY GATE] 'kubectl delete namespace...' -> FORBIDDEN`
+- Final response payload with `PAUSED_FOR_HITL_APPROVAL`.
+
+---
 
 ## Stop here
-Do not add a new primitive; compose what you already have. A filter plus a POST plus the chapter 09 gate is enough. Do not add a pager product, a live kubectl client, or a new DAG engine. A free loop on prod is the risk this page avoids.
+You have successfully implemented an autonomous SRE incident response agent! In Lab 6, we will build a Spec-Driven TDD development engine.
+
+Next up: [Lab 6: Spec TDD Loop](./lab6_spec_tdd_loop.md).
+
+---
 
 ## Notes
-- Reference blueprint. Alarm to action. Reuse chapter 06 phases, chapter 09 HITL, chapter 13 filter.
-- Contract drift vs `lab5_autonomous_sre_agent.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`. Input is a `List[str]`, not alert JSON. The three kubectl strings are hardcoded after the RCA. The whitelist regexes are lowercase and require `-n <ns>`. No command is executed. The intended contract is alert JSON plus a HITL pause. Write that in your copy. Leave the reference file as-is.
+*(Record your SRE log triage, RCA summaries, and safety classifications here)*

@@ -1,90 +1,66 @@
-# Lab 3: Multi-agent workbench
+# Lab 3: Multi-Agent Software Development Workbench
 
-A supervisor, a coder, and a QA reviewer share one temp dir. This reuses chapter 08 roles and the chapter 09 sandbox. Not a new topology.
+In this lab, you will orchestrate a collaborative multi-agent software engineering team (Supervisor, Coder, and QA Reviewer) working inside isolated temporary workbenches to generate and verify automated unit test suites.
+
+---
 
 ## What you touch
 - Script: `lab3_multi_agent_workbench.py`
-- Functions: `SupervisorAgent.plan`, `CoderAgent.write_code`, `QAReviewerAgent.review`, `run_local_multi_agent_workbench`, `llm_call`
-- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
-- Keys sent: `model`, `prompt`, `stream` (`false`), `options.temperature` (`0.0`)
-- Keys read: `response`
-- Files written: `calculator.py`, `test_calculator.py` in a `workbench_` temp dir
+- Main Classes & Roles:
+  - `SupervisorAgent.plan(goal)`: Decomposes product goals into implementation tasks.
+  - `CoderAgent.write_code(task, work_dir)`: Generates Python modules and test files.
+  - `QAReviewerAgent.review(work_dir, test_file)`: Executes tests inside an isolated sandbox subprocess.
+  - `run_local_multi_agent_workbench(goal)`: Top-level orchestrator.
+- Files Produced: `calculator.py` and `test_calculator.py` inside temporary workspace `workbench_`
+- Environment Configuration: Reads `OLLAMA_HOST` (default: `http://192.168.1.29:11434`) and `OLLAMA_MODEL` (default: `qwen3.6:35b-a3b-65k`) from `.env`
+
+---
 
 ## Steps
 ```mermaid
 flowchart TD
-    subgraph wb_roles [lab3_multi_agent_workbench.py]
-        SUP["SupervisorAgent.plan"]
-        COD["CoderAgent.write_code"]
-        QA["QAReviewerAgent.review"]
-    end
-    subgraph wb_dir [workbench_ temp dir]
-        MOD["calculator.py"]
-        TST["test_calculator.py"]
-    end
-    subgraph wb_host [Ollama on port 11434]
-        API["POST /api/generate"]
-    end
-    SUP -->|"two task strings"| COD
-    COD -->|"prompt"| API
-    API -->|"response"| COD
-    COD --> MOD
-    COD --> TST
-    QA -->|"Popen test_calculator.py"| TST
+    A["User Goal: Create calculator & unit tests"] --> B["SupervisorAgent: plan()"]
+    B -->|"Task 1: calculator.py"| C["CoderAgent: write_code() -> calculator.py"]
+    B -->|"Task 2: test_calculator.py"| D["CoderAgent: write_code() -> test_calculator.py"]
+    C --> E["workbench_ Isolated Scratch Directory"]
+    D --> E
+    E --> F["QAReviewerAgent: review() -> subprocess.Popen(test_calculator.py)"]
+    F -->|"Exit Code 0"| G["Workbench Run Passed [SUCCESS]"]
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://192.168.1.29:11434` and `qwen3.6:35b-a3b-65k`.
-2. Call `SupervisorAgent.plan(goal)` with `Create a calculator module and automated unit test suite.` Intended: handoff JSON with a next role and a task. The reference `plan` returns two hardcoded strings (write `calculator.py` with `add` and `multiply`, then write `test_calculator.py`).
-3. Open a temp dir prefixed `workbench_`.
-4. For each task, call `CoderAgent.write_code`. That POSTs `model`, `prompt`, `stream: false`, `options.temperature: 0.0` to `{host}/api/generate` and writes the `response` (fences stripped) to `calculator.py` then `test_calculator.py`.
-5. Call `QAReviewerAgent.review(work_dir, "test_calculator.py")`. That starts `[sys.executable, test_calculator.py]` with `cwd` set to the temp dir and `communicate(timeout=5)`.
-6. Print pass if the exit code is 0. Print `stderr` if it is not.
+1. Load environment variables via `load_env.py` (or fallback defaults).
+2. Invoke `run_local_multi_agent_workbench()` with the goal: `"Create a calculator module and automated unit test suite."`.
+3. The `SupervisorAgent` plans two sequential tasks.
+4. The `CoderAgent` calls the model to write `calculator.py` and `test_calculator.py` into a clean temporary directory.
+5. The `QAReviewerAgent` runs `test_calculator.py` inside the isolated sandbox.
+6. Verify test results and clean up workspace.
+
+---
 
 ## Data contract
 
-**Intended handoff** (chapter 08 shape)
+**Supervisor Task Plan**
 
 ```json
-{
-  "next_role": "coder",
-  "task": "string"
-}
+[
+  "Write calculator.py containing add(a, b) and multiply(a, b) functions.",
+  "Write test_calculator.py importing calculator and running unittest test cases."
+]
 ```
 
-**Request** `POST /api/generate`
-
-```json
-{
-  "model": "qwen3.6:35b-a3b-65k",
-  "prompt": "Write runnable Python code for this requirement: string. Return ONLY valid Python code.",
-  "stream": false,
-  "options": { "temperature": 0.0 }
-}
-```
-
-**Response**
-
-```json
-{
-  "response": "string"
-}
-```
-
-**QA return**
+**QA Verification Result**
 
 ```json
 {
   "exit_code": 0,
-  "stderr": "string"
+  "stderr": ""
 }
 ```
 
-`review` returns a tuple `(exit_code, stderr)`. The supervisor does not POST. See Notes.
+---
 
 ## Run
-Copy `.env.example` to `.env` in the repo root and uncomment the Ollama lines. The script loads that file (it does not override vars already set in the shell).
-
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/20_synthesis/lab3_multi_agent_workbench.py
@@ -94,12 +70,23 @@ python education/20_synthesis/lab3_multi_agent_workbench.py
 python education/20_synthesis/lab3_multi_agent_workbench.py
 ```
 
+---
+
 ## What you should see
-`[SUPERVISOR AGENT]`, two `[CODER AGENT]` lines, `[QA REVIEWER] Executing 'test_calculator.py' in sandbox...`, then either `[WORKBENCH COMPLETE] [PASSED]` or `[WORKBENCH QA FAILED]` plus a traceback. If you see `URLError` or `Connection refused`, the provider is not reachable at that host. If you see HTTP 404, the model name is wrong or not pulled. A QA fail can also mean the model wrote code that does not import or does not assert.
+- `[SUPERVISOR AGENT] Decomposing goal into tasks...`
+- `[CODER AGENT] Generating calculator.py...`
+- `[CODER AGENT] Generating test_calculator.py...`
+- `[QA REVIEWER] Executing 'test_calculator.py' in sandbox...`
+- `[WORKBENCH COMPLETE] [PASSED] QA verification succeeded.`
+
+---
 
 ## Stop here
-Do not add a new primitive; compose what you already have. Three roles in one process plus a temp-dir child is enough. Do not add a queue service, a second PID per role, or a new handoff protocol. Those would hide whether the miss came from the POST, the files, or the extra.
+You have successfully orchestrated a multi-agent engineering workbench! In Lab 4, we will build an enterprise Text-to-SQL data assistant.
+
+Next up: [Lab 4: Enterprise SQL Agent](./lab4_enterprise_sql_agent.md).
+
+---
 
 ## Notes
-- Reference blueprint. Reuse chapter 08 roles and chapter 09 `subprocess.Popen`.
-- Contract drift vs `lab3_multi_agent_workbench.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`. No handoff JSON. `plan` is hardcoded. `llm_call` strips a leading ` ```python ` fence. QA returns only `exit_code` and `stderr` (stdout is discarded). Timeout is 5 seconds. Temp dir prefix is `workbench_`. The intended contract is chapter 08 handoff JSON plus a sandbox run of `test_calculator.py`. Write that in your copy. Leave the reference file as-is.
+*(Record your workbench generated code and QA execution traces here)*

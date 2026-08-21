@@ -1,45 +1,51 @@
-# Lab 2: State checkpointer
+# Lab 2: Building a SQLite State Checkpointer
 
-A SQLite row holds the latest state dict and `load_latest_checkpoint` prints the last saved `code`.
+In this lab, you will build an automated SQLite state checkpointer that saves snapshots of a multi-step agent workflow and restores the latest state via `load_latest_checkpoint(thread_id)`.
+
+---
 
 ## What you touch
 - Script: `lab2_state_checkpointer.py`
-- Functions: `init_sqlite_checkpointer`, `save_checkpoint(thread_id, step_name, state)`, `load_latest_checkpoint(thread_id)`, `run_stateful_graph(thread_id, max_retries=3)`
-- Nodes: `node_draft_code`, `node_run_tests`, `node_refactor_code`
-- DB file: `checkpoints.db` beside the script, or the path in `CHECKPOINT_DB`
-- Table: `checkpoints` (`thread_id`, `step_name`, `checkpoint_id`, `state_data`, `timestamp`)
-- State keys: `code` (string), `attempts` (int), `test_passed` (bool)
-- Thread id used in `__main__`: `task_session_101`
-- No HTTP. This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`.
+- Main Functions:
+  - `init_sqlite_checkpointer()`
+  - `save_checkpoint(thread_id, step_name, state)`
+  - `load_latest_checkpoint(thread_id) -> dict`
+  - `run_stateful_graph(thread_id, max_retries=3)`
+- Database File: `checkpoints.db` (overrideable with `CHECKPOINT_DB` environment variable)
+- SQLite Table: `checkpoints` (`thread_id`, `step_name`, `checkpoint_id`, `state_data`, `timestamp`)
+- State Dictionary Keys: `code` (str), `attempts` (int), `test_passed` (bool)
+
+---
 
 ## Steps
 ```mermaid
 flowchart LR
-    subgraph lab2_state_script [This script]
-        ST["state dict"]
-        SAVE["save_checkpoint"]
-        LOAD["load_latest_checkpoint"]
-    end
-    subgraph lab2_state_db [checkpoints.db]
-        TBL["table checkpoints"]
-    end
-    ST -->|"json.dumps INSERT"| SAVE
-    SAVE --> TBL
-    TBL -->|"SELECT latest json.loads"| LOAD
+    A["Workflow State Dictionary"] -->|"save_checkpoint() / INSERT"| B[("SQLite DB: checkpoints.db")]
+    B -->|"load_latest_checkpoint() / SELECT"| C["Restored State Dictionary"]
 ```
 
-1. Set `DB_PATH` from `CHECKPOINT_DB`, or `os.path.join(os.path.dirname(__file__), "checkpoints.db")`.
-2. Write `init_sqlite_checkpointer`. Connect with `sqlite3.connect(DB_PATH)`. `CREATE TABLE IF NOT EXISTS checkpoints` with `thread_id TEXT`, `step_name TEXT`, `checkpoint_id INTEGER PRIMARY KEY AUTOINCREMENT`, `state_data TEXT`, `timestamp REAL`.
-3. Write `save_checkpoint(thread_id, step_name, state)`. INSERT `thread_id`, `step_name`, `json.dumps(state)`, `time.time()`. Print `[CHECKPOINT SAVED]`.
-4. Write `load_latest_checkpoint(thread_id)`. SELECT `step_name, state_data WHERE thread_id = ? ORDER BY checkpoint_id DESC LIMIT 1`. If a row exists, print `[CHECKPOINT LOADED]` and return `json.loads(state_data)`. If not, return `{}`.
-5. Write the three nodes. `node_draft_code` sets `code` to `def calculate_total(price, tax): return price + tax` and `test_passed` to false. `node_run_tests` increments `attempts`. If `attempts < 2`, print `[FAIL]` and set `test_passed` false. Else print `[PASS]` and set `test_passed` true. `node_refactor_code` replaces `code` with a version that raises `ValueError` when `price < 0`.
-6. Write `run_stateful_graph`. Init the table. Start `state = {"code": "", "attempts": 0, "test_passed": False}`. Call draft, save step `draft_code`. Loop while `attempts < max_retries` (default 3): run tests, save `run_tests_attempt_{attempts}`. If `test_passed`, break. Else refactor and save `refactor_attempt_{attempts}`.
-7. In `__main__`, call `run_stateful_graph("task_session_101")`, then `load_latest_checkpoint("task_session_101")`, then print `Restored Code:` and `restored_state.get("code")`.
+1. Configure database path from `CHECKPOINT_DB` or default to `checkpoints.db` next to the script.
+2. Implement `init_sqlite_checkpointer()`:
+   - Connect to SQLite and run `CREATE TABLE IF NOT EXISTS checkpoints ...`.
+3. Implement `save_checkpoint(thread_id: str, step_name: str, state: dict)`:
+   - Insert `(thread_id, step_name, json.dumps(state), time.time())`.
+   - Print `[CHECKPOINT SAVED]` with step name and thread ID.
+4. Implement `load_latest_checkpoint(thread_id: str) -> dict`:
+   - Query `SELECT step_name, state_data FROM checkpoints WHERE thread_id = ? ORDER BY checkpoint_id DESC LIMIT 1`.
+   - If found, deserialize with `json.loads(state_data)` and return the dictionary. Otherwise return `{}`.
+5. Create workflow nodes:
+   - `node_draft_code`: sets initial draft code.
+   - `node_run_tests`: simulates testing (fails on attempt 1, passes on attempt 2).
+   - `node_refactor_code`: updates code to handle edge cases.
+6. In `run_stateful_graph("task_session_101")`:
+   - Save checkpoints after every step (draft, test attempt 1, refactor, test attempt 2).
+7. Test reloading state with `load_latest_checkpoint("task_session_101")` and verify that the final refactored code is restored.
+
+---
 
 ## Data contract
-Only the keys this script writes and reads.
 
-**Table**
+**Checkpoints Table Schema**
 
 ```sql
 CREATE TABLE checkpoints (
@@ -48,23 +54,23 @@ CREATE TABLE checkpoints (
     checkpoint_id INTEGER PRIMARY KEY AUTOINCREMENT,
     state_data TEXT,
     timestamp REAL
-)
+);
 ```
 
-**state_data** (TEXT column, JSON)
+**Serialized `state_data` Payload**
 
 ```json
-{ "code": "string", "attempts": 0, "test_passed": false }
+{
+  "code": "def calculate_total(price, tax):\n    if price < 0:\n        raise ValueError('Price cannot be negative')\n    return price + tax",
+  "attempts": 2,
+  "test_passed": true
+}
 ```
 
-**save** INSERT `(thread_id, step_name, state_data, timestamp)`.
-
-**load** SELECT `step_name, state_data FROM checkpoints WHERE thread_id = ? ORDER BY checkpoint_id DESC LIMIT 1`.
-
-`thread_id` in the run is `task_session_101`.
+---
 
 ## Run
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/07_the_state/lab2_state_checkpointer.py
@@ -74,17 +80,22 @@ python education/07_the_state/lab2_state_checkpointer.py
 python education/07_the_state/lab2_state_checkpointer.py
 ```
 
-This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`. Do not set those vars for this lab. Optional: `$env:CHECKPOINT_DB` to point at another `.db` file.
+---
 
 ## What you should see
-`[CHECKPOINT SAVED]` after draft, after the first test (`[FAIL]`), after refactor, and after the second test (`[PASS]`). Then `=== FINAL PERSISTED WORKFLOW STATE ===` with JSON that has `test_passed: true` and `attempts: 2`. Then `[CHECKPOINT LOADED]` and `Restored Code:` followed by the refactored `calculate_total` that checks `price < 0`. If the DB path is wrong, create the directory or set `CHECKPOINT_DB`. If load prints nothing for `code`, the SELECT did not find `task_session_101`.
+- `[CHECKPOINT SAVED]` notifications after each step: `draft_code`, `run_tests_attempt_1` (`[FAIL]`), `refactor_attempt_1`, and `run_tests_attempt_2` (`[PASS]`).
+- Final workflow summary with `test_passed: true` and `attempts: 2`.
+- `[CHECKPOINT LOADED]` message followed by the restored refactored function.
+
+---
 
 ## Stop here
-This is not RAG. Do not add a vector store. Do not compact old rows. Do not POST to the model. The lesson is INSERT and SELECT of a state dict. Do not invent a graph of named edges here. Next: [00_context_compaction.md](../08_context_compaction/00_context_compaction.md).
+You now have a durable state checkpointer! In Chapter 08, we will explore context compaction and token window management.
+
+Next up: [Chapter 08: Context Compaction](../08_context_compaction/00_context_compaction.md).
+
+---
 
 ## Notes
-- Schema is `thread_id`, `step_name`, `checkpoint_id`, `state_data`, `timestamp`.
-- Emoji in prints broke Windows cp1252. The script uses `[FAIL]` / `[PASS]`.
-- `checkpoints.db` is gitignored. Do not commit it.
-- Keys written and read match this brief. Do not edit the `.py` in the repo.
-- Chapter 08 adds compaction, Chapter 09 adds memory, and Chapter 10 adds graph workflows.
+*(Record your checkpoint restoration trace here)*
+

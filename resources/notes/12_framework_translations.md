@@ -1,14 +1,16 @@
-# Framework Translations to Pure Python (Rosetta Stone)
+# Framework Translations to Pure Python: A Developer's Rosetta Stone
 
-Modern AI agent frameworks (LangChain, LangGraph, CrewAI, AutoGen) introduce thousands of classes, complex inheritance trees, and proprietary DSLs. However, every single agent framework decomposes into the exact same standard Python primitives:
+Modern AI agent frameworks (such as LangChain, LangGraph, CrewAI, and AutoGen) provide helpful abstractions, but their numerous classes can sometimes obscure how agent systems actually work. 
 
-1. **HTTP Requests**: `urllib.request` / `http.client` issuing `POST /v1/chat/completions`
-2. **Data Serialization**: `json.loads()` and `json.dumps()`
-3. **Control Loops**: `while` loops managing turn budgets and condition checks
-4. **Tool Registries**: `dict[str, Callable]` mapping strings to functions
-5. **State Storage**: `dict` or `list` serialized to `.json` files on disk
+Under the hood, every single agent framework is built using the exact same standard Python primitives:
 
-This document is a technical **Rosetta Stone** mapping framework abstractions directly to standard library Python implementations.
+1. **HTTP Requests**: `urllib.request` or `http.client` sending requests to `/v1/chat/completions`.
+2. **Data Serialization**: Standard `json.loads()` and `json.dumps()`.
+3. **Control Loops**: Standard Python `while` and `for` loops managing turn budgets and condition checks.
+4. **Tool Registries**: A standard `dict[str, Callable]` mapping function names to Python functions.
+5. **State Storage**: Standard dictionaries or lists serialized to `.json` files or SQLite databases.
+
+This guide serves as a practical **Rosetta Stone**, showing you how popular framework abstractions translate directly into plain, native Python code.
 
 ---
 

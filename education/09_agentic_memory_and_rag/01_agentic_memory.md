@@ -1,47 +1,34 @@
-# 09: Agentic memory
+# 09: Agentic Memory: Working, Session, Episodic, and Procedural Memory
 
-After this chapter you can name four stores and say which one a fact belongs in. Working, short-term, long-term (episodic), and procedural are different files or tables. This page does not put all four in one script.
+By the end of this chapter, you will understand the four distinct tiers of agentic memory and know exactly which storage mechanism is appropriate for each type of information.
+
+In Chapter 08, we managed in-context working memory. In this chapter, we explore how agents retain persistent cross-session facts and procedural instructions over time.
 
 ## Data
-Four stores. They are not the same object.
-
-**Working memory** is this POST. It is the `messages` list (or the `prompt` string) you send to `{OLLAMA_HOST}/api/generate` or `/v1/chat/completions` right now. Chapter 00 in this folder shrinks that list. When the process exits, working memory is gone unless you wrote it somewhere else.
-
-**Short-term / session memory** is the session list on disk. Chapter 05 writes it as JSON or as a row in `checkpoints.db`. One session, one thread_id. A new session starts a new list.
-
-**Long-term / episodic memory** is facts that must survive a new session. A fact is a small row: `{ "key": "string", "value": "string" }`. The store can be a SQLite table or a vector collection. You write after a session. You read at the start of a later session and inject matching rows into `messages`. Lab 2 writes one row to `facts.json`: `{ "key": "preferred_name", "value": "Ada" }`.
-
-**Procedural memory** is how to do a job, not what happened. It lives in the system prompt (`role: "system"`, key `content`) or in a `SKILL.md` file (chapter 14). You load it every run. You do not treat it as a fact row. Lab 2 keeps `You add numbers. Show each step.` in system `content` only.
-
-Lab 2 is `lab1_episodic_vs_procedural.py`. Functions: `save_fact`, `load_facts`, `route_query`. Two queries print which store they hit. Lab 2 does not POST.
-
-This file was moved from modules/14. Leftover notes from old 01/03 folders live here. The four names did not change.
-
-`OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. Memory writes do not require a POST. A POST happens only when you ask the model to use a loaded fact.
+We define four distinct memory layers:
+1. **Working Memory**: The ephemeral `messages` list currently in RAM sent in the immediate model request. Cleared when the process ends.
+2. **Short-Term / Session Memory**: Conversation history for a specific ongoing session, persisted to disk (e.g. `messages.json` or SQLite `checkpoints.db` tagged by `thread_id`).
+3. **Long-Term / Episodic Memory**: Discrete facts and user preferences that survive across sessions (e.g. `{ "key": "preferred_name", "value": "Ada" }`), stored in a persistent database or facts file.
+4. **Procedural Memory**: Behavioral instructions on *how* tasks must be executed (e.g. the system prompt instructions or a `SKILL.md` file), loaded on every run.
 
 ## Information
-Do not put all four stores in one file. A bug in the session JSON is not a bug in the fact table. A bad system prompt is not a missing episodic row.
-
-The session file is not long-term memory. If you only `json.dump` the `messages` list, a new session with a new path or a new `thread_id` will not see last week's facts.
-
-Episodic means "what happened" or "what is true about this user or project": a key/value you can look up later. Procedural means "how we do this job": the steps in the system prompt or in `SKILL.md`.
-
-Vector RAG (`02_private_rag.md`, `lab2_local_private_rag.py`) is one way to store long-term text. It is not the only way. A SQLite table of `{ "key", "value" }` is enough to prove cross-session facts. Lab 2 uses `facts.json`.
+Separating memory into four distinct stores prevents architectural confusion:
+- **Procedural rules** describe workflow steps (e.g. "Always validate input before processing"). They belong in system prompts, not individual fact rows.
+- **Episodic facts** describe specific data points learned from interactions (e.g. "User prefers dark mode"). They are retrieved and injected into working memory when relevant.
 
 ## Knowledge
-1. Decide which store the item belongs in before you write.
-2. Working: append to `messages` and POST. Do not open a DB for one turn.
-3. Short-term: `json.dump` / `json.load` or `save_checkpoint` / `load_latest_checkpoint` from chapter 05. Same session only.
-4. Long-term / episodic: INSERT a fact row `{ "key": "string", "value": "string" }`. On a later run, SELECT (or embed-and-query) and prepend matching values into `messages`.
-5. Procedural: edit the system `content` string or a `SKILL.md`. Load it as the first message every run. Do not INSERT it as a fact.
-6. Write and read that store only. Do not merge the four into one class on this page.
+Here is the step-by-step procedure:
+1. Categorize incoming information into the appropriate memory tier before writing.
+2. Store cross-session facts in an episodic repository (`facts.json` or a relational table).
+3. Maintain procedural guidelines in system prompts or skill definition documents.
+4. Implement a routing query function `route_query(query, facts, procedural_content)` to fetch information from the correct memory store based on intent.
 
 ## Wisdom
-A JSON session file is enough until a fact must survive a new session. Then add one fact table (or one vector collection). Do not add all four stores, a skill loader, and RAG in the same script. If you do, you will not know which store a missing fact came from.
+Keeping memory stores modular makes debugging easy. A corrupt fact entry won't break your procedural prompt, and a new session ID cleanly resets short-term memory without losing long-term user preferences.
 
 ## The When and Why
-- **When:** a fact must survive a new session, or you need to separate "what happened" from "how we do the job".
-- **Why:** the session file is not long-term memory. The system prompt is not a fact row. Mixing them hides which store failed.
+- **When**: Use tiered memory when building personalized assistants, long-lived autonomous agents, or multi-session workflows.
+- **Why**: Bundling all history and instructions into a single prompt is expensive and brittle. Categorizing memory ensures facts survive across sessions while maintaining lean working context.
 
 ## How it works
 

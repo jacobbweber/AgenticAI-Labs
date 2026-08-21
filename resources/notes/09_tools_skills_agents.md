@@ -1,8 +1,8 @@
-# Concrete Boundaries: Tool vs Skill vs Agent
+# Concrete Boundaries: Tools vs Skills vs Agents
 
-In AI systems development, the terms **Tool**, **Skill**, and **Agent** are frequently conflated. Framework marketing treats them as interchangeable levels of "smartness". In systems engineering, they are three distinct architectural primitives with fundamentally different runtime footprints, execution engines, state lifecycles, and interface contracts.
+When learning about AI architectures, the terms **Tool**, **Skill**, and **Agent** are often used interchangeably. Understanding the clear distinction between them helps you design systems that are fast, cost-effective, and easy to maintain.
 
-Conflating these primitives leads to bloated context windows, unbounded latency, and brittle orchestration graphs.
+In systems engineering, these are three distinct architectural building blocks with different purposes, execution lifecycles, and context costs.
 
 ---
 
@@ -10,14 +10,14 @@ Conflating these primitives leads to bloated context windows, unbounded latency,
 
 | Dimension | Tool | Skill | Agent |
 |---|---|---|---|
-| **Literal Nature** | A deterministic function pointer paired with a JSON schema descriptor. | A structured text recipe (`SKILL.md`) or a composite wrapper script. | An independent execution process running a bounded `while` turn loop. |
-| **Execution Engine** | Host Python runtime (synchronous / asynchronous function call). | Model prompt processor (interprets text guidelines) or child script wrapper. | Autonomous Turn Loop calling Model Process + Actuator Registry. |
-| **State Lifecycle** | Ephemeral: executes in milliseconds, retains no internal memory across calls. | Invariant: static markdown loaded into context on demand, or cached in prompt. | Stateful: manages an append-only `messages` array and writes to `state_store/session.json`. |
-| **Context Impact** | Low: consumes ~50–150 tokens in `tools` schema parameter. | Medium: consumes ~500–2,000 tokens when injected into working context. | High / Isolated: owns its own independent context window; zero leakage to caller. |
-| **Failure Handling** | Returns error JSON or raises Python exception back to caller. | Model self-corrects via prompt instructions or fails silently. | Evaluates error, triggers Reflexion / Replanning, or escalates to supervisor. |
-| **Autonomy Level** | Zero: strictly passive, executes only when directly invoked with exact arguments. | Low / Guided: provides procedural constraints to direct model behavior. | High: decides which tools to invoke, sequences steps, and determines when done. |
-| **Transport / Wire** | In-process Python function call or local IPC. | File read (`pathlib.Path.read_text()`) injected into `system` or `user` message. | HTTP REST API, Unix domain socket, or stdio message protocol. |
-| **Scope** | Single atomic operation (e.g., read file, execute SQL, compute hash). | Standard Operating Procedure (e.g., how to diagnose a network timeout). | End-to-end goal pursuit (e.g., resolve customer incident #482). |
+| **What it is** | A deterministic Python function paired with a JSON schema descriptor. | A structured text guide (`SKILL.md`) or a composite wrapper script. | An independent execution process running a bounded `while` turn loop. |
+| **How it runs** | Host Python runtime (synchronous / asynchronous function call). | Model prompt processor (interprets text guidelines) or child script wrapper. | Autonomous Turn Loop calling Model Process + Actuator Registry. |
+| **State & Memory** | Ephemeral: executes in milliseconds, retains no internal memory across calls. | Invariant: static markdown loaded into context on demand, or cached in prompt. | Stateful: manages an append-only `messages` array and writes to `state_store/session.json`. |
+| **Context Window Cost** | Low: consumes ~50–150 tokens in the `tools` schema parameter. | Medium: consumes ~500–2,000 tokens when injected into working context. | High / Isolated: owns its own independent context window with zero leakage to the caller. |
+| **Handling Errors** | Returns an error dictionary or raises a Python exception back to the caller. | Model self-corrects using prompt instructions or asks for clarification. | Evaluates the error, triggers reflection / replanning, or escalates to a supervisor. |
+| **Autonomy Level** | Low: executes only when directly called with explicit arguments. | Guided: provides procedural rules to help the model make better decisions. | High: chooses which tools to invoke, sequences steps, and decides when the task is complete. |
+| **Communication Transport** | In-process Python function call or local IPC. | File read (`pathlib.Path.read_text()`) injected into a `system` or `user` message. | HTTP REST API, Unix domain socket, or standard I/O message protocol. |
+| **Typical Scope** | Single atomic operation (e.g. read a file, query SQL, calculate a hash). | Standard Operating Procedure (e.g. how to diagnose a network timeout). | End-to-end goal pursuit (e.g. investigate and resolve an open incident). |
 
 ---
 

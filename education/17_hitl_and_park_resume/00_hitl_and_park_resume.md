@@ -1,31 +1,38 @@
-# 17: Human-in-the-Loop and Park/Resume
+# 17: Human-in-the-Loop & State Parking: Pausing and Resuming High-Risk Workflows
 
-Pause execution before high-risk actions to await human approval, and persist state so long-running workflows can resume asynchronously across processes.
+By the end of this chapter, you will understand how to build resilient Human-in-the-Loop (HITL) approval gates that pause execution before destructive actions, park serialized state safely to persistent storage, and resume execution asynchronously once a human decision is received.
+
+Real-world production agents frequently interact with irreversible systems—such as dropping database columns, making financial payments, or deploying code.
 
 ## Data
-A **human approval gate** intercepts dangerous or irreversible tool calls (e.g. deleting files, sending financial transactions, deploying code) and requires explicit confirmation (`"needs_approval": true`).
-**Park state** is a serialized snapshot of an in-progress agent execution stored in a persistent database or JSON file when an interactive gate is reached or an external asynchronous dependency is pending.
-**Resume** reloads the serialized snapshot by session ID or job ID, injects the user's approval or rejection decision into the message history, and continues execution from the exact point of suspension.
-The labs in this chapter are `lab1_hitl_approval.py` and `lab2_park_and_resume.py`.
+We define three core concepts in the HITL lifecycle:
+1. **Approval Gate**: Intercepts high-risk tool actions (e.g. `apply_db_migration`), halting immediate execution and generating structured approval payloads (`sdui_frame` / `HITLApprovalModal`).
+2. **Parked State Snapshot**: The serialized execution state (session ID, message history, current turn, pending action payload) persisted to disk or a database with status `PARKED_AWAITING_APPROVAL`.
+3. **Resume Worker**: Reads the parked checkpoint by ID, injects the user's human decision (`APPROVED` or `REJECTED`), executes the authorized tool, and resumes the conversation loop.
 
 ## Information
-Autonomous agents operating in production environments require safety boundaries. Rather than allowing unrestricted actuator access, high-impact tools trigger an execution halt.
-Because human reviews may take minutes or days, the runtime process cannot simply block synchronously in memory. The agent parks its execution state to persistent storage and terminates or yields the thread. When approval arrives via web UI or CLI, a worker process resumes the state and completes the turn.
+Human reviews take time—ranging from seconds in an interactive chat to hours or days across email or incident queues.
+
+Keeping long-lived synchronous HTTP connections open or holding state in memory while waiting for human input is brittle and resource-intensive:
+- Connections time out, servers restart, and worker threads are starved.
+- **State Parking** decouples execution time from review latency. The agent safely writes its state to persistent storage and releases server memory.
+- When an operator approves or rejects the action via CLI or Webhook, a worker hydrates the snapshot and continues execution without data loss.
 
 ## Knowledge
-1. Define a tool permission tier with a `requires_human_approval` flag in the tool registry.
-2. In the dispatch loop, check whether a requested tool call requires approval before invoking the function.
-3. If approval is required, construct an approval request payload with tool name, arguments, and risk explanation.
-4. Serialize the current execution state (`messages`, turn index, pending action) to disk/database with status `PARKED_WAITING_APPROVAL`.
-5. When the user approves or rejects the action, load the parked state, record the human decision, and invoke or skip the tool.
-6. Continue the execution loop to produce the final response.
+Here is the step-by-step procedure:
+1. Tag destructive tools as `is_high_risk = True`.
+2. Before invoking an actuator, evaluate risk via `execute_action_with_hitl_gate()`.
+3. If high risk, generate a unique `approval_id`, persist a checkpoint with status `PAUSED_AWAITING_APPROVAL`, and emit an approval UI frame.
+4. Yield execution without running the underlying tool.
+5. When the operator submits a decision, invoke `resume_agent_execution(approval_id, decision)`.
+6. If `APPROVED`, execute the action and record the result; if `REJECTED`, record user feedback and cancel the operation.
 
 ## Wisdom
-Use human approval gates selectively on irreversible operations. Over-gating trivial read operations creates user friction and defeats the purpose of automation; under-gating destructive operations exposes systems to catastrophic errors.
+Reserve human gates for truly dangerous or irreversible side effects. Over-gating routine read actions causes operator fatigue, while under-gating destructive operations invites system outages.
 
 ## The When and Why
-- **When:** the agent is about to execute irreversible side effects (database writes, deletions, financial charges, external API modifications) or long-running tasks requiring human oversight.
-- **Why:** synchronous blocking crashes on timeouts and consumes server resources; park/resume ensures durable resilience across process boundaries.
+- **When**: High-impact, irreversible actions (database schema migrations, file deletions, payment processing, DNS updates).
+- **Why**: Synchronous blocking fails across process restarts and network timeouts. State parking enables durable, asynchronous human review.
 
 ## How it works
 

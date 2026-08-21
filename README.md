@@ -1,16 +1,18 @@
-# Script to Agent
+# Script to Agent: Learn to Build AI Agents from First Principles
 
-Hands-on course for building AI agents from ordinary scripts. Open the repo root in an AI IDE (Cursor, Claude Code, Antigravity) and work one chapter at a time.
+Welcome to **Script to Agent**! This is a hands-on, learn-by-building curriculum that guides you through creating robust AI agents starting from simple, standard Python scripts. 
 
-The markdown is the course. The Python is what you and the IDE write.
+Open this repository in your preferred AI IDE (such as Cursor, Claude Code, Antigravity, or VS Code) and work through one chapter at a time. The markdown files provide the concepts and assignments, while you and your assistant write and test the Python code.
 
-New here? Start at [`getting_started/`](./getting_started/). You can do these labs on a tiny laptop model. Answers will vary. The concepts do not.
+If you are new to Python or local AI models, start with our [Getting Started Guide](./getting_started/). You can complete every lab using a small model on an everyday laptop!
 
-## How to use it
+---
 
-1. Read [`getting_started/README.md`](./getting_started/README.md). Install Python, pick a model, start Ollama or set a cloud key.
-2. Clone the repo (or download the ZIP). Open the repo root so the IDE reads `AGENTS.md`.
-3. Copy the env template. Uncomment one provider and fill it in:
+## How a Learning Session Works
+
+1. **Set Up Your Environment**: Follow [`getting_started/README.md`](./getting_started/README.md) to install Python, choose a model, and start Ollama or configure a cloud API key.
+2. **Open the Repository**: Open the repository root folder in your IDE so that project instructions (`AGENTS.md`) are automatically recognized.
+3. **Configure Your Settings**: Copy `.env.example` to `.env` and uncomment the settings for your chosen provider:
 
 ```bash
 cp .env.example .env
@@ -20,29 +22,29 @@ cp .env.example .env
 copy .env.example .env
 ```
 
-4. Start at `education/00_atoms/`.
-5. Read the module `.md`. Then open the `labN_*.md` brief.
-6. Write the `labN_*.py` with the IDE, or write it yourself and have the IDE check it.
-7. Run the script. Put real output under **Notes** in the lab brief.
-8. Go to the next numbered folder.
+4. **Navigate to Chapter 00**: Start at [`education/00_atoms/`](./education/00_atoms/).
+5. **Read the Concept Module**: Read the module file (`00_*.md`) first to understand the *When*, the *Why*, and the data contract.
+6. **Review the Lab Brief**: Open the lab brief (`labN_*.md`). This document is your complete assignment.
+7. **Write and Test Your Code**: Write `labN_*.py` alongside the brief and run it from your terminal. Record real output or observations under the **Notes** section of the brief.
+8. **Move Forward**: Once your script runs successfully, proceed to the next chapter!
 
-That is the whole workflow.
+---
 
-## The 20-Stage Progressive Hierarchy (7 Tiers)
+## The 20-Stage Progressive Curriculum (7 Tiers)
 
-The curriculum is organized into a 20-stage cognitive progression across 7 tiers, taking you from raw network calls to full multi-agent enterprise synthesis:
+The curriculum takes you on a structured progression from raw network sockets to autonomous enterprise systems:
 
-1. **Tier 1: The Wire & Protocol** (`00_atoms`, `01_the_call`, `02_the_contract`)
-2. **Tier 2: The Core Loop & Kernel** (`03_the_dispatcher`, `04_the_loop`, `05_the_budget`, `06_the_reliability`)
-3. **Tier 3: Persistence & Memory** (`07_the_state`, `08_context_compaction`, `09_agentic_memory_and_rag`)
-4. **Tier 4: Control Flows & Reasoning** (`10_the_workflow`, `11_planning_and_reflection`, `12_agent_evals`)
-5. **Tier 5: Coordination & Protocols** (`13_one_agent`, `14_two_agents`, `15_mcp_and_skills`)
-6. **Tier 6: Security, Governance & Production Runtime** (`16_the_shield`, `17_hitl_and_park_resume`, `18_the_job`, `19_the_front_door`)
-7. **Tier 7: Full System Synthesis** (`20_synthesis`)
+1. **Tier 1: The Wire & Protocol** (`00_atoms`, `01_the_call`, `02_the_contract`): Making raw HTTP POST calls, building wrappers, streaming tokens, and validating structured JSON.
+2. **Tier 2: The Core Loop & Kernel** (`03_the_dispatcher`, `04_the_loop`, `05_the_budget`, `06_the_reliability`): Dispatching tools, running ReAct loops, managing execution budgets, and building resilient gateways.
+3. **Tier 3: Persistence & Memory** (`07_the_state`, `08_context_compaction`, `09_agentic_memory_and_rag`): Persisting state to SQLite/JSON, compacting context windows, and implementing private local RAG.
+4. **Tier 4: Control Flows & Reasoning** (`10_the_workflow`, `11_planning_and_reflection`, `12_agent_evals`): Deterministic DAG pipelines, Plan-and-Solve patterns, Reflexion retry loops, and automated evaluations.
+5. **Tier 5: Coordination & Standards** (`13_one_agent`, `14_two_agents`, `15_mcp_and_skills`): Standalone agent kernels, multi-agent supervisor topologies, 5-key handoffs, MCP, and dynamic markdown skills.
+6. **Tier 6: Security, Governance & Production Runtime** (`16_the_shield`, `17_hitl_and_park_resume`, `18_the_job`, `19_the_front_door`): Subprocess sandboxes, RBAC permissions, Human-In-The-Loop gates, background job tables, and FastAPI SSE streaming.
+7. **Tier 7: Full System Synthesis** (`20_synthesis`): Composing all primitives into full enterprise autonomous harnesses, SRE agents, and spec-driven TDD loops.
 
-Auxiliary Training Path: [`optional_training/`](./education/optional_training/) (Pretraining, LoRA/QLoRA fine-tune, GGUF quantization, GRPO preference alignment).
+**Auxiliary Training Path**: Explore [`optional_training/`](./education/optional_training/) to learn model pretraining, LoRA fine-tuning, 4-bit GGUF quantization, and GRPO alignment.
 
-For full navigation, see [`education/PATH.md`](./education/PATH.md).
+For full course navigation, see the [Curriculum Path Map](./education/PATH.md).
 
 ## Start from scratch
 

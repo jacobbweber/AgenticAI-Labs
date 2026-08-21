@@ -1,35 +1,36 @@
-# Pick a model
+# How to Pick a Model That Fits Your Computer
 
-A model is a file of numbers. Bigger files usually give smarter answers and need more memory. Smaller files run on almost anything.
+An AI model is simply a file of numbers stored on your computer. As a general rule, larger model files produce more detailed or intelligent answers, but they also require more memory to run. Smaller model files can run smoothly on almost any computer.
 
-You can do every lab with a small model. Expect slower replies and weaker wording. The JSON still comes back. That is what the labs check.
+You can complete every lab in this course using a small model. While smaller models might give shorter answers or generate text a little more slowly, they will still return valid JSON responses. Testing how your code handles those responses is what these labs are all about.
 
-Ollama and LM Studio store models in a compressed form (often called Q4). The table below assumes that. If a download fails with "out of memory", pick the row above it.
+Tools like Ollama and LM Studio store models in a compressed format (often labeled as **Q4**). The recommendations below are based on those standard compressed sizes. If a download ever fails with an "out of memory" error, simply choose a model from a row higher up in the table.
 
-## A simple rule
+## A Simple Memory Rule
 
-Leave a few GB free for the operating system. If the model file is 3 GB, you want about 6 GB of free RAM or VRAM so the prompt has room.
+Always leave a few gigabytes (GB) of memory free for your operating system and open apps. For example, if a model file is 3 GB in size, you will want around 6 GB of available RAM or VRAM so there is plenty of room to process text prompts.
 
-- **RAM** is the memory your laptop already has. Models can run on the CPU using RAM. They will be slow. They still work.
-- **VRAM** is memory on a video card. If you have a GPU, the model runs much faster there.
-- **Unified memory** (Apple Silicon, some other machines) is one pool the CPU and GPU share. A 128 GB Mac can hold a large model.
+Here is a quick refresher on computer memory types:
+- **System RAM**: This is the regular memory built into your laptop or desktop. Models can run directly on your CPU using system RAM. They will run a bit slower, but they work just fine for learning.
+- **VRAM (Video RAM)**: This is dedicated memory on a graphics card (GPU). If your computer has a dedicated GPU, models will run much faster.
+- **Unified Memory**: Found on modern Macs (Apple Silicon) and some newer PCs, unified memory is shared between the CPU and GPU. A Mac with plenty of unified memory can run large models with ease.
 
-## What to pick
+## Recommended Starting Models
 
-| Your machine | Try this first (Ollama name) | About how much memory | What to expect |
+| Your Computer Setup | Recommended First Model (Ollama Name) | Approximate Memory Needed | What to Expect |
 |---|---|---|---|
-| 8 GB laptop, no GPU | `llama3.2:1b` or `qwen2.5:0.5b` | 1 to 2 GB | Slow. Short answers. Fine for chapters 00 to 04. |
-| 16 GB laptop, no GPU | `llama3.2:3b` or `qwen2.5:3b` | 2 to 4 GB | Usable. Still weak on tools and long JSON. |
-| 8 to 12 GB video card (RTX 3060 / 4060 class) | `qwen2.5:7b` or `llama3.1:8b` | 5 to 8 GB VRAM | Fast enough to feel like chat. Good through most chapters. |
-| 16 to 24 GB video card | `qwen2.5:14b` or `qwen2.5:32b` | 10 to 24 GB VRAM | Stronger JSON and tool calls. |
-| 64 GB unified memory | `qwen2.5:32b` or a 70B Q4 | 20 to 48 GB | Comfortable for the whole path. |
-| 128 GB unified memory | `qwen3.6:35b-a3b-65k` (course default) or a 70B Q4/Q5 | 35 to 50 GB | This is the machine the course notes were written on. |
+| 8 GB laptop (no dedicated GPU) | `llama3.2:1b` or `qwen2.5:0.5b` | 1 to 2 GB | Slower speeds and brief answers, but works well for Chapters 00 through 04. |
+| 16 GB laptop (no dedicated GPU) | `llama3.2:3b` or `qwen2.5:3b` | 2 to 4 GB | Comfortable speed for learning; may occasionally struggle with complex JSON. |
+| 8 to 12 GB dedicated GPU (RTX 3060 / 4060 class) | `qwen2.5:7b` or `llama3.1:8b` | 5 to 8 GB VRAM | Fast, interactive speeds. Great for working through almost all chapters. |
+| 16 to 24 GB dedicated GPU | `qwen2.5:14b` or `qwen2.5:32b` | 10 to 24 GB VRAM | Excellent quality for structured JSON output and tool calling. |
+| 64 GB unified memory (Mac / PC) | `qwen2.5:32b` or a 70B Q4 | 20 to 48 GB | Very smooth performance across the entire curriculum. |
+| 128 GB unified memory | `qwen3.6:35b-a3b-65k` (Course Default) or 70B Q4/Q5 | 35 to 50 GB | High performance with extended context capacity. |
 
-Those Ollama names are starting points. In LM Studio, search the same family and pick a **Q4** file that is smaller than your free memory.
+These names are convenient starting points for Ollama. If you prefer LM Studio, search for the same model family and select a **Q4** quantized file that comfortably fits your available memory.
 
-## Set the name so labs use it
+## Configuring the Model in Your Environment
 
-From the repo root, copy the template and uncomment one provider. Put the model name on `OLLAMA_MODEL` (or the cloud model var).
+To let the lab scripts know which model to use, copy the environment template from the repository root and uncomment your chosen provider:
 
 ```bash
 cp .env.example .env
@@ -39,18 +40,19 @@ cp .env.example .env
 copy .env.example .env
 ```
 
-Labs read that file. They do not care how famous the model is. If `.env` is missing, they fall back to `http://127.0.0.1:11434` and `llama3.2:1b`.
+Set the `OLLAMA_MODEL` variable (or your cloud model variable) to your chosen model name. The lab scripts read this configuration automatically. If `.env` is not found, the labs default to `http://127.0.0.1:11434` with `llama3.2:1b`.
 
-Do not commit `.env`.
+> **Reminder**: Keep `.env` on your local machine and do not commit it to git.
 
-## If the model is "dumb"
+## What if My Small Model Makes Mistakes?
 
-Keep going. A 1B model can still:
+Don't worry—keep going! Even a compact 1B model is fully capable of:
+- Returning text inside the `response` field.
+- Formatting JSON keys that your script can read and print.
+- Calling a straightforward tool when given a simple instruction (like *"What is 2 plus 3? Use the calculator tool."*).
 
-- Return a string in `response`
-- Return keys you can print
-- Call a simple tool if you keep the prompt tiny (`What is 2 plus 3? Use the tool.`)
+Small models might occasionally struggle with complicated multi-step reasoning or large JSON schemas. When that happens, simply note the behavior under the **Notes** section of your lab brief. You do not need to switch chapters or buy expensive cloud credits—the underlying code and architectural concepts remain identical!
 
-It may fail at long JSON or multi-step plans. Write that under **Notes** in the lab. Do not switch chapters. Do not add a smarter API to "fix" a small model. The concept is the same.
+---
 
-Next: [install Ollama or LM Studio](./02_ollama_and_lmstudio.md), or [use a cloud key](./03_cloud_apis.md).
+**Next Steps**: [Install Ollama or LM Studio](./02_ollama_and_lmstudio.md), or [configure a cloud API key](./03_cloud_apis.md).

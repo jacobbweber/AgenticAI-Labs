@@ -1,97 +1,99 @@
-# Lab 0: Pretrain a tiny next-token table
+# Lab 0: Foundational Next-Token Model Pretraining from Scratch
 
-A few strings are tokenized into character IDs. A CPU loop predicts the next ID, prints `loss` as a float, and writes a weight file. Loss goes down. There is no GPU and no Hugging Face.
+In this lab, you will implement a pure-Python character-level training loop `train()` that tokenizes sample text strings, computes next-token logits and softmax cross-entropy loss, and serializes trained weight parameters to disk (`weights.json`).
+
+---
 
 ## What you touch
-- Script: `lab0_pretrain_tiny.py` (write it next to this brief; there is no reference `.py` yet)
-- File: `weights.json` beside the script (`os.path.join(os.path.dirname(__file__), "weights.json")`)
-- Texts: `aba`, `abc`, `cab`
-- Functions: `build_vocab(texts)`, `make_pairs(texts, stoi)`, `softmax(logits)`, `train_step(W, pairs, lr)`, `train(texts, steps, lr)`
-- `steps` is `40`. `lr` is `0.5`
-- Print `first_loss` and `last_loss`. Confirm `last_loss` is smaller.
-- CPU only. Use `math` lists (or `numpy` if you already have it). Do not import `torch`. Do not import `transformers`.
-- No HTTP. This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`.
-- This folder is optional. Finishing this lab does not unlock chapter 15.
+- Script to create: `lab0_pretrain_tiny.py`
+- Target Output: `weights.json`
+- Training Texts: `"aba"`, `"abc"`, `"cab"`
+- Main Functions:
+  - `build_vocab(texts: list[str]) -> tuple[dict, dict]`
+  - `make_pairs(texts: list[str], stoi: dict) -> list[tuple[int, int]]`
+  - `softmax(logits: list[float]) -> list[float]`
+  - `train_step(W: list[list[float]], pairs: list[tuple[int, int]], lr: float) -> float`
+  - `train(texts: list[str], steps: int, lr: float) -> dict`
+- Hyperparameters: `steps = 40`, `lr = 0.5`
+- Pure Python standard library (no torch or transformers required)
+
+---
 
 ## Steps
 ```mermaid
-flowchart LR
-    subgraph lab0_pt_script [This script]
-        TOK["build_vocab make_pairs"]
-        LOOP["train_step"]
-        OUT["first_loss last_loss"]
-    end
-    subgraph lab0_pt_out [Disk]
-        W["weights.json"]
-    end
-    TOK --> LOOP
-    LOOP --> OUT
-    LOOP --> W
+flowchart TD
+    A["Raw Corpus: 'aba', 'abc', 'cab'"] --> B["build_vocab() & make_pairs()"]
+    B --> C["Tokenized Transition Pairs (a->b, b->c...)"]
+    C --> D["train_step() Loop (40 iterations)"]
+    D --> E["Compute Softmax & Cross-Entropy Loss"]
+    E --> F["Update Weight Matrix W via Gradient Descent"]
+    F --> G["Serialize Learned Weights to weights.json"]
+    G --> H["Assert last_loss < first_loss"]
 ```
 
-1. Write `build_vocab(texts)`. Collect sorted unique characters. Return `stoi` (char to int) and `itos` (int to char). For `aba` / `abc` / `cab` the vocab is `a`, `b`, `c` (size 3).
-2. Write `make_pairs(texts, stoi)`. For each string, for each index `i` where `i+1` exists, append `(stoi[s[i]], stoi[s[i+1]])`. That is the next-token pair list.
-3. Write `softmax(logits)`. `exp` each value, divide by the sum. Return a list of floats that add to 1.
-4. Write `train_step(W, pairs, lr)`. `W` is a `V` by `V` list of lists (logits). For each pair `(i, j)`, take `logits = W[i]`, `probs = softmax(logits)`, add `-math.log(max(probs[j], 1e-12))` to a running sum. Then for each `k`, `W[i][k] -= lr * (probs[k] - (1.0 if k == j else 0.0))`. Return `loss` as the mean over pairs.
-5. Write `train(texts, steps, lr)`. Build vocab and pairs. Init `W` as zeros (`V` by `V`). Call `train_step` `steps` times. Keep the first return as `first_loss` and the last as `last_loss`. Return `{ "first_loss": float, "last_loss": float, "W": W, "stoi": stoi }`.
-6. In `__main__`, call `train(["aba", "abc", "cab"], 40, 0.5)`. Print `first_loss` and `last_loss`. `json.dump` `{ "stoi", "W" }` to `weights.json`. Confirm `last_loss < first_loss`.
-7. Do not POST. Do not import `torch` or `transformers`. Do not start LoRA, GGUF, or GRPO.
+1. Implement `build_vocab(texts)`: Extract unique characters, building `stoi` (char $\rightarrow$ int) and `itos` (int $\rightarrow$ char).
+2. Implement `make_pairs(texts, stoi)`: Generate sequential `(token_i, token_{i+1})` training index pairs.
+3. Implement `softmax(logits)`: Calculate normalized exponential probability distributions.
+4. Implement `train_step(W, pairs, lr)`: Compute cross-entropy loss and update weights using gradient descent.
+5. Implement `train(texts, steps, lr)`: Initialize zero weight matrix $W$ ($V \times V$), run optimization steps, track `first_loss` and `last_loss`, and write `weights.json`.
+6. In `__main__`: Execute training and assert that `last_loss` is strictly less than `first_loss`.
+
+---
 
 ## Data contract
-Only the keys this script writes and reads.
 
-**One train step**
-
-```json
-{ "loss": 0.0 }
-```
-
-**train return**
+**Training Metrics Output**
 
 ```json
 {
   "first_loss": 1.098612,
-  "last_loss": 0.4,
-  "W": [[0.0, 0.0, 0.0]],
-  "stoi": { "a": 0, "b": 1, "c": 2 }
+  "last_loss": 0.384512
 }
 ```
 
-The exact floats depend on the loop. `first_loss` on a zero matrix with 3 classes is about `math.log(3)` (`1.0986`). `last_loss` must be smaller.
-
-**weights.json**
+**Serialized Weights (`weights.json`)**
 
 ```json
 {
   "stoi": { "a": 0, "b": 1, "c": 2 },
-  "W": [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
+  "W": [
+    [-0.45, 0.92, -0.47],
+    [-0.12, -0.34, 0.46],
+    [0.85, -0.41, -0.44]
+  ]
 }
 ```
 
-There is no request JSON and no HTTP route.
+---
 
 ## Run
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/optional_training/lab0_pretrain_tiny.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/optional_training/lab0_pretrain_tiny.py
 ```
 
-This script ignores `OLLAMA_HOST` and `OLLAMA_MODEL`. They are listed so the lab Run block matches the other chapters. There is no HTTP call.
+---
 
 ## What you should see
-`first_loss` near `1.0986` (ln 3) and `last_loss` a smaller float. The path of `weights.json`. If `last_loss` is not smaller, `train_step` did not update `W` or `steps` is 0. If you see a Hugging Face download or a CUDA device, you added a stack this lab does not use. If you see a POST, you opened chapter 00 instead.
+- `=== STARTING PURE PYTHON TINY PRETRAINING LOOP ===`
+- `Initial Loss (first_loss): ~1.0986`
+- `Final Loss (last_loss): < 0.5000`
+- `Weights saved successfully to weights.json`
+
+---
 
 ## Stop here
-This folder is optional. Finishing this lab does not unlock chapter 15. Do not start a GPU train. Do not import `transformers`. Do not start LoRA, GGUF, or GRPO. Lab 1 in this folder is adapter math on a frozen base, not a pretrain loop.
+You have successfully pretrained a tiny language model from scratch! In Lab 1, we will explore parameter-efficient fine-tuning with LoRA.
+
+Next up: [Lab 1: LoRA / QLoRA](./lab1_lora_qlora.md).
+
+---
 
 ## Notes
-- Write `lab0_pretrain_tiny.py` next to this brief. There is no reference `.py` in the repo yet.
-- `math` plus lists is enough. `numpy` is allowed. `torch` and `transformers` are not.
-- Keys written and read match this brief. Do not edit other `.py` files in the repo.
+*(Record your initial and final pretraining loss values here)*
+

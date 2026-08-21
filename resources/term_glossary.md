@@ -1,10 +1,10 @@
-# Terms
+# Terminology Glossary: Plain-English Definitions for Agentic Concepts
 
-Optional lookup. Short definitions for words used in the chapters.
+Welcome to the course glossary! This reference guide translates popular AI buzzwords into clear, concrete software engineering concepts.
 
-For a mapping that matches the labs (hosts and files, not staff names), see [notes/](./notes/).
+Use this page whenever you encounter an unfamiliar term. It breaks down complex ideas into plain language and shows how each concept connects to standard software architecture and code objects built in our labs.
 
-It demystifies industry marketing jargon into exact computer science and software engineering terms, making it easy to understand what technologies *actually are*, how they differ, and where they fit into real-world software architecture.
+For a direct mapping between common terms and the specific files or ports in this repository, see the [Notes Index](./notes/).
 
 ---
 

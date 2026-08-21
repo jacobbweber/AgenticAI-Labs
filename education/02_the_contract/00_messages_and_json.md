@@ -1,38 +1,37 @@
-# 02: The Contract
+# 02: The Contract: Messages Arrays and Structured JSON Output
 
-After this chapter you send `messages[]` with roles and you ask the model for JSON you can `json.loads`. Chapter 01 returned a string from `query_llm`. This chapter names the shape of that string.
+By the end of this chapter, you will structure your model interactions using the industry-standard `messages` array format and enforce predictable, machine-readable JSON responses that can be safely parsed with `json.loads()`.
+
+In Chapter 01, our wrapper function returned unstructured text strings. In this chapter, we establish a formal communication contract between your application code and the AI model.
 
 ## Data
-The route changes. Chapter 00 and 01 used `POST /api/generate` with a single key `prompt`. This chapter uses `POST /api/chat` (Ollama native) or `POST /v1/chat/completions` (OpenAI-style). Both take a key named `messages`.
+We shift to the standard chat completions endpoint (`POST /api/chat` for Ollama or `POST /v1/chat/completions` for OpenAI-compatible APIs), replacing the single `prompt` string with a structured `messages` list.
 
-`messages` is a list. Each item is an object with two keys: `role` (a string) and `content` (a string). The roles used here are `system` (instructions for the whole call), `user` (this turn's request), and `assistant` (what the model said on a previous turn). The first call usually sends `system` plus `user` only.
+Each item in the `messages` list is a dictionary containing two keys:
+- `role`: Specifies who is speaking (`system` for instructions, `user` for the prompt, `assistant` for model replies, or `tool` for function results).
+- `content`: The text content of that specific turn.
 
-The host and model are still `OLLAMA_HOST` (default `http://192.168.1.29:11434`) and `OLLAMA_MODEL` (default `qwen3.6:35b-a3b-65k`). `stream` stays `false` in this chapter.
-
-The model text now lives at `message.content` (Ollama `/api/chat`) or `choices[0].message.content` (OpenAI-style). That content is a JSON string. You turn it into a Python dict with `json.loads`. Then you check the keys you declared, for example `intent` (string) and `confidence` (number).
-
-Ollama accepts an optional request key `format: "json"`. That asks the model to emit a JSON object. It is not a guarantee. You still parse and check keys.
+We also request structured output by setting `"format": "json"` in our request payload. The returned string at `message.content` is parsed into a native Python dictionary using `json.loads()`, and validated to ensure required fields (such as `intent` and `confidence`) are present with the correct data types.
 
 ## Information
-A message list is the conversation state. `system` is policy. `user` is the request. `assistant` is the last model turn. You send the list. The provider appends one assistant message. You read that message's `content`.
+Using the `messages` array allows you to maintain clean separation between global system behavior instructions and immediate user tasks. 
 
-Structured output means that `content` is JSON that matches a declared shape, not a paragraph. Downstream code reads keys. If a key is missing, that is a contract failure (`KeyError` or your own check). If the string is not JSON, that is `JSONDecodeError`. Both are louder than a regex on free text that silently matches the wrong span.
-
-This chapter does not add tools. `tools` and `tool_calls` are chapter 03.
+Enforcing structured JSON output ensures that downstream application code receives reliable key-value data rather than ambiguous text paragraphs. If a model omits a required field or returns invalid JSON, your application catches a clear `KeyError` or `JSONDecodeError` immediately, rather than failing silently.
 
 ## Knowledge
-1. Switch the POST from `{host}/api/generate` to `{host}/api/chat`. Drop `prompt`. Send `messages`.
-2. Put instructions in `{ "role": "system", "content": "..." }`. Put the task in `{ "role": "user", "content": "..." }`.
-3. Ask for a specific JSON object, for example `{ "intent": string, "confidence": number }`. You may send `format: "json"`.
-4. Read `data["message"]["content"]`. Run `json.loads` on that string. Reject the result if required keys are missing or the types are wrong. Print the dict. Exit non-zero on parse or key failure.
-5. Do not add Pydantic, CFG logit masking, a prompt compiler, or a tool list unless the brief says so.
+Here is the step-by-step implementation:
+1. Direct your HTTP POST request to `{OLLAMA_HOST}/api/chat`.
+2. Construct the `messages` array with a `system` instruction specifying exact JSON keys and a `user` prompt.
+3. Pass `"format": "json"` in your request payload to instruct the model to produce valid JSON.
+4. Extract `data["message"]["content"]` from the response.
+5. Parse the content string with `json.loads()` and validate the presence and types of your required keys.
 
 ## Wisdom
-A string plus `json.loads` plus a key check is enough for one script. Constrained sampling (Outlines, vLLM CFG, a JSON Schema the provider enforces) is for when an invalid object is expensive to retry. Prompt-injection firewalls and DSPy are not this chapter. If the next function only needs a paragraph, stay on chapter 01 and skip the parse.
+A clean JSON contract with simple dictionary validation is often all you need for reliable application logic. Resist adding heavy schema compilation frameworks or Pydantic models until your project grows in complexity.
 
 ## The When and Why
-- **When:** the next function needs fields, not a paragraph.
-- **Why:** regex on free text fails silently. A named JSON object fails at `KeyError` or `JSONDecodeError`. Roles exist so the instruction and the task are separate strings, not one concatenated `prompt`.
+- **When**: Use structured JSON whenever downstream code needs specific values (like categories, numbers, or boolean flags) rather than freeform text.
+- **Why**: Freeform text parsing with regular expressions is brittle and fails silently when wording changes. A strict JSON contract guarantees that missing or malformed fields raise immediate, actionable errors.
 
 ## How it works
 

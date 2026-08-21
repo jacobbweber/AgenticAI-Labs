@@ -1,60 +1,74 @@
-# Lab 2: Graph workflow
+# Lab 2: Building a State Graph with Conditional Back Edges
 
-A runner calls named nodes until an edge function returns `"finish"`. Each node name and each edge return is printed.
+In this lab, you will implement a state graph workflow runner `run_graph()` with conditional routing (`edge_after_tests()`) that loops between drafting, testing, and refactoring until tests pass or the retry budget is exhausted.
+
+---
 
 ## What you touch
-- Script: `lab2_graph_workflow.py` (write it next to this brief; there is no reference `.py` yet)
-- Nodes: `draft(state)`, `run_tests(state)`, `refactor(state)` each `dict -> dict`
-- Edge: `edge_after_tests(state, max_retries=3)` returns a string node name (`"refactor"` or `"finish"`)
-- Runner: `run_graph(state, max_retries=3)` looks up the next name and calls that function
-- State keys: `code` (string), `attempts` (int), `test_passed` (bool)
-- No HTTP. This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`.
-- No SQLite. No queue.
+- Script to create: `lab2_graph_workflow.py`
+- Node Functions: `draft(state)`, `run_tests(state)`, `refactor(state)` (each `dict -> dict`)
+- Conditional Edge: `edge_after_tests(state, max_retries=3) -> str` (returns `"refactor"` or `"finish"`)
+- Graph Runner: `run_graph(state, max_retries=3)`
+- Shared State Keys: `code` (str), `attempts` (int), `test_passed` (bool)
+- Pure Python logic (no network requests or database setup required)
+
+---
 
 ## Steps
 ```mermaid
 flowchart TD
-    subgraph lab2_graph_script [This script]
-        DRAFT["draft"]
-        TEST["run_tests"]
-        REF["refactor"]
-        DONE["finish"]
-    end
-    subgraph lab2_graph_edge [edge_after_tests]
-        EDGE["reads test_passed and attempts"]
-    end
-    DRAFT --> TEST
-    TEST --> EDGE
-    EDGE -->|"refactor"| REF
-    REF --> TEST
-    EDGE -->|"finish"| DONE
+    A["draft(state)"] --> B["run_tests(state)"]
+    B --> C["edge_after_tests()"]
+    C -->|"Returns 'refactor'"| D["refactor(state)"]
+    D --> B
+    C -->|"Returns 'finish'"| E["Workflow Complete"]
 ```
 
-1. Start `state = { "code": "", "attempts": 0, "test_passed": False }`.
-2. Write `draft`. Set `code` to `def calculate_total(price, tax): return price + tax` and `test_passed` to false. Return the dict.
-3. Write `run_tests`. Increment `attempts`. If `attempts < 2`, set `test_passed` false. Else set `test_passed` true. Return the dict.
-4. Write `refactor`. Replace `code` with a version that raises `ValueError` when `price < 0`. Return the dict.
-5. Write `edge_after_tests(state, max_retries=3)`. If `test_passed` is false and `attempts < max_retries`, return `"refactor"`. Else return `"finish"`. Do not call a node from this function.
-6. Write `run_graph`. Keep a dict of names to functions: `draft`, `run_tests`, `refactor`. Start at `"draft"`. After `draft`, go to `"run_tests"`. After `run_tests`, call `edge_after_tests` and jump to that name. After `refactor`, go to `"run_tests"`. Stop when the edge returns `"finish"` or `attempts` hits `max_retries`. Print each node name you call and each edge return.
-7. In `__main__`, call `run_graph` with the empty start dict. Do not open SQLite. Do not POST. Do not add a queue.
+1. Initialize `state = {"code": "", "attempts": 0, "test_passed": False}`.
+2. Implement `draft(state)`:
+   - Set `code` to `"def calculate_total(price, tax): return price + tax"`.
+   - Set `test_passed = False` and return `state`.
+3. Implement `run_tests(state)`:
+   - Increment `attempts += 1`.
+   - On attempt 1, set `test_passed = False`. On attempt 2+, set `test_passed = True`.
+   - Return `state`.
+4. Implement `refactor(state)`:
+   - Update `code` to include input validation:
+     `"def calculate_total(price, tax):\n    if price < 0:\n        raise ValueError('Price cannot be negative')\n    return price + tax"`.
+   - Return `state`.
+5. Implement `edge_after_tests(state, max_retries=3) -> str`:
+   - If `not state["test_passed"]` and `state["attempts"] < max_retries`, return `"refactor"`.
+   - Otherwise, return `"finish"`.
+6. Implement `run_graph(state, max_retries=3)`:
+   - Maintain node lookup registry: `{"draft": draft, "run_tests": run_tests, "refactor": refactor}`.
+   - Execute `"draft"`, then loop through `"run_tests"` and evaluate `edge_after_tests`.
+   - Print each node invocation and edge decision.
+7. In `__main__`, call `run_graph(state)` and verify the full retry-and-repair trace.
 
-These are the same nodes as chapter 07 lab 2. Only add the named edge.
+---
 
 ## Data contract
-Only the keys this script writes and reads.
 
-**State dict**
+**State Structure**
 
 ```json
-{ "code": "string", "attempts": 0, "test_passed": false }
+{
+  "code": "def calculate_total(price, tax):\n    if price < 0:\n        raise ValueError('Price cannot be negative')\n    return price + tax",
+  "attempts": 2,
+  "test_passed": true
+}
 ```
 
-**Edge return:** a string, `"refactor"` or `"finish"`. Not a URL. Not a JSON object.
+**Edge Routing Values**
 
-**Node signature:** `def node(state: dict) -> dict`.
+```text
+"refactor" | "finish"
+```
+
+---
 
 ## Run
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/10_the_workflow/lab2_graph_workflow.py
@@ -64,17 +78,27 @@ python education/10_the_workflow/lab2_graph_workflow.py
 python education/10_the_workflow/lab2_graph_workflow.py
 ```
 
-This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`. Do not set those vars for this lab. There is no HTTP call.
+---
 
 ## What you should see
-`draft`, then `run_tests`, then edge `refactor`, then `refactor`, then `run_tests`, then edge `finish`. `attempts` is 2 and `test_passed` is true. If the script never returns to `run_tests`, the edge did not return a node name. If you see a SQLite path or a queue, you opened the wrong lab.
+- Execution trace showing:
+  1. `[NODE: draft]`
+  2. `[NODE: run_tests] (Attempt 1 - FAIL)`
+  3. `[EDGE: edge_after_tests -> 'refactor']`
+  4. `[NODE: refactor]`
+  5. `[NODE: run_tests] (Attempt 2 - PASS)`
+  6. `[EDGE: edge_after_tests -> 'finish']`
+- Final state with `test_passed: true` and `attempts: 2`.
+
+---
 
 ## Stop here
-This is not a checkpointer. Do not add SQLite. Do not add a queue. Do not POST to the model. Next: [lab3_async_event_queue.md](./lab3_async_event_queue.md).
+You have successfully implemented a state graph with cyclic back edges! In Lab 3, we will build an asynchronous event-driven task queue.
+
+Next up: [Lab 3: Async Event Queue](./lab3_async_event_queue.md).
+
+---
 
 ## Notes
-- Write `lab2_graph_workflow.py` next to this brief. There is no reference `.py` in the repo yet.
-- Nodes update keys. The edge picks the next name. Do not put the branch inside `run_tests`.
-- Same nodes as [lab2_state_checkpointer.md](../07_the_state/lab2_state_checkpointer.md). Only add the named edge.
-- Keys written and read match this brief. Do not edit other `.py` files in the repo.
-- Human-approval gates are chapter 17.
+*(Record your state graph transition logs here)*
+

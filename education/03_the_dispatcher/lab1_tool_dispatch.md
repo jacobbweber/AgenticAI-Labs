@@ -1,54 +1,60 @@
-# Lab 1: Tool dispatch
+# Lab 1: Implementing a Local Tool Registry and Dispatcher
 
-One local function has run because the model asked for it in `tool_calls`, and a `role: tool` message is on the list.
+In this lab, you will provide an `add_numbers` function schema to the model, parse its `tool_calls` request, execute the Python function from a dictionary registry, and pass the computed result back as a `role: tool` message.
+
+---
 
 ## What you touch
-- Script you will write: `lab1_tool_dispatch.py`
-- URL / path: `{OLLAMA_HOST}/api/chat` (default `http://127.0.0.1:11434/api/chat`)
-- Registry: `TOOL_REGISTRY = {"add_numbers": add_numbers}`
-- Keys sent: `model`, `messages`, `tools`, `stream` (`false`)
-- Keys read: `message.tool_calls[0].function.name`, `message.tool_calls[0].function.arguments`
-- Message you append: `{ "role": "tool", "content": "<result string>" }`
+- Script to create: `lab1_tool_dispatch.py`
+- URL / Endpoint: `{OLLAMA_HOST}/api/chat` (defaults to `http://127.0.0.1:11434/api/chat`)
+- Registry Dictionary: `TOOL_REGISTRY = {"add_numbers": add_numbers}`
+- Request Keys: `model`, `messages`, `tools`, `stream` (`false`)
+- Response Keys Read: `message.tool_calls[0].function.name`, `message.tool_calls[0].function.arguments`
+- Appended Tool Message: `{"role": "tool", "content": "<result string>"}`
+
+---
 
 ## Steps
 ```mermaid
 flowchart LR
-    subgraph ch03_lab1_script [This script]
-        U["user message plus tools"]
-        R["TOOL_REGISTRY add_numbers"]
-        T["append role tool"]
-    end
-    subgraph ch03_lab1_host [Ollama on port 11434]
-        C["POST /api/chat"]
-    end
-    U --> C
-    C -->|"tool_calls"| R
-    R --> T
+    A["lab1_tool_dispatch.py"] -->|"POST prompt + tools schema"| B["Ollama Chat Endpoint"]
+    B -->|"Returns tool_calls JSON"| C["Dispatcher: TOOL_REGISTRY lookup"]
+    C -->|"Execute add_numbers(a, b)"| D["Computed Output ('5')"]
+    D -->|"Append role: tool message"| A
+    A -->|"Optional final POST"| B
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://127.0.0.1:11434` and `llama3.2:1b`.
-2. Define `add_numbers(a, b) -> str` that returns the sum as a string. Put it in `TOOL_REGISTRY`.
-3. Build a `tools` list with one function schema: name `add_numbers`, properties `a` and `b` (numbers), `required: ["a", "b"]`.
-4. POST `{ "model", "messages": [{ "role": "user", "content": "What is 2 plus 3? Use the tool." }], "tools", "stream": false }` to `{host}/api/chat` with header `Content-Type: application/json`.
-5. Read `tool_calls[0].function.name` and `.arguments`. If `arguments` is a string, `json.loads` it.
-6. Call `TOOL_REGISTRY[name](**arguments)`. Print the name, the arguments, and the return value.
-7. Append `{ "role": "tool", "content": result }` to `messages`. POST once more if you want a final sentence. Do not write a `while` loop.
+1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from environment variables, defaulting to `http://127.0.0.1:11434` and `llama3.2:1b`.
+2. Define a Python function `add_numbers(a: float, b: float) -> str` that returns the string representation of `a + b`.
+3. Register the function in `TOOL_REGISTRY = {"add_numbers": add_numbers}`.
+4. Construct the `tools` schema array describing `add_numbers` with properties `a` and `b` (type `number`) as required parameters.
+5. Send an HTTP POST request to `{OLLAMA_HOST}/api/chat` with user prompt: `"What is 2 plus 3? Please use the add_numbers tool."`
+6. Check for `message.tool_calls` in the response. Extract `function.name` and `function.arguments`. If `arguments` is a JSON string, deserialize it with `json.loads()`.
+7. Look up the function in `TOOL_REGISTRY` and call it: `result = TOOL_REGISTRY[name](**arguments)`.
+8. Print the executed tool name, input arguments, and computed return value.
+9. Append `{"role": "tool", "content": str(result)}` to `messages` and send one follow-up POST to receive the final summary sentence.
+
+---
 
 ## Data contract
-Only the keys this script sends and reads.
 
-**Request**
+**Request Payload with Tool Schema**
 
 ```json
 {
   "model": "llama3.2:1b",
-  "messages": [{ "role": "user", "content": "What is 2 plus 3? Use the tool." }],
+  "messages": [
+    {
+      "role": "user",
+      "content": "What is 2 plus 3? Please use the add_numbers tool."
+    }
+  ],
   "tools": [
     {
       "type": "function",
       "function": {
         "name": "add_numbers",
-        "description": "Add two numbers.",
+        "description": "Add two numbers together.",
         "parameters": {
           "type": "object",
           "properties": {
@@ -64,42 +70,63 @@ Only the keys this script sends and reads.
 }
 ```
 
-**Response**
+**Response Payload with Tool Call**
 
 ```json
 {
   "message": {
+    "role": "assistant",
     "tool_calls": [
-      { "function": { "name": "add_numbers", "arguments": { "a": 2, "b": 3 } } }
+      {
+        "function": {
+          "name": "add_numbers",
+          "arguments": { "a": 2, "b": 3 }
+        }
+      }
     ]
   }
 }
 ```
 
-**Tool result you append**
+**Tool Result Message Appended to Conversation**
 
 ```json
-{ "role": "tool", "content": "5" }
+{
+  "role": "tool",
+  "content": "5"
+}
 ```
+
+---
 
 ## Run
-From the repo root, after you write the script:
+From the repository root, run your script:
 
 ```bash
-OLLAMA_HOST=http://127.0.0.1:11434 OLLAMA_MODEL=llama3.2:1b python education/03_the_dispatcher/lab1_tool_dispatch.py
-```
-
-```powershell
-$env:OLLAMA_HOST="http://127.0.0.1:11434"
-$env:OLLAMA_MODEL="llama3.2:1b"
 python education/03_the_dispatcher/lab1_tool_dispatch.py
 ```
 
+```powershell
+python education/03_the_dispatcher/lab1_tool_dispatch.py
+```
+
+---
+
 ## What you should see
-A printed tool name, arguments, and the function return value (for example `5`). If `tool_calls` is empty, the model answered in prose. Tighten the user prompt. Do not invent a call. If `arguments` is a string and you pass it to `**` without `json.loads`, Python will raise `TypeError`. If you see `URLError`, the provider is not reachable. If `name` is missing from the registry, print the name and exit. Do not catch that by calling a random function.
+You should see:
+1. The tool name and parsed arguments identified by the model (`add_numbers`, `{'a': 2, 'b': 3}`).
+2. The local Python function execution output (`5`).
+3. The model's final response sentence incorporating the tool's result.
+
+---
 
 ## Stop here
-Do not write a `while` loop. That is chapter 04 (ReAct). Do not add MCP, a second tool, or parallel calls. This script is one dispatch and one optional follow-up POST. Next: [00_the_react_loop.md](../04_the_loop/00_the_react_loop.md).
+This lab executes a single tool dispatch turn. We do not write an automated `while` loop here—multi-turn loops will be built in Chapter 04 (The ReAct Loop).
+
+Next up: [Chapter 04: The Loop](../04_the_loop/00_the_react_loop.md).
+
+---
 
 ## Notes
-There is no reference `.py` in this folder. Paste a real run here: the printed name, arguments, return value, and whether you needed a second POST for a final sentence.
+*(Record your tool dispatch logs and observations here)*
+

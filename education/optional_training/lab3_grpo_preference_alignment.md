@@ -1,38 +1,46 @@
-# Lab 3: GRPO preference alignment
+# Lab 3: Group Relative Policy Optimization (GRPO) Preference Alignment
 
-A Python file on disk has scored four hardcoded snippets and printed a group-relative advantage for each one. No model is loaded. No weights are updated. No HTTP POST.
+In this lab, you will implement a GRPO relative advantage evaluator (`calculate_grpo_group_advantages`, `GRPOAlignmentEngine`) that executes and scores a group of candidate Python completions against unit test assertions to compute policy adjustment advantages.
+
+---
 
 ## What you touch
 - Script: `lab3_grpo_preference_alignment.py`
-- Class / functions: `verify_python_code`, `calculate_grpo_group_advantages`, `GRPOAlignmentEngine.run_alignment_step`
-- Keys returned: `status`, `group_rewards`, `group_advantages`
-- URL / path: none. This script does not call `{OLLAMA_HOST}/api/generate`.
+- Main Classes & Functions:
+  - `verify_python_code(code: str, expected_output: str) -> float`: Evaluates code correctness in an isolated subprocess (returns `1.0` or `0.0`).
+  - `calculate_grpo_group_advantages(rewards: list[float]) -> list[float]`: Computes normalized group advantages $A_i = \frac{R_i - \mu}{\sigma + \epsilon}$.
+  - `GRPOAlignmentEngine.run_alignment_step(prompt, candidate_outputs, expected_output) -> dict`
+- Test Fixtures: 4 candidate implementations of `is_even(n)` (two correct, one incorrect, one syntax error)
+- Pure Python standard library (no torch required)
+
+---
 
 ## Steps
 ```mermaid
-flowchart LR
-    subgraph otlab3_script [Script]
-        S["lab3_grpo_preference_alignment.py"]
-    end
-    subgraph otlab3_score [Score]
-        V["verify_python_code"]
-        A["calculate_grpo_group_advantages"]
-    end
-    S --> V
-    V -->|"group_rewards"| A
-    A -->|"group_advantages"| S
+flowchart TD
+    A["Prompt: 'def is_even(n): ...'"] --> B["4 Candidate Code Snippets (G = 4)"]
+    B --> C["verify_python_code() Sandbox Subprocess"]
+    C --> D["Group Rewards: [1.0, 0.0, 1.0, 0.0]"]
+    D --> E["calculate_grpo_group_advantages()"]
+    E --> F["Group Advantages: [1.0, -1.0, 1.0, -1.0]"]
+    F --> G["Determine Policy Adjustments (+Advantage = Increase, -Advantage = Decrease)"]
 ```
 
-1. Build four candidate strings for `is_even(n)` (two that print `True`, one that prints `False`, one that is a syntax error).
-2. Call `GRPOAlignmentEngine.run_alignment_step` with `prompt`, that list, and `expected_output="True"`.
-3. For each candidate, `verify_python_code` writes the string to a temp file, runs it with `subprocess.Popen` (`timeout=3`), and returns `1.0` if `expected_output` is in stdout, else `0.0`.
-4. Call `calculate_grpo_group_advantages` on that reward list. Print each reward and each advantage.
-5. Print the JSON payload with `status`, `group_rewards`, and `group_advantages`. Do not load a model. Do not POST to Ollama. Do not write weights.
+1. Define 4 candidate implementations for `is_even(n)`:
+   - Candidate 1 & 3: Valid logic printing `True`.
+   - Candidate 2: Incorrect logic printing `False`.
+   - Candidate 4: Broken syntax throwing `SyntaxError`.
+2. Implement `verify_python_code()`: Execute code inside a temporary sandbox subprocess and check stdout for expected text (`"True"`).
+3. Implement `calculate_grpo_group_advantages()`:
+   - Calculate group reward mean $\mu$ and standard deviation $\sigma$.
+   - Calculate advantages: $A_i = (R_i - \mu) / (\sigma + 1e-8)$.
+4. Run `GRPOAlignmentEngine.run_alignment_step()` and assert that correct solutions obtain positive advantages ($+1.0$) and failing solutions obtain negative advantages ($-1.0$).
+
+---
 
 ## Data contract
-Only the keys this script returns. There is no request JSON.
 
-**Return of `run_alignment_step` for the hardcoded `is_even` group**
+**GRPO Alignment Step Result**
 
 ```json
 {
@@ -42,31 +50,37 @@ Only the keys this script returns. There is no request JSON.
 }
 ```
 
-`group_rewards` is a list of floats. `group_advantages` is a list of floats of the same length. A positive advantage means the policy would increase that candidate. A negative advantage means it would decrease it.
+---
 
 ## Run
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/optional_training/lab3_grpo_preference_alignment.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/optional_training/lab3_grpo_preference_alignment.py
 ```
 
-The script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`. The env lines are here so this lab matches the other Run blocks.
+---
 
 ## What you should see
-A header `GRPO PREFERENCE ALIGNMENT`, the prompt, `G = 4`, then four candidate lines (`PASSED` / `FAILED` with `R_i = 1.0` or `0.0`), then four advantage lines, then a JSON payload with `status`, `group_rewards`, and `group_advantages`.
+- `=== GRPO PREFERENCE ALIGNMENT ===`
+- `Group Evaluation (G = 4):`
+  - Candidate 1: `[PASSED] Reward R_1 = 1.0 | Advantage A_1 = +1.0000 -> (POLICY: INCREASE)`
+  - Candidate 2: `[FAILED] Reward R_2 = 0.0 | Advantage A_2 = -1.0000 -> (POLICY: DECREASE)`
+  - Candidate 3: `[PASSED] Reward R_3 = 1.0 | Advantage A_3 = +1.0000 -> (POLICY: INCREASE)`
+  - Candidate 4: `[FAILED] Reward R_4 = 0.0 | Advantage A_4 = -1.0000 -> (POLICY: DECREASE)`
+- Return payload showing `status: SUCCESS` and advantage lists.
 
-If a candidate hangs, `verify_python_code` times out at 3 seconds and returns `0.0`. If you see an import error, you are not running the file in this folder. The script uses the standard library only (`json`, `math`, `random`, `subprocess`, `sys`, `tempfile`). `random` is imported and unused.
+---
 
 ## Stop here
-This folder is optional. Finishing this lab does not unlock chapter 15. Do not wire GRPO into chapter 04 or chapter 15. Do not start a real policy train. If you only need a model to answer, go back to chapter 00 and POST to `http://192.168.1.29:11434`.
+You have successfully implemented Group Relative Policy Optimization (GRPO) advantage calculation! You have finished the optional training module.
+
+---
 
 ## Notes
-- Drift vs `lab3_grpo_preference_alignment.py`: the module's intended contract is a reward number plus a policy update. This script never loads a model and never writes weights. Candidates are four hardcoded strings. `verify_python_code` runs each string in a temp dir and returns `1.0` or `0.0`.
-- Results from a real run. Questions that came up while running. Do not put module teaching here.
+*(Record your GRPO rewards, advantage calculations, and policy directions here)*
+

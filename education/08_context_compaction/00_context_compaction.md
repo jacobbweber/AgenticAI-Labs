@@ -1,47 +1,42 @@
-# 08: Context Compaction
+# 08: Context Compaction: Sliding Windows and Conversation Summarization
 
-After this chapter the message list can shrink. You keep the system message and the last N turns, or you replace the middle with a summary. This chapter does not add a vector store.
+By the end of this chapter, you will implement context compaction strategies that keep active conversation histories within model context limits. You will build a sliding window mechanism that preserves system instructions and recent turns while condensing older history into compact summaries.
+
+In Chapter 07, we persisted message history. In this chapter, we ensure that as conversation histories grow, they remain fast, inexpensive, and within token limits.
 
 ## Data
-Chapter 05 writes the `messages` list to a file or a SQLite row. That list is the working memory: the exact JSON you would send on the next `POST /api/generate` or `POST /v1/chat/completions`. Every turn appends another object with `role` and `content`. The list grows.
+As multi-turn conversations expand, sending every historical message on every turn causes two issues:
+1. **Latency & Cost**: Time-to-first-token (TTFT) and API costs increase linearly with input prompt length.
+2. **Context Window Limits**: Models have maximum input context windows, beyond which requests fail.
 
-**Working memory** is that payload. It lives in RAM as a Python list, then goes in the POST body under `messages` (chat) or is flattened into `prompt` (generate).
-
-**Compaction** is any step that makes that list smaller before the next POST. Three ways:
-
-1. **Window:** drop old turns. Keep the system message and the last N user/assistant pairs.
-2. **Summary:** replace the dropped middle with one assistant (or system) message that states what happened.
-3. **Prune:** trim long tool stdout or other bulky `content` strings so one turn is smaller.
-
-Lab 1 is `lab1_context_window.py`. Functions: `count_chars`, `window_messages`, `summarize_dropped`, `compact_messages`. The fixture is 9 items. `last_n` is 4. The summary is a local join. Lab 1 does not POST.
-
-`OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. The route is still `POST /api/generate` or `POST /v1/chat/completions`. Compaction changes the body, not the host. Lab 1 only prints the smaller list.
+To manage context effectively, we apply **Context Compaction**:
+- **Sliding Window**: Keep the foundational `system` prompt (index 0) and the most recent $N$ conversational turns (`messages[-last_n:]`).
+- **Middle Summarization**: Condense dropped intermediate messages into a single summary message (`{"role": "assistant", "content": "Summary: ..."}`) placed between the system prompt and recent turns.
+- **Content Pruning**: Truncate overly verbose tool outputs (e.g. large file dumps or logs) to safe character limits.
 
 ## Information
-Chapter 05 saves the list so a restart can load it. This chapter makes the loaded list smaller so the next POST still fits.
-
-A long `messages` list has two costs:
-
-1. **TTFT** (time to first token) grows because the provider must read every token in the prompt before it starts the reply.
-2. **Cost and context limit:** more tokens in means more money on a cloud API, or an HTTP 400 / context overflow when the local window is full.
-
-Count tokens if you have a tokenizer. Count characters if you do not. Either number is a size. When the size is too large, compact, then POST. Lab 1 prints `before_count` / `before_chars` and `after_count` / `after_chars`.
-
-Vector search (RAG) is `02_private_rag.md` and `lab3_local_private_rag.py`. Do not add a vector DB on this page. This page only shrinks the list you already have.
+Context compaction keeps working memory focused on what is relevant right now:
+- **System Directives**: Pinned at the start so behavioral guidelines are never lost.
+- **Historical Context**: Condensed into an efficient summary so the agent retains awareness of earlier agreements and facts.
+- **Immediate Context**: The most recent exchanges preserved verbatim so dialogue flows naturally.
 
 ## Knowledge
-1. After you load or build `messages`, measure size: `len(json.dumps(messages))` for characters, or a token count if you have one.
-2. Keep the system message (first item with `role: "system"`) and the last N turns (user/assistant pairs). Drop the middle.
-3. Optionally POST the dropped middle to `{OLLAMA_HOST}/api/generate` with a prompt that asks for a short summary, then insert one message in the gap. Lab 1 joins the dropped `role` and `content` into one `Summary:` string instead.
-4. Optionally trim long `content` on tool-result messages (stdout, file dumps) to a character cap.
-5. POST the smaller list when you need a model reply. Lab 1 stops at the printed counts. Do not add Chroma, embeddings, or a retrieval query here.
+Here is the step-by-step procedure:
+1. Measure the size of `messages` (by counting characters or tokens).
+2. If the size exceeds your budget threshold:
+   - Extract and preserve the system prompt (`messages[0]`).
+   - Extract the recent history slice (`messages[-last_n:]`).
+   - Collect the dropped intermediate messages.
+   - Condense dropped messages into a concise summary string.
+   - Assemble the compacted list: `[system_prompt] + [summary_message] + recent_slice`.
+3. Return the compacted `messages` array for subsequent model requests.
 
 ## Wisdom
-Stop when the next POST uses a shorter list and still has the system message plus recent turns. Do not add a vector database, episodic memory, or a codebase index on this page. Those are the next files in this folder. If you add them now, a bad answer could come from the window, the summary, or retrieval.
+A deterministic sliding window combined with local summarization prevents context overflow without requiring external vector databases.
 
 ## The When and Why
-- **When:** the `messages` list no longer fits the model context, or TTFT and cost are growing with the raw history.
-- **Why:** the provider reads the whole prompt before the first output token. A smaller list is a faster, cheaper POST that still fits the context window.
+- **When**: Use context compaction in long-running chat sessions, agentic loops, and multi-turn workflows.
+- **Why**: Language models have fixed attention and context budgets. Trimming unnecessary historical detail speeds up generation and prevents context exhaustion.
 
 ## How it works
 

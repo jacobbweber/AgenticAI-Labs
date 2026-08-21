@@ -1,51 +1,72 @@
-# Tool, skill, agent, staff, department, control plane
+# Understanding the Terminology: Tools, Skills, Agents, and Control Planes
 
-Marketing words are not extra types. Each one maps to a file, a JSON key, or a function already in the course.
+In the AI industry, marketing terms can often make simple software concepts sound mysterious or overly complicated. In reality, each of these buzzwords maps directly to a concrete Python function, file format, or JSON schema.
 
-| Word | Course object |
+Here is a quick lookup table translating popular terminology into the actual code objects you build in this course:
+
+| Term You Hear | Concrete Course Object |
 |---|---|
-| Tool | A name in `TOOLS_SCHEMA`, a function in `TOOL_REGISTRY` |
-| Skill | A `SKILL.md` file, or a wrapper tool. Not a process. |
-| Agent | One process: system prompt, tools, the chapter 04 loop, a session file |
-| Independent agent | A job row plus its own session. Not a person. [04_shape_tree.md](./04_shape_tree.md) |
-| Ephemeral subagent | An 14 wrapper: isolated loop that dies after one JSON. [04_shape_tree.md](./04_shape_tree.md) |
-| Staff / department | Not an object. A supervisor process plus a host map plus tools |
-| Control plane | Not a new primitive. The process that owns `jobs.json`, the host map, and handoff tools |
+| **Tool** | A schema definition in `TOOLS_SCHEMA` paired with a callable function in `TOOL_REGISTRY`. |
+| **Skill** | A structured instruction document (`SKILL.md`), or an isolated wrapper tool function. |
+| **Agent** | A running Python process with a system prompt, available tools, a ReAct loop, and a session state file. |
+| **Independent Agent** | A background worker process that claims records from a job queue and maintains its own session history. |
+| **Ephemeral Subagent** | A self-contained wrapper tool that runs a temporary child loop to solve a subtask, returning a single JSON result. |
+| **Staff / Department** | An organizational metaphor for a supervisor process managing a host map and specific tools. |
+| **Control Plane** | The central backend process managing `jobs.json`, the host configuration map, and handoff protocols. |
 
-The dual-name tree (word you hear, then the object): [04_shape_tree.md](./04_shape_tree.md).
+For a visual breakdown of how these concepts connect, see the [Shape Tree Guide](./04_shape_tree.md).
 
-## Tool
+---
 
-**Tool** ([chapter 03](../../education/03_the_dispatcher/00_tool_dispatch.md)): a name in `TOOLS_SCHEMA`, a function in a registry. Chapter 03 sends the list as the `tools` key and looks the name up in `TOOL_REGISTRY`. [Chapter 04](../../education/04_the_loop/00_the_react_loop.md) names that list `TOOLS_SCHEMA`. The model emits `tool_calls`. The dispatcher runs the function and sends `role: tool` back.
+## 1. Tools
 
-See [lab1_tool_dispatch.md](../../education/03_the_dispatcher/lab1_tool_dispatch.md).
+A **tool** ([Chapter 03: Tool Dispatch](../../education/03_the_dispatcher/00_tool_dispatch.md)) is simply a standard Python function registered in your code. 
 
-## Skill
+When you make a request to an LLM provider, your script includes a list of available tool schemas in the `tools` parameter (often stored in a variable like `TOOLS_SCHEMA`). If the model decides a tool is needed, it responds with a `tool_calls` payload. Your script looks up the matching function name in `TOOL_REGISTRY`, executes the Python function with the model's arguments, and appends the result to the conversation as a message with `role: tool`.
 
-**Skill** is three different things. Do not collapse them.
+To see this in action, review [Chapter 03 Lab 1](../../education/03_the_dispatcher/lab1_tool_dispatch.md).
 
-1. `SKILL.md` ([chapter 15 lab2](../../education/15_mcp_and_skills/lab2_skills.md)): a text file loaded when a trigger matches. It is not a process. It is not a person. See also [01_skills_and_plugins.md](../../education/15_mcp_and_skills/01_skills_and_plugins.md).
-2. Skill wrapper ([chapter 14 03_skill_vs_two_agents](../../education/14_two_agents/03_skill_vs_two_agents.md)): a tool whose body runs a longer script or a child loop, then returns one JSON. The parent blocks. Marketing also calls this an ephemeral subagent.
-3. Marketing "skill": any of the above, plus a fake staff member. Ignore the staff part.
+---
 
-The reader who wants to call "skills" "tools" is half right: the thing the model calls is a tool. Keep "skill" for the markdown file and for the wrapper pattern. Do not name a running process a skill.
+## 2. Skills
 
-## Agent
+The word **skill** is used in three distinct ways across the industry:
 
-**Agent** ([chapter 13](../../education/13_one_agent/00_persona_tools_loop_state.md)): one process with a system prompt, tools, the [chapter 04](../../education/04_the_loop/00_the_react_loop.md) loop, and a session file. Not a personality. The kernel is `CoreAgentKernel`. State is `state_store/{session_id}.json`.
+1. **Instruction Files (`SKILL.md`)**: A markdown document ([Chapter 15 Lab 2](../../education/15_mcp_and_skills/lab2_skills.md)) containing specialized domain guidelines that are loaded into an agent's prompt when a specific trigger condition is met.
+2. **Skill Wrappers**: A Python function ([Chapter 14: Skill vs Two Agents](../../education/14_two_agents/03_skill_vs_two_agents.md)) that runs an internal child loop or script to handle a complex task and returns a single clean JSON response. The parent agent pauses and waits for the result without cluttering its own conversation history.
+3. **Marketing Persona**: Fictional character titles (like *"Customer Support Specialist"*). In code, these are simply system prompts paired with specific tool allowlists.
 
-See [lab1_core_harness_kernel.md](../../education/13_one_agent/lab1_core_harness_kernel.md).
+In this course, we reserve the word "skill" for `SKILL.md` documents and wrapper tool patterns.
 
-## Staff / department
+---
 
-**Staff / Chief of Staff / department** (marketing): an org chart of named people. In this course that is a supervisor process ([14](../../education/14_two_agents/00_topologies.md) `supervisor_orchestrator`) plus a host map plus tools. There is no staff object.
+## 3. Agents
 
-See [lab1_supervisor_worker.md](../../education/14_two_agents/lab1_supervisor_worker.md) and [01_where_not_who.md](./01_where_not_who.md).
+An **agent** ([Chapter 13: One Agent](../../education/13_one_agent/00_persona_tools_loop_state.md)) is a single running Python program consisting of four concrete elements:
+- A **system prompt** defining its core objective.
+- A **tool registry** (`TOOL_REGISTRY`) giving it actionable capabilities.
+- An **execution loop** ([Chapter 04: The ReAct Loop](../../education/04_the_loop/00_the_react_loop.md)) that iteratively queries the model, executes tools, and evaluates results.
+- A **persistent session file** (such as `state_store/{session_id}.json`) to preserve conversation state across runs.
 
-## Control plane
+---
 
-**Control plane** (marketing): often Kubernetes or a product. In this course: the process that owns the job list ([chapter 18](../../education/18_the_job/00_the_job.md) `jobs.json`), the host map, and the tools that send handoff JSON ([chapter 14](../../education/14_two_agents/01_handoff_protocol.md)). Not a new primitive.
+## 4. Supervisors, Staff, and Departments
 
-## LangChain / LangGraph / LangFlow
+When marketing materials talk about an "AI staff" or "department," they are usually describing a **supervisor-worker topology** ([Chapter 14 Lab 1](../../education/14_two_agents/lab1_supervisor_worker.md)). 
 
-**LangChain / LangGraph / LangFlow**: Related only. LangGraph is one library for the dict-and-edge you wrote in [chapter 10](../../education/10_the_workflow/01_graph_workflows.md). LangChain wraps `tool_calls` and the loop ([03](../../education/03_the_dispatcher/00_tool_dispatch.md) / [04](../../education/04_the_loop/00_the_react_loop.md)). LangFlow is a canvas for that graph. None of them are required. Do not pip install them for these notes.
+In practical code, this is simply a coordinator agent that uses a host configuration map ([Note 01: Where, Not Who](./01_where_not_who.md)) to delegate specific tasks to specialized worker processes.
+
+---
+
+## 5. Control Planes
+
+A **control plane** is the central management service that oversees system operations. In our curriculum, the control plane is represented by the central process that manages persistent task queues ([Chapter 18: `jobs.json`](../../education/18_the_job/00_the_job.md)), monitors device maps, and coordinates handoff protocols ([Chapter 14: Handoff Protocol](../../education/14_two_agents/01_handoff_protocol.md)).
+
+---
+
+## What About External Frameworks?
+
+Frameworks like LangChain, LangGraph, and CrewAI provide third-party abstractions around these exact patterns. For instance, LangGraph provides state graphs similar to the deterministic dictionaries and functions built in [Chapter 10](../../education/10_the_workflow/01_graph_workflows.md). 
+
+Because this course teaches the underlying mechanics directly in pure Python, you do not need to install any external frameworks.
+

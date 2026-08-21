@@ -1,75 +1,69 @@
-# Lab 1: Compact the context window
+# Lab 1: Implementing a Sliding Window with Conversation Summarization
 
-A long `messages` list is shortened. The system item and the last N items stay. Dropped turns become one summary string. Before and after counts print. There is no RAG and no HTTP.
+In this lab, you will write a compaction utility `compact_messages(messages, last_n)` that trims older conversational history while preserving the initial system instructions, generating a summary of dropped messages, and retaining the most recent turns.
+
+---
 
 ## What you touch
-- Script: `lab1_context_window.py` (write it next to this brief; there is no reference `.py` yet)
-- Function: `count_chars(messages)` returns `len(json.dumps(messages))`
-- Function: `window_messages(messages, last_n)` keeps the first `role: "system"` item and the last `last_n` items
-- Function: `summarize_dropped(dropped)` returns `{ "role": "assistant", "content": "string" }` from the dropped items. No POST.
-- Function: `compact_messages(messages, last_n)` returns system + summary + last N
-- Fixture list in `__main__` (exact items in Steps). `last_n` is `4`
-- No HTTP. This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`.
-- No vector store. No PII tokens. No repo walk.
+- Script to create: `lab1_context_window.py`
+- Main Functions:
+  - `count_chars(messages: list) -> int`
+  - `window_messages(messages: list, last_n: int) -> dict`
+  - `summarize_dropped(dropped: list) -> dict`
+  - `compact_messages(messages: list, last_n: int = 4) -> list`
+- Test Fixture: A 9-message conversation list (1 system prompt + 4 multi-turn question/answer pairs)
+- Pure Python logic (no network requests or environment variables needed)
+
+---
 
 ## Steps
 ```mermaid
-flowchart LR
-    subgraph lab1_ctx_script [This script]
-        CNT["count_chars"]
-        WIN["window_messages"]
-        SUM["summarize_dropped"]
-        CMP["compact_messages"]
-    end
-    subgraph lab1_ctx_out [Counts]
-        B["before_count before_chars"]
-        A["after_count after_chars"]
-    end
-    CNT --> B
-    WIN --> SUM
-    SUM --> CMP
-    CMP --> CNT
-    CNT --> A
+flowchart TD
+    A["Original Messages List (9 items)"] --> B["window_messages(messages, last_n=4)"]
+    B --> C["Preserve system prompt (item 0)"]
+    B --> D["Slice last 4 recent items"]
+    B --> E["Collect dropped middle items"]
+    E --> F["summarize_dropped() -> Summary Message"]
+    C & F & D --> G["Assembled Compacted List (6 items)"]
 ```
 
-1. Build a fixture `messages` list with one system item (`You add numbers.`) then eight turns: user `What is 1 plus 1?` / assistant `2`, user `What is 2 plus 2?` / assistant `4`, user `What is 3 plus 3?` / assistant `6`, user `What is 4 plus 4?` / assistant `8`. That is 9 items.
-2. Write `count_chars`. Return `len(json.dumps(messages))`.
-3. Write `window_messages(messages, last_n)`. If `messages[0]["role"]` is `system`, keep that item. Keep `messages[-last_n:]`. Drop the middle. Return `{ "kept": [...], "dropped": [...] }`.
-4. Write `summarize_dropped(dropped)`. Join each dropped `role` and `content` with `; `. Prefix `Summary: `. Return `{ "role": "assistant", "content": that string }`. Do not POST.
-5. Write `compact_messages(messages, last_n)`. Call `window_messages`. If `dropped` is not empty, insert `summarize_dropped(dropped)` after the system item and before the kept tail. Return the new list.
-6. In `__main__`, print `before_count` (`len(messages)`) and `before_chars` (`count_chars`). Call `compact_messages(messages, 4)`. Print `after_count` and `after_chars`. Print each kept `role` and `content`.
-7. Confirm `after_count` is less than `before_count` and `after_chars` is less than `before_chars`. Confirm the first item is still the system line and the last two items are `What is 4 plus 4?` / `8`. Do not call `search`. Do not POST.
+1. Create a 9-item test fixture `messages`:
+   - Item 0: `{"role": "system", "content": "You add numbers."}`
+   - Turn 1: `user`: `"What is 1 plus 1?"` / `assistant`: `"2"`
+   - Turn 2: `user`: `"What is 2 plus 2?"` / `assistant`: `"4"`
+   - Turn 3: `user`: `"What is 3 plus 3?"` / `assistant`: `"6"`
+   - Turn 4: `user`: `"What is 4 plus 4?"` / `assistant`: `"8"`
+2. Implement `count_chars(messages: list) -> int` to return `len(json.dumps(messages))`.
+3. Implement `window_messages(messages, last_n)`:
+   - Extract `system_msg = messages[0]` if `role == "system"`.
+   - Slice `kept_tail = messages[-last_n:]`.
+   - Identify `dropped = messages[1:-last_n]`.
+   - Return `{"kept_system": system_msg, "kept_tail": kept_tail, "dropped": dropped}`.
+4. Implement `summarize_dropped(dropped)`:
+   - Join dropped messages as `"user What is 1 plus 1?; assistant 2; ..."`.
+   - Return `{"role": "assistant", "content": f"Summary: {joined_text}"}`.
+5. Implement `compact_messages(messages, last_n=4)`:
+   - Combine `[kept_system] + [summary_msg] + kept_tail`.
+6. In `__main__`:
+   - Print `before_count` and `before_chars`.
+   - Execute `compact_messages(messages, 4)`.
+   - Print `after_count` and `after_chars`.
+   - Display each retained message's `role` and `content`.
+   - Verify that `after_count` is 6 and the total character size is reduced.
+
+---
 
 ## Data contract
-Only the keys this script writes and reads.
 
-**Fixture item**
-
-```json
-{ "role": "system", "content": "You add numbers." }
-```
-
-**window_messages return**
-
-```json
-{
-  "kept": [{ "role": "string", "content": "string" }],
-  "dropped": [{ "role": "string", "content": "string" }]
-}
-```
-
-**Summary item**
-
-```json
-{ "role": "assistant", "content": "Summary: user What is 1 plus 1?; assistant 2; user What is 2 plus 2?; assistant 4" }
-```
-
-**compact_messages return** (system + summary + last 4)
+**Original Un-compacted History (9 Items)**
 
 ```json
 [
   { "role": "system", "content": "You add numbers." },
-  { "role": "assistant", "content": "Summary: string" },
+  { "role": "user", "content": "What is 1 plus 1?" },
+  { "role": "assistant", "content": "2" },
+  { "role": "user", "content": "What is 2 plus 2?" },
+  { "role": "assistant", "content": "4" },
   { "role": "user", "content": "What is 3 plus 3?" },
   { "role": "assistant", "content": "6" },
   { "role": "user", "content": "What is 4 plus 4?" },
@@ -77,30 +71,48 @@ Only the keys this script writes and reads.
 ]
 ```
 
-The script does not POST this list. Lab 3 is RAG, not this file.
+**Compacted Working Memory (6 Items)**
+
+```json
+[
+  { "role": "system", "content": "You add numbers." },
+  { "role": "assistant", "content": "Summary: user What is 1 plus 1?; assistant 2; user What is 2 plus 2?; assistant 4" },
+  { "role": "user", "content": "What is 3 plus 3?" },
+  { "role": "assistant", "content": "6" },
+  { "role": "user", "content": "What is 4 plus 4?" },
+  { "role": "assistant", "content": "8" }
+]
+```
+
+---
 
 ## Run
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/08_context_compaction/lab1_context_window.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/08_context_compaction/lab1_context_window.py
 ```
 
-This script ignores `OLLAMA_HOST` and `OLLAMA_MODEL`. They are listed so the lab Run block matches the other chapters. There is no HTTP call.
+---
 
 ## What you should see
-`before_count` `9` and a `before_chars` integer. Then `after_count` `6` and a smaller `after_chars`. Then the six kept items: system `You add numbers.`, one `Summary:` line that mentions `1 plus 1` and `2 plus 2`, then `What is 3 plus 3?` / `6` / `What is 4 plus 4?` / `8`. If `after_count` is still 9, the middle was not dropped. If you see a retrieved chunk or `[PERSON_1]`, you opened lab 3. If you see a POST, you added HTTP this lab does not need.
+- `before_count: 9` and the original character count.
+- `after_count: 6` and the reduced character count.
+- The 6 formatted messages showing the system prompt, the generated summary of turns 1 & 2, and turns 3 & 4 intact.
+
+---
 
 ## Stop here
-This is a window plus a local summary string. Do not POST. Do not add Chroma or embeddings. Do not redact PII. Do not walk a repo. Lab 3 is RAG. Lab 2 is episodic vs procedural. Lab 4 is symbol hits.
+You have successfully implemented sliding window context compaction! In Chapter 09, we will explore agentic memory architectures and local Retrieval-Augmented Generation (RAG).
+
+Next up: [Chapter 09: Agentic Memory and RAG](../09_agentic_memory_and_rag/00_agentic_memory.md).
+
+---
 
 ## Notes
-- Write `lab1_context_window.py` next to this brief. There is no reference `.py` in the repo yet.
-- `last_n` is 4 so two recent turns stay. The summary is a join, not a model call.
-- Keys written and read match this brief. Do not edit other `.py` files in the repo.
+*(Record your compaction metrics and verified output here)*
+

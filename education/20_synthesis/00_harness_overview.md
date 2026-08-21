@@ -1,44 +1,39 @@
-# 20: Harness Synthesis
+# 20: Comprehensive Agent Harness Synthesis
 
-After this page the pieces from chapters 00-19 sit in one host process: hydrate, route, sandbox, cycle, HITL, and trace. This page does not add a new primitive.
+By the end of this chapter, you will understand how all core primitives developed across Chapters 00 through 19 unite into a unified, production-grade agent execution harness.
+
+Throughout this course, you built individual modular components: state hydration, model tier routing, subprocess sandboxing, loop oscillation detection, Human-in-the-Loop safety approval gates, and OpenTelemetry distributed tracing. Now, we compose these building blocks into a unified runtime engine.
 
 ## Data
-A **harness** here is one Python process that already owns the chapter 13 kernel and then calls functions you already wrote.
-
-The pieces, by name:
-
-- **hydrate:** `SessionStateHydrator` in `education/13_one_agent/lab1_core_harness_kernel.py` (and chapter 07 `lab2_state_checkpointer.py`). Functions `load_state(session_id)` and `save_state(session_id, state)`. File `state_store/{session_id}.json`. Keys: `session_id`, `messages`, `turn_count`.
-- **route:** `triage_prompt_intent` / `select_tier` from chapter 06. Sets the JSON `model` key before the POST.
-- **sandbox:** `execute_sandboxed_python` from chapter 16, or `SandboxedSubprocessWorker.execute_code` in this folder's `lab1_resilient_executor.py`. Child process, temp dir, timeout.
-- **cycle:** `compute_step_hash` / `CycleOscillationDetector.check_call_signature` from chapter 06. Same tool name plus args (and often the same error hash) stops the loop.
-- **HITL:** `evaluate_action` / approval gates from chapter 17. A mutative command returns `PAUSED_FOR_HITL_APPROVAL` instead of running.
-- **trace:** a list of span dicts (`session_id`, `span_name`, `duration_ms`, `attributes`). Chapter 12 evals and this folder's `OTelEvalTracer.record_span` already do that.
-
-Lab 1 of the kernel is already in chapter 13 (`lab1_core_harness_kernel.py`). This page's labs are `lab1_resilient_executor.py` and `lab2_enterprise_harness_app.py`. They were moved from the old `modules/11` tree.
-
-`OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. The intended model route is still `POST /api/chat` with `messages` and `tool_calls`.
+A complete **Agent Harness** integrates all runtime subsystems:
+- **State Hydration**: Restores and persists conversation histories (`state_store/{session_id}.json`) via `SessionStateHydrator` (Chapter 13).
+- **Adaptive Gateway Routing**: Classifies task intent and dynamically chooses model tiers (`FAST_TIER` vs `DEEP_TIER`) via `select_tier` (Chapter 06).
+- **Subprocess Code Sandbox**: Safely isolates code execution inside timeout-bounded subprocesses via `execute_sandboxed_python` (Chapter 16).
+- **Loop Oscillation Detection**: Halts repetitive agent thrashing via `CycleOscillationDetector` step hashing (Chapter 06).
+- **Human-in-the-Loop (HITL) Safety Gates**: Intercepts destructive or high-risk actions (`PAUSED_FOR_HITL_APPROVAL`) before execution (Chapter 17).
+- **Telemetry & Tracing**: Records structured lifecycle spans (`llm.inference`, `tool.dispatch`) via `OTelEvalTracer` (Chapter 12).
 
 ## Information
-Do not start the path here. Open this folder after you have run 00-19. Each script in 00-19 is one piece. This page wires those pieces in one process so a session file, a model pick, a sandbox, a cycle halt, an approval gate, and a span list share the same `session_id`.
-
-Scattered scripts are not a product. One host that calls `run_turn`, then `select_tier`, then `execute_code`, then `evaluate_action`, then `record_span` is the product shape. A browser demo app is optional and is not added in this PR.
-
-Do not invent a new loop, a new protocol, or a new store. If a piece is missing, go back to its chapter.
+Scattered standalone scripts are helpful learning exercises, but production applications require a unified runtime:
+- **Shared Session Context**: All subsystems—routing, memory, sandboxing, and security—operate seamlessly across a single `session_id`.
+- **Defense in Depth**: Sandboxes protect the OS, cycle detectors protect token budgets, and HITL gates protect critical data.
+- **Architectural Composition**: We do not invent new abstractions; we compose our proven primitives into a cohesive host engine.
 
 ## Knowledge
-1. List the pieces you already have: hydrate, route, sandbox, cycle, HITL, trace.
-2. Keep the chapter 13 kernel as the host. `run_turn(session_id, user_prompt)` still loads and saves `state_store/{session_id}.json`.
-3. Before the POST, call the chapter 06 router so `model` is a chosen id, not a constant.
-4. When a tool wants to run code, call the chapter 16 sandbox. When a tool wants a mutative command, call the chapter 17 HITL gate.
-5. After each tool step, run the chapter 06 cycle hash. If it repeats, halt.
-6. Append a span dict for the POST and for the gate. Do not add a new advanced topic.
+Here is the step-by-step procedure:
+1. Hydrate session history from disk storage (`load_state(session_id)`).
+2. Route the incoming prompt to appropriate model tiers (`select_tier`).
+3. Call the inference endpoint (`/api/chat` or `/api/generate`) with structured schemas.
+4. Execute requested tool actions inside isolated sandboxes while evaluating HITL safety gates.
+5. Hash execution steps to detect and prevent infinite loops.
+6. Record execution telemetry spans and persist updated session states (`save_state`).
 
 ## Wisdom
-Do not add a new primitive; compose what you already have. A second kernel, a new RPC, or a new database would hide which old piece broke. Stop when one process has called hydrate, route, sandbox, cycle, HITL, and trace on the same session. Blueprints stay optional.
+Composition is the true secret of reliable agent architecture. Rather than relying on monolithic frameworks, modular primitives composed together create clean, resilient systems.
 
 ## The When and Why
-- **When:** you have finished 00-19 and the scripts still live in separate folders.
-- **Why:** scattered scripts are not a product. One host is how a session, a model pick, and a gate share state.
+- **When**: Assembling end-to-end enterprise autonomous systems, coding assistants, or multi-turn agent platforms.
+- **Why**: Production reliability demands that security, memory, routing, and observability work together in harmony.
 
 ## How it works
 

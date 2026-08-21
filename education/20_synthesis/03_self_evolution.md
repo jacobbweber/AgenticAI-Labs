@@ -1,35 +1,35 @@
-# 20: Self-Evolution
+# 20: Self-Evolution and Safe Autonomous Tool Modification
 
-After this page you know long-horizon self-change is a later judgment call, not a required lab. This page does not add a new primitive.
+By the end of this chapter, you will understand the critical safety considerations, architectural boundaries, and Human-in-the-Loop guardrails required when designing agents capable of modifying their own code, tool registries, or permission grants.
+
+Self-modifying code is a powerful concept, but allowing an autonomous agent to rewrite its own tools or widen permissions without strict human governance is a dangerous failure mode.
 
 ## Data
-**Self-evolution** here means the agent wants to edit its own tools, grants, or registry: add a function, widen a permission, or rewrite `TOOL_REGISTRY` without a person in the loop.
-
-There is no new lab and no new JSON key. The gate you already have is chapter 17 HITL (`evaluate_action` / `PAUSED_FOR_HITL_APPROVAL`). A grant change is a mutative action. It uses that same status string.
-
-Moved from old `modules/04/03` if useful. No script was added.
-
-`OLLAMA_HOST` should still default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should still default to `qwen3.6:35b-a3b-65k`. Those defaults do not change on this page because this page does not POST.
+**Agent Self-Evolution** refers to an agent dynamically modifying its runtime capabilities:
+- **Registry Mutation**: Adding, modifying, or removing tools from `TOOL_REGISTRY` dynamically.
+- **Permission Widening**: Requesting expanded filesystem access, network egress, or elevated OS roles.
+- **Safety Interception**: Mandatory routing of all capability mutation requests through Human-in-the-Loop gates (`evaluate_action`) returning `PAUSED_FOR_HITL_APPROVAL`.
 
 ## Information
-Useful as a warning: do not let the agent rewrite its own grants without HITL.
-
-A new tool name in `TOOLS_SCHEMA` plus a new function in `TOOL_REGISTRY` is chapter 03. A dangerous command that must pause is chapter 16 / 17. Putting those two together is not a new science. Letting the model write both without `evaluate_action` is the failure mode this page names.
-
-Skip this page if you are still on the required path (00–20).
+Self-evolution must be governed by strict architectural constraints:
+- **Never Auto-Grant Privileges**: An agent must never be permitted to unilaterally grant itself elevated security privileges.
+- **Explicit Approval Checkpoints**: When an agent writes a new tool script or requests broader access, it must yield an approval modal and wait for explicit human review.
+- **Immutable Core Guardrails**: Security filters, sandbox boundaries, and HITL interceptors must remain immutable and outside the agent's write scope.
 
 ## Knowledge
-1. Read only. Do not write a lab.
-2. If the model proposes a new tool or a wider grant, treat that string as a mutative command.
-3. Call the chapter 17 gate (`evaluate_action` or the same `PAUSED_FOR_HITL_APPROVAL` status).
-4. Do not add a self-edit loop, a grant file, or a Future Lab Blueprint.
+Here is the step-by-step procedure:
+1. When an agent generates a new tool implementation or proposes permission expansion, capture the action as a high-risk mutation.
+2. Route the proposed changes to the Chapter 17 safety evaluator (`evaluate_action`).
+3. Return `PAUSED_FOR_HITL_APPROVAL` to halt execution and present the proposed diff to the human operator.
+4. If approved by the human operator, register the validated tool into `TOOL_REGISTRY`.
+5. If rejected, log the refusal and continue with existing capabilities.
 
 ## Wisdom
-Do not add a new primitive; compose what you already have. Skip if you are still on the path. A self-edit loop would hide whether the miss came from the old HITL gate or from the new writer.
+Autonomous capability expansion requires strict human oversight. An agent may propose new tools, but only a human operator may grant permissions.
 
 ## The When and Why
-- **When:** you are tempted to let the agent edit its tools.
-- **Why:** that is a shield and governance problem (chapters 16 and 17).
+- **When**: Designing long-horizon self-improving agents, autonomous research assistants, or extensible plugin ecosystems.
+- **Why**: Unconstrained self-modification risks security compromise, privilege escalation, and unintended system destruction.
 
 ## How it works
 

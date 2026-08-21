@@ -1,97 +1,107 @@
-# Path canvas
+# Course Architecture Canvas
 
-One flowchart of the course. Not an enterprise product canvas. Objects below are files, JSON keys, and functions already in the labs.
+This visual map illustrates how all the architectural components built throughout this course connect to form a complete, production-grade agentic system.
+
+Every block in this diagram represents a concrete Python file, function, or data contract taught in the labs—not third-party abstractions.
+
+---
+
+## Architectural Map
 
 ```mermaid
 flowchart TD
-    subgraph dec02_call [Script and call]
-        dec02_00["00 script"]
-        dec02_01["01 query_llm"]
-        dec02_02["02 messages"]
+    subgraph dec02_call [1. Script & HTTP Calls]
+        dec02_00["Chapter 00: Script & POST"]
+        dec02_01["Chapter 01: query_llm Wrapper"]
+        dec02_02["Chapter 02: Messages Contract"]
     end
-    subgraph dec02_loop [Loop and tools]
-        dec02_03["03 dispatcher"]
-        dec02_04["04 while loop"]
-        dec02_05["05 budget"]
-        dec02_13["13 kernel"]
+    subgraph dec02_loop [2. Core Loop & Dispatcher]
+        dec02_03["Chapter 03: Tool Dispatcher"]
+        dec02_04["Chapter 04: ReAct while Loop"]
+        dec02_05["Chapter 05: Execution Budgets"]
+        dec02_13["Chapter 13: Agent Kernel"]
     end
-    subgraph dec02_state [State and memory]
-        dec02_07["07 messages.json"]
-        dec02_08["08 compaction"]
-        dec02_09["09 facts and files"]
+    subgraph dec02_state [3. State & Memory]
+        dec02_07["Chapter 07: messages.json State"]
+        dec02_08["Chapter 08: Context Compaction"]
+        dec02_09["Chapter 09: Facts & Private RAG"]
     end
-    subgraph dec02_graph [Graph & Reasoning]
-        dec02_10["10 dict through functions"]
-        dec02_11["11 plan & reflexion"]
-        dec02_12["12 evals"]
+    subgraph dec02_graph [4. Workflows & Planning]
+        dec02_10["Chapter 10: Deterministic Pipelines"]
+        dec02_11["Chapter 11: Plan & Reflexion"]
+        dec02_12["Chapter 12: Automated Evals"]
     end
-    subgraph dec02_split [Split work]
-        dec02_14w["14 wrapper"]
-        dec02_14h["14 handoff five keys"]
-        dec02_18["18 jobs.json"]
+    subgraph dec02_split [5. Task Distribution]
+        dec02_14w["Chapter 14: Skill Wrapper"]
+        dec02_14h["Chapter 14: 5-Key Handoff"]
+        dec02_18["Chapter 18: jobs.json Queue"]
     end
-    subgraph dec02_shield [Shield & Governance]
-        dec02_16["16 evaluate_action"]
-        dec02_17["17 park_job & hitl"]
+    subgraph dec02_shield [6. Security & Governance]
+        dec02_16["Chapter 16: Permissions & Sandbox"]
+        dec02_17["Chapter 17: Park & HITL Gates"]
     end
-    subgraph dec02_door [Front door]
-        dec02_19["19 EventSource / SSE"]
+    subgraph dec02_door [7. Front Door & Streaming]
+        dec02_19["Chapter 19: FastAPI SSE & WebSockets"]
     end
-    subgraph dec02_prov [Provider]
-        dec02_p["provider"]
-        dec02_w["weights"]
+    subgraph dec02_prov [Model Provider]
+        dec02_p["Provider Process (Ollama/vLLM)"]
+        dec02_w["Weights File (.gguf)"]
     end
-    subgraph dec02_rel [Reliability]
-        dec02_06["06 cycle / CoT / retry"]
+    subgraph dec02_rel [Reliability Layer]
+        dec02_06["Chapter 06: Cycle Detection & Gateways"]
     end
-    subgraph dec02_else [Dispatcher elsewhere]
-        dec02_15["15 SKILL.md / MCP"]
+    subgraph dec02_else [Skills & Standards]
+        dec02_15["Chapter 15: SKILL.md & MCP"]
     end
-    dec02_19 -->|"POST prompt or EventSource token"| dec02_13
-    dec02_00 -->|"POST /api/chat"| dec02_p
-    dec02_01 -->|"POST /api/chat"| dec02_p
-    dec02_13 -->|"POST /api/chat"| dec02_p
-    dec02_p -->|"matrix math"| dec02_w
+
+    dec02_19 -->|"POST prompt or SSE stream"| dec02_13
+    dec02_00 -->|"POST /api/generate"| dec02_p
+    dec02_01 -->|"POST /v1/chat/completions"| dec02_p
+    dec02_13 -->|"HTTP POST request"| dec02_p
+    dec02_p -->|"Matrix math on weights"| dec02_w
     dec02_p -->|"JSON with tool_calls"| dec02_03
-    dec02_02 -->|"messages"| dec02_04
-    dec02_03 -->|"role tool"| dec02_04
+    dec02_02 -->|"messages array"| dec02_04
+    dec02_03 -->|"role: tool result"| dec02_04
     dec02_04 --> dec02_13
-    dec02_13 -->|"messages"| dec02_07
+    dec02_13 -->|"Persist state"| dec02_07
     dec02_13 --> dec02_08
     dec02_13 --> dec02_09
-    dec02_13 -->|"ask_host wrapper"| dec02_14w
-    dec02_14w -->|"handoff five keys"| dec02_14h
-    dec02_14w -->|"jobs.json status"| dec02_18
-    dec02_18 -->|"claimed_by"| dec02_04
+    dec02_13 -->|"Delegate via wrapper"| dec02_14w
+    dec02_14w -->|"5-key handoff JSON"| dec02_14h
+    dec02_14w -->|"Enqueue background job"| dec02_18
+    dec02_18 -->|"Worker claims job"| dec02_04
     dec02_13 --> dec02_16
-    dec02_16 -->|"needs_hitl now"| dec02_16
-    dec02_16 -->|"needs_hitl later"| dec02_17
+    dec02_16 -->|"Immediate approval"| dec02_16
+    dec02_16 -->|"Asynchronous approval"| dec02_17
     dec02_13 --> dec02_05
     dec02_13 --> dec02_06
     dec02_13 --> dec02_11
     dec02_13 --> dec02_12
-    dec02_13 -->|"load SKILL.md"| dec02_15
-    dec02_10 -->|"no model required"| dec02_10
+    dec02_13 -->|"Load standard instructions"| dec02_15
+    dec02_10 -->|"Deterministic steps"| dec02_10
 ```
 
-HITL is evaluate_action ([16](../../education/16_the_shield/01_security_overview.md) `lookup_permission` / `execute_action_with_hitl_gate` in [17 lab1](../../education/17_hitl_and_park_resume/lab1_hitl_approval.md)) or `park_job` ([17](../../education/17_hitl_and_park_resume/00_hitl_and_park_resume.md)). Do not invent a product name for the pause.
+---
 
-Chapter files for the boxes: [00](../../education/00_atoms/00_script_provider_weights.md), [01](../../education/01_the_call/00_the_wrapper_and_the_stream.md), [02](../../education/02_the_contract/00_messages_and_json.md), [03](../../education/03_the_dispatcher/00_tool_dispatch.md), [04](../../education/04_the_loop/00_the_react_loop.md), [05](../../education/05_the_budget/00_the_budget.md), [06](../../education/06_the_reliability/00_cot_and_reasoning.md), [07](../../education/07_the_state/00_save_the_messages.md), [08](../../education/08_context_compaction/00_context_compaction.md), [09](../../education/09_agentic_memory_and_rag/01_agentic_memory.md), [10](../../education/10_the_workflow/01_graph_workflows.md), [11](../../education/11_planning_and_reflection/00_planning_and_reflection.md), [12](../../education/12_agent_evals/00_agent_evals.md), [13](../../education/13_one_agent/00_persona_tools_loop_state.md), [14 wrapper](../../education/14_two_agents/03_skill_vs_two_agents.md), [14 handoff](../../education/14_two_agents/01_handoff_protocol.md), [15](../../education/15_mcp_and_skills/00_mcp_overview.md), [16](../../education/16_the_shield/01_security_overview.md), [17](../../education/17_hitl_and_park_resume/00_hitl_and_park_resume.md), [18](../../education/18_the_job/00_the_job.md), [19](../../education/19_the_front_door/00_fastapi_sse.md), [20](../../education/20_synthesis/00_harness_overview.md).
+## Step-by-Step Scenario: "Are there any alerts on server jarvis?"
 
-## Guided walk: "any alerts on jarvis?"
+Let's walk through how a single user request travels through this architecture:
 
-One request.
+1. **Receiving the Request**: The user sends a query through the web client or CLI ([Chapter 19](../../education/19_the_front_door/00_fastapi_sse.md)), which passes it to the central agent kernel ([Chapter 13](../../education/13_one_agent/00_persona_tools_loop_state.md)).
+2. **Consulting Skills**: The agent checks available guidelines ([Chapter 15](../../education/15_mcp_and_skills/lab2_skills.md)), noting that inquiries about specific target hosts should call the `ask_host` wrapper tool.
+3. **Dispatching the Subtask**: The `ask_host` function ([Chapter 14](../../education/14_two_agents/03_skill_vs_two_agents.md)) enqueues a background job row tagged with `host_id: "jarvis"` into `jobs.json` ([Chapter 18](../../education/18_the_job/00_the_job.md)) or transfers context using the five-key handoff format ([Chapter 14 Lab 2](../../education/14_two_agents/lab2_agent_handoff.md)).
+4. **Isolated Execution**: A worker assigned to server `jarvis` claims the job row ([Chapter 18 Lab 2](../../education/18_the_job/lab2_two_workers.md)), runs its own internal ReAct loop ([Chapter 04](../../education/04_the_loop/00_the_react_loop.md)), and uses local read-only diagnostic tools allowed by its RBAC security policy ([Chapter 16 Lab 3](../../education/16_the_shield/lab3_agent_rbac.md)).
+5. **Returning the Clean Result**: The worker finishes its analysis and returns a clean JSON summary. The main agent receives this as a single `role: tool` message ([Chapter 03](../../education/03_the_dispatcher/00_tool_dispatch.md)) without polluting its conversation history with the worker's intermediate trial tokens.
+6. **Safety & Human Approval**: If a corrective action is recommended that modifies server state, execution is gated by a Human-In-The-Loop check ([Chapter 16](../../education/16_the_shield/01_security_overview.md) and [Chapter 17](../../education/17_hitl_and_park_resume/00_hitl_and_park_resume.md)) rather than running unattended commands.
+7. **Model Communication**: At every step, the model provider ([Chapter 01](../../education/01_the_call/00_the_wrapper_and_the_stream.md)) only generates text and tool decisions over HTTP POST. The Python runtime is responsible for executing tools and enforcing safety boundaries (see [Script, Provider, and Weights](./00_script_server_weights.md)).
 
-1. The [chapter 19](../../education/19_the_front_door/00_fastapi_sse.md) client POSTs the prompt (or you type into the [13](../../education/13_one_agent/00_persona_tools_loop_state.md) kernel).
-2. The core loop ([13](../../education/13_one_agent/00_persona_tools_loop_state.md)) may load a `SKILL.md` ([15 lab2](../../education/15_mcp_and_skills/lab2_skills.md)) that says: when the user names a host, call `ask_host`.
-3. `ask_host` is an [14](../../education/14_two_agents/03_skill_vs_two_agents.md) wrapper: enqueue a job with `host_id` `jarvis` ([18](../../education/18_the_job/00_the_job.md)) or send handoff JSON ([14 01](../../education/14_two_agents/01_handoff_protocol.md)). `jarvis` is a `host_id` ([notes 01](../notes/01_where_not_who.md), [notes 02](../notes/02_one_router.md)).
-4. The jarvis worker claims the row (`claimed_by` in [18 lab2](../../education/18_the_job/lab2_two_workers.md)), runs its own [04](../../education/04_the_loop/00_the_react_loop.md) loop, own tools (read logs). The [16](../../education/16_the_shield/lab3_agent_rbac.md) allowlist is read-only.
-5. Result JSON returns. Core `messages` get one `role: tool` result ([03](../../education/03_the_dispatcher/00_tool_dispatch.md)), not jarvis trial tokens.
-6. If a mutative fix is next, [17 HITL](../../education/17_hitl_and_park_resume/lab1_hitl_approval.md) or [17 park](../../education/17_hitl_and_park_resume/00_hitl_and_park_resume.md), not a silent root command.
-7. The provider ([01](../../education/01_the_call/00_the_wrapper_and_the_stream.md)) is only the POST for tokens. Weights do not run Ansible. See [00](./00_script_server_weights.md).
+---
 
-Fill [01_when_x_vs_y.md](./01_when_x_vs_y.md) before you add a second process.
+## Keeping It Simple: Native Python vs Third-Party Frameworks
 
-## Outside chats vs this course
+In this course, all agent logic is built directly in clear Python code. You do not need external dependencies like Redis, message brokers, or heavy framework abstractions to understand or build these patterns. 
 
-If a canvas requires Redis, OpenTelemetry, or Docker to exist, it is a product sketch. Those products are optional and not in this course. The labs already have the objects. Add those products only when a lab object is not enough ([14](../../education/14_two_agents/03_skill_vs_two_agents.md) wisdom: no bus until a wrapper fails).
+Add infrastructure tools only when a real production constraint demands it (for instance, when a lightweight wrapper is no longer sufficient).
+
+For help deciding which pattern to use, review [01_when_x_vs_y.md](./01_when_x_vs_y.md).
+

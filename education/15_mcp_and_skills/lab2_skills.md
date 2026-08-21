@@ -1,92 +1,102 @@
-# Lab 2: Load a skill file
+# Lab 2: Loading Dynamic Procedural Skills on Demand
 
-A trigger string decides whether `SKILL.md` is read. On a match the body prints. This is not MCP and not a second agent.
+In this lab, you will write a dynamic skill loader `load_skill()` that parses a target skill guide (`SKILL.md`) only when the user query matches an active trigger keyword (`pr-review`), skipping unnecessary filesystem reads on unmatched prompts.
+
+---
 
 ## What you touch
-- Script: `lab2_skills.py` (write it next to this brief; there is no reference `.py` yet)
-- File: `SKILL.md` (write it next to this brief; there is no reference skill file yet)
-- Trigger: `pr-review`
-- Function: `load_skill(user_text, skill_path)` returns `{ "loaded": true, "path": path, "body": text }` or `{ "loaded": false }`
-- Two user lines in `__main__`: `Please do a pr-review on this branch` and `What is 2+2?`
-- Print the trigger, the path, and the body on a match. Print `skipped` on a miss.
-- No HTTP. This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`.
-- Do not send `tools/list` or `tools/call`. Do not start a second model.
+- Script to create: `lab2_skills.py`
+- Skill File: `SKILL.md` (next to the script)
+- Trigger Keyword: `"pr-review"`
+- Main Function: `load_skill(user_text: str, skill_path: str) -> dict`
+- Test Queries:
+  - Match: `"Please do a pr-review on this branch"`
+  - Miss: `"What is 2+2?"`
+
+---
 
 ## Steps
 ```mermaid
-flowchart LR
-    subgraph lab2_skill_script [This script]
-        TRIG["trigger pr-review"]
-        LOAD["load_skill"]
-    end
-    subgraph lab2_skill_file [Disk]
-        MD["SKILL.md"]
-    end
-    TRIG -->|"match"| LOAD
-    LOAD --> MD
-    TRIG -->|"no match"| LOAD
+flowchart TD
+    A["User Prompt"] --> B["load_skill(user_text, skill_path)"]
+    B --> C{"Contains 'pr-review'?"}
+    C -->|"Yes (Match)"| D["Read SKILL.md from disk"]
+    D --> E["Return {loaded: True, path: ..., body: ...}"]
+    C -->|"No (Miss)"| F["Return {loaded: False}"]
+    F --> G["Print 'skipped' (Disk read avoided)"]
 ```
 
-1. Write `SKILL.md` with exactly these three lines:
-   - `# PR review`
-   - `Check the diff. List risks. Do not merge.`
-   - (a trailing newline is fine)
-2. Set `skill_path` to `os.path.join(os.path.dirname(__file__), "SKILL.md")`.
-3. Write `load_skill(user_text, skill_path)`. If `pr-review` is not in `user_text`, return `{ "loaded": False }`. Do not open the file. If it is in `user_text`, `open` the path, read the body, return `{ "loaded": True, "path": skill_path, "body": text }`.
-4. In `__main__`, call `load_skill("Please do a pr-review on this branch", skill_path)`. Print `trigger` `pr-review`, then `path`, then `body`.
-5. Call `load_skill("What is 2+2?", skill_path)`. Print `skipped`.
-6. Confirm the first call prints `Check the diff. List risks. Do not merge.` Confirm the second call does not print the body. Do not POST. Do not send JSON-RPC.
+1. Create `SKILL.md` next to the script with the following contents:
+   ```markdown
+   # PR review
+   Check the diff. List risks. Do not merge.
+   ```
+2. Implement `load_skill(user_text: str, skill_path: str) -> dict`:
+   - If `"pr-review"` is not in `user_text`, immediately return `{"loaded": False}` without reading disk.
+   - If `"pr-review"` is present, read `SKILL.md` and return `{"loaded": True, "path": skill_path, "body": file_content}`.
+3. In `__main__`:
+   - Test with `"Please do a pr-review on this branch"` and verify that the skill body is returned and printed.
+   - Test with `"What is 2+2?"` and verify that execution prints `"skipped"`.
+
+---
 
 ## Data contract
-Only the keys this script writes and reads.
 
-**SKILL.md body**
+**`SKILL.md` Body Content**
 
 ```text
 # PR review
 Check the diff. List risks. Do not merge.
 ```
 
-**Match return**
+**Skill Match Return Object**
 
 ```json
 {
   "loaded": true,
-  "path": "SKILL.md",
+  "path": "education/15_mcp_and_skills/SKILL.md",
   "body": "# PR review\nCheck the diff. List risks. Do not merge.\n"
 }
 ```
 
-**Miss return**
+**Skill Miss Return Object**
 
 ```json
-{ "loaded": false }
+{
+  "loaded": false
+}
 ```
 
-The script does not POST. Lab 1 is JSON-RPC. This lab is a file read.
+---
 
 ## Run
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/15_mcp_and_skills/lab2_skills.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/15_mcp_and_skills/lab2_skills.py
 ```
 
-This script ignores `OLLAMA_HOST` and `OLLAMA_MODEL`. They are listed so the lab Run block matches the other chapters. There is no HTTP call.
+---
 
 ## What you should see
-`trigger` `pr-review`, then the path of `SKILL.md`, then the body including `Check the diff. List risks. Do not merge.`. Then `skipped` for `What is 2+2?`. If both print the body, the trigger check is missing. If you see `tools/list` or `add_numbers`, you opened lab 1. If you see a POST, you added HTTP this lab does not need.
+- `Trigger: pr-review`
+- `Path: .../SKILL.md`
+- `Body: # PR review\nCheck the diff. List risks. Do not merge.`
+- `Result for 'What is 2+2?': skipped`
+
+---
 
 ## Stop here
-This is a file load. Do not add `tools/list` or `tools/call`. Do not start a second model. Do not write a 200-line MCP server. Lab 1 is the JSON-RPC client. Chapter 13 lab 2 is a fact row, not a skill file.
+You have successfully implemented dynamic on-demand skill loading! In Chapter 16, we will build security sandboxes, RBAC permissions, and prompt injection defenses.
+
+Next up: [Chapter 16: The Shield](../16_the_shield/01_security_overview.md).
+
+---
 
 ## Notes
-- Write `lab2_skills.py` and `SKILL.md` next to this brief. There is no reference file in the repo yet.
-- Read the file only when the trigger matches so unused skills stay on disk.
-- Keys written and read match this brief. Do not edit other `.py` files in the repo.
+*(Record your skill loading trace and trigger verification results here)*
+

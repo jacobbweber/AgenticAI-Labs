@@ -1,97 +1,100 @@
-# Lab 1: Resilient executor
+# Lab 1: Resilient Sandbox Execution with Automated Self-Healing and Cycle Detection
 
-A failed tool run is retried under the chapter 11 policy, using the chapter 09 sandbox and the chapter 12 cycle hash. Not a new gateway.
+In this lab, you will implement a resilient code execution controller `run_resilient_code()` that executes Python snippets inside isolated subprocesses, catches runtime failures (such as `ZeroDivisionError`), and safely retries execution using reflection without infinite loops.
+
+---
 
 ## What you touch
 - Script: `lab1_resilient_executor.py`
-- Classes: `CycleOscillationDetector`, `SandboxedSubprocessWorker`, `ResilientExecutionController`
-- Functions: `check_call_signature`, `check_error_hash`, `execute_code`, `run_resilient_code`, `mock_llm_fixer`
-- URL / path: none in the reference script. Intended retry target is `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
-- Keys sent (intended, if the fixer POSTs): `model`, `prompt`, `stream` (`false`)
-- Keys read (intended): `response`
-- Files written: `target.py` in a `harness_sandbox_` temp dir
+- Main Classes & Functions:
+  - `CycleOscillationDetector`: Detects identical repeated execution attempts via MD5 hashing.
+  - `SandboxedSubprocessWorker`: Executes scripts in isolated temporary directories (`harness_sandbox_`) with strict timeouts.
+  - `ResilientExecutionController`: Orchestrates execution, reflexions, and automated repairs.
+  - `mock_llm_fixer(code: str, error: str) -> str`: Simulates code repair.
+- Pure Python logic (no network calls required)
+
+---
 
 ## Steps
 ```mermaid
 flowchart TD
-    subgraph re_ctrl [lab1_resilient_executor.py]
-        RUN["run_resilient_code"]
-        CYC["check_call_signature"]
-        ERR["check_error_hash"]
-        FIX["mock_llm_fixer"]
-    end
-    subgraph re_sand [SandboxedSubprocessWorker]
-        EX["execute_code"]
-        PY["target.py"]
-    end
-    RUN --> CYC
-    RUN --> EX
-    EX --> PY
-    EX -->|"nonzero exit"| ERR
-    ERR --> FIX
-    FIX --> RUN
+    A["Initial Code (returns 10 / 0)"] --> B["ResilientExecutionController"]
+    B --> C["SandboxedSubprocessWorker: Execute target.py"]
+    C -->|"ZeroDivisionError"| D["Capture stderr & Compute Error Hash"]
+    D --> E["CycleOscillationDetector: Verify No Infinite Loop"]
+    E --> F["mock_llm_fixer: Repair Code (returns 10 / 2)"]
+    F --> G["Re-execute target.py"]
+    G -->|"Exit Code 0"| H["Return {status: 'SUCCESS', attempts: 2, stdout: '5'}"]
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://192.168.1.29:11434` and `qwen3.6:35b-a3b-65k`. The reference script does not POST.
-2. Build `ResilientExecutionController`. It owns `CycleOscillationDetector(max_repeats=2)` and `SandboxedSubprocessWorker`.
-3. Call `run_resilient_code` with the broken snippet `def divide():\n    return 10 / 0\nprint(divide())` and `mock_llm_fixer`.
-4. On each attempt (max 3): `check_call_signature("execute_code", {"code_len": len(current_code)})`. If that signature has already been seen `max_repeats` times, return `ABORTED`.
-5. `execute_code` writes `target.py` in a `harness_sandbox_` temp dir, starts `[sys.executable, target.py]`, and uses `communicate(timeout=3.0)`. Exit 0 returns `SUCCESS` with `stdout`.
-6. On failure, `check_error_hash(stderr)` MD5s the traceback. A repeated hash returns `ABORTED`. Otherwise call the fixer and retry. Intended fixer is a chapter 11 retry POST. The reference fixer is `mock_llm_fixer` and returns `return 10 / 2`.
+1. Instantiate `ResilientExecutionController` with `CycleOscillationDetector(max_repeats=2)` and `SandboxedSubprocessWorker`.
+2. Call `run_resilient_code()` with an intentionally failing snippet:
+   ```python
+   def divide():
+       return 10 / 0
+   print(divide())
+   ```
+3. Attempt 1: The worker writes `target.py`, executes it, and catches `ZeroDivisionError`.
+4. The error hash is computed and recorded in the cycle detector.
+5. The controller invokes `mock_llm_fixer`, which repairs the snippet to `return 10 / 2`.
+6. Attempt 2: Re-execution succeeds with exit code `0`, returning stdout `"5"`.
+
+---
 
 ## Data contract
 
-**Intended** (chapter 11 retry of a failed tool or POST)
-
-```json
-{
-  "model": "qwen3.6:35b-a3b-65k",
-  "prompt": "string",
-  "stream": false
-}
-```
-
-**What `run_resilient_code` actually returns on success**
+**Successful Self-Healing Result**
 
 ```json
 {
   "status": "SUCCESS",
   "attempts": 2,
   "stdout": "5",
-  "final_code": "string"
+  "final_code": "def divide():\n    return 10 / 2\nprint(divide())"
 }
 ```
 
-**Abort / fail**
+**Loop Oscillation Abort Result**
 
 ```json
 {
   "status": "ABORTED",
-  "reason": "string"
+  "reason": "Repeated identical error hash detected."
 }
 ```
 
-`status` can also be `FAILED` with `reason` `Max attempts exceeded.` There is no HTTP body. See Notes.
+---
 
 ## Run
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/20_synthesis/lab1_resilient_executor.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/20_synthesis/lab1_resilient_executor.py
 ```
 
+---
+
 ## What you should see
-`=== STARTING RESILIENT EXECUTION CONTROLLER ===`, `[ATTEMPT 1]` with `ZeroDivisionError`, `[REFLEXION]` plus an 8-char MD5 prefix, `[SELF-HEALING]`, `[ATTEMPT 2]` with `[SUCCESS]`, then a JSON payload `status` `SUCCESS`, `attempts` 2, `stdout` `5`. This script does not need Ollama. If you wire a real fixer POST later and see `URLError`, the provider is not reachable.
+- `=== STARTING RESILIENT EXECUTION CONTROLLER ===`
+- `[ATTEMPT 1] Execution Failed: ZeroDivisionError`
+- `[REFLEXION] Error signature logged`
+- `[SELF-HEALING] Applying automated patch...`
+- `[ATTEMPT 2] Execution Passed [SUCCESS]`
+- Return payload showing `status: SUCCESS`, `attempts: 2`, and `stdout: 5`.
+
+---
 
 ## Stop here
-Do not add a new primitive; compose what you already have. Sandbox plus cycle plus one retry is enough. Do not add a new gateway mesh. Lab 3 in this folder (`lab2_enterprise_harness_app.py`) is the full app. A new retry stack would hide whether the miss came from the child, the hash, or the extra.
+You have successfully implemented resilient, self-healing sandbox execution! In Lab 2, we will assemble the complete enterprise agent application harness.
+
+Next up: [Lab 2: Enterprise Harness App](./lab2_enterprise_harness_app.md).
+
+---
 
 ## Notes
-- Kernel plus retry. Reuse chapter 09 `subprocess.Popen`, chapter 12 cycle/error hash, chapter 11 retry policy, chapter 12 reflexion.
-- Contract drift vs `lab1_resilient_executor.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL`, no POST, no session file, no `tool_calls`. Cycle key is `execute_code` plus `code_len` (not tool args plus result). Error halt is MD5 of `stderr`. Fixer is `mock_llm_fixer`, not a model. Temp dir prefix is `harness_sandbox_`. Script name inside the dir is `target.py`. Timeout is 3.0 seconds. The intended contract is a chapter 11 retry of a failed tool. Write that in your copy. Leave the reference file as-is.
+*(Record your execution attempts and error traces here)*
+

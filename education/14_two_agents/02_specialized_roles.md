@@ -1,43 +1,37 @@
-# 14: Specialized Worker Roles
+# 14: Specialized Worker Roles: Scoping Personas and Tool Whitelists
 
-After this page a role is a system prompt plus a tool whitelist. The chapter 14 labs isolate the prompt. The list is enforced in chapter 16 `lab3_agent_rbac.py`.
+By the end of this chapter, you will understand how to design specialized worker roles combining focused system prompts with explicit tool whitelists (such as Architect, Engineer, and Auditor).
+
+In earlier modules, agents were granted access to broad tool sets. In this chapter, we explore why and how to restrict tool privileges according to each agent's specific role.
 
 ## Data
-A **role** is two things stored together:
-
-1. A system prompt. That is the `role: system` string, or the `system_prompt` argument in `lab1_supervisor_worker.py` (`worker_security_auditor` and `worker_doc_generator` each have their own).
-2. An allowed tool name list. That is a Python dict from role name to a list of strings. The intended names in this chapter are Architect, Engineer, and Auditor.
-
-Intended grants:
-
-- Architect: `view_file`, `write_spec`
-- Engineer: `view_file`, `write_to_file`
-- Auditor: `view_file`, scoped `run_command`
-
-The chapter 16 reference script uses different names (`ARCHITECT` / `read_file` / `list_dir`, `DEVELOPER` / `read_file` / `write_file`, `AUDITOR` / `read_file` / `run_tests`). The idea is the same: a role name maps to a short list. See Notes.
-
-Lab 1 workers have a system prompt and no tools. Lab 2 `agent_developer` has a prompt and no whitelist. This page names the missing list so chapter 16 has something to enforce.
-
-`OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. A role does not change the route. The intended route is still `POST /api/chat`.
+A specialized **Role** is defined by two tightly coupled elements:
+1. **System Persona**: A concise instruction set declaring role responsibilities and boundaries.
+2. **Tool Whitelist**: An explicit dictionary mapping each role to its allowed tool function names:
+   - **Architect**: `["view_file", "write_spec"]`
+   - **Engineer**: `["view_file", "write_to_file"]`
+   - **Auditor**: `["view_file", "run_command"]`
 
 ## Information
-One agent with every tool mixes jobs. The writer can call `run_command`. The auditor can call `write_to_file`. A role is a smaller grant: the prompt says what the job is, and the list says which function names `TOOL_REGISTRY` may run.
+Assigning all available tools to every agent is risky. A documentation writer might accidentally invoke shell execution commands, or a security auditor might overwrite source files.
 
-Without the list, the prompt is only text. The model can still emit a `tool_calls` entry for a name that is not its job. Chapter 16 `rbac_tool_interceptor` is the function that compares `tool_name` to the list and returns status `403` when it is missing.
+Scoping roles with whitelists provides defense-in-depth:
+- **Least Privilege**: Each agent is equipped only with the exact tools necessary for its specific function.
+- **Deterministic Interception**: In Chapter 16, we implement an RBAC interceptor that returns HTTP 403 Forbidden if an agent attempts to invoke a tool outside its whitelist.
 
 ## Knowledge
-1. Write the system prompt with what the role must do and what it must not do.
-2. Attach only that role's tool names. Store them as `dict[str, list[str]]` (role name to tool names).
-3. When a `tool_calls` item arrives, look up the role and reject any name that is not on the list. Chapter 16 implements the reject. This chapter only names the grant.
-4. Do not put `run_command` on the writer. Do not put `write_to_file` on the auditor.
-5. Do not implement Docker or a permission matrix here.
+Here is the step-by-step procedure:
+1. Define clear operational boundaries in the role's system prompt.
+2. Maintain a central permission mapping (`ROLE_TOOL_PERMISSIONS: dict[str, list[str]]`).
+3. Whenever an agent emits a tool call, verify that `tool_name` is present in the role's authorized list before execution.
+4. Reject unauthorized tool calls immediately with structured error feedback.
 
 ## Wisdom
-Personas without a whitelist are just text. The list is the control. Two isolated prompts in lab 1 prove the topology. They do not prove a tool cannot leak. That proof is chapter 16.
+A persona prompt alone is just advisory text. An enforced tool whitelist is what provides actual security and operational boundaries.
 
 ## The When and Why
-- **When:** two agents share a process and must not share every tool.
-- **Why:** a doc writer with `run_command` is an accident. The list stops the call before the function runs.
+- **When**: Building multi-agent systems where agents possess distinct authority levels (e.g. read-only reviewers vs read-write developers).
+- **Why**: Prompt instructions alone cannot prevent unauthorized tool execution. Whitelists guarantee strict operational containment.
 
 ## How it works
 

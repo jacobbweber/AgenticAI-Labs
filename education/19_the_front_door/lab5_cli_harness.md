@@ -1,58 +1,54 @@
-# Lab 5: CLI harness as a client
+# Lab 5: Building a Command Line Interface (CLI) Harness
 
-A stdin/stdout loop calls `run_turn`, prints `response`, and asks y/n on a high-risk line. The mock `run_turn` means the lab runs without a model. The CLI does not own the agent loop.
+In this lab, you will implement a terminal CLI harness `run_cli()` that wraps an agent kernel, processes multi-turn conversations via simulated or interactive standard I/O, and enforces interactive `[y/n]` Human-in-the-Loop gates before high-risk tool actions.
+
+---
 
 ## What you touch
-- Script: `lab5_cli_harness.py` (write it next to this brief; there is no reference `.py` yet)
-- Function: `mock_run_turn(session_id, user_prompt)` returns a `run_turn` dict
-- Function: `apply_hitl(turn, answer)` returns `{ "applied": bool, "tool": name }` when `high_risk` is true
-- Function: `run_cli(lines, run_turn)` walks a list of strings (fake stdin) so the script does not hang on `input()`
-- Session id: `cli-1`
-- Fixture lines in `__main__`: `What is 2+2?`, `Write config.json`, `n`, then a second list `Write config.json`, `y`
-- Print `response` only. Do not print `thinking` on the default path.
-- No HTTP. This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`.
-- Do not copy `CoreAgentKernel`. Do not start FastAPI. Do not build a TUI.
+- Script to create: `lab5_cli_harness.py`
+- Main Functions:
+  - `mock_run_turn(session_id: str, user_prompt: str) -> dict`
+  - `apply_hitl(turn: dict, answer: str) -> dict`
+  - `run_cli(lines: list[str], run_turn)`
+- Test Inputs:
+  - Run 1: `["What is 2+2?", "Write config.json", "n"]` $\rightarrow$ verify skipped write
+  - Run 2: `["Write config.json", "y"]` $\rightarrow$ verify applied write
+- Pure Python logic (no network calls required)
+
+---
 
 ## Steps
 ```mermaid
-flowchart LR
-    subgraph lab5_cli_script [This script]
-        LINES["lines list"]
-        CLI["run_cli"]
-        HITL["apply_hitl"]
-    end
-    subgraph lab5_cli_kernel [Called function]
-        RUN["mock_run_turn"]
-    end
-    LINES --> CLI
-    CLI --> RUN
-    RUN -->|"high_risk true"| HITL
-    HITL -->|"y or n"| CLI
+flowchart TD
+    A["User Input Line ('Write config.json')"] --> B["mock_run_turn()"]
+    B --> C{"is high_risk?"}
+    C -->|"False"| D["Print ASSISTANT: response"]
+    C -->|"True"| E["Prompt: HITL: Apply write to config.json? [y/n]"]
+    E --> F["Read Answer ('y' or 'n')"]
+    F --> G["apply_hitl(turn, answer)"]
+    G -->|"Answer 'y'"| H["Print APPLY: write_file"]
+    G -->|"Answer 'n'"| I["Print SKIP: write_file"]
 ```
 
-1. Write `mock_run_turn(session_id, user_prompt)`. If the prompt contains `Write` or `write`, return `{ "session_id", "turn_count": 1, "thinking": "will write config", "response": "Apply write to config.json?", "high_risk": True, "tool": "write_file" }`. Else return `{ "session_id", "turn_count": 1, "thinking": "add the numbers", "response": "4", "high_risk": False }`.
-2. Write `apply_hitl(turn, answer)`. If `turn["high_risk"]` is false, return `{ "applied": False, "reason": "not_high_risk" }`. If `answer.strip().lower()` is `y`, return `{ "applied": True, "tool": turn["tool"] }`. Else return `{ "applied": False, "tool": turn["tool"] }`.
-3. Write `run_cli(lines, run_turn)`. `session_id` is `cli-1`. Walk the list with an index. Each user line is printed as `USER: ` plus the line. Call `run_turn(session_id, line)`. Print `ASSISTANT: ` plus `turn["response"]`. Do not print `thinking`.
-4. If `turn["high_risk"]` is true, take the next list item as the y/n answer. Print `HITL: Apply write to config.json? [y/n]`. Print `USER: ` plus that answer. Call `apply_hitl`. If `applied` is true, print `APPLY: ` plus the tool name. If false, print `SKIP: ` plus the tool name. Do not call a write function.
-5. In `__main__`, call `run_cli(["What is 2+2?", "Write config.json", "n"], mock_run_turn)`. Then call `run_cli(["Write config.json", "y"], mock_run_turn)`.
-6. Confirm the first run prints `4` then `SKIP: write_file`. Confirm the second run prints `APPLY: write_file`. Do not POST. Do not import `CoreAgentKernel`.
+1. Implement `mock_run_turn(session_id, user_prompt)`:
+   - If prompt contains `"write"` or `"Write"`, return `{"session_id": session_id, "turn_count": 1, "thinking": "will write config", "response": "Apply write to config.json?", "high_risk": True, "tool": "write_file"}`.
+   - Otherwise, return `{"session_id": session_id, "turn_count": 1, "thinking": "add the numbers", "response": "4", "high_risk": False}`.
+2. Implement `apply_hitl(turn, answer)`:
+   - If not high risk, return `{"applied": False, "reason": "not_high_risk"}`.
+   - If `answer.strip().lower() == "y"`, return `{"applied": True, "tool": turn["tool"]}`.
+   - Otherwise, return `{"applied": False, "tool": turn["tool"]}`.
+3. Implement `run_cli(lines, run_turn)`:
+   - Iterate through lines, printing `USER: <line>`, invoking `run_turn()`, and printing `ASSISTANT: <response>`.
+   - On high-risk turns, consume the next input line as the HITL response and invoke `apply_hitl()`.
+4. In `__main__`:
+   - Execute Run 1 (declining write) $\rightarrow$ verify `SKIP: write_file`.
+   - Execute Run 2 (accepting write) $\rightarrow$ verify `APPLY: write_file`.
+
+---
 
 ## Data contract
-Only the keys this script writes and reads.
 
-**Safe `run_turn` return**
-
-```json
-{
-  "session_id": "cli-1",
-  "turn_count": 1,
-  "thinking": "add the numbers",
-  "response": "4",
-  "high_risk": false
-}
-```
-
-**High-risk `run_turn` return**
+**Kernel Turn Response Payload**
 
 ```json
 {
@@ -65,42 +61,46 @@ Only the keys this script writes and reads.
 }
 ```
 
-**HITL apply**
+**HITL Authorization Evaluation**
 
 ```json
-{ "applied": true, "tool": "write_file" }
+{
+  "applied": true,
+  "tool": "write_file"
+}
 ```
 
-**HITL skip**
-
-```json
-{ "applied": false, "tool": "write_file" }
-```
-
-The CLI prints `response`. It does not print `thinking`. It does not write `state_store/{session_id}.json`. That file is chapter 07.
+---
 
 ## Run
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/19_the_front_door/lab5_cli_harness.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/19_the_front_door/lab5_cli_harness.py
 ```
 
-This script ignores `OLLAMA_HOST` and `OLLAMA_MODEL`. They are listed so the lab Run block matches the other chapters. There is no HTTP call.
+---
 
 ## What you should see
-First `run_cli`: `USER: What is 2+2?` then `ASSISTANT: 4` then `USER: Write config.json` then `ASSISTANT: Apply write to config.json?` then `HITL: Apply write to config.json? [y/n]` then `USER: n` then `SKIP: write_file`. Second `run_cli`: `USER: Write config.json` then the HITL lines then `USER: y` then `APPLY: write_file`. If `thinking` prints, you dumped MX. If the script waits for a keyboard, you used `input()` instead of the list. If you see a POST or `CoreAgentKernel`, you copied the chapter 07 loop.
+- **Run 1**:
+  - `USER: What is 2+2?` $\rightarrow$ `ASSISTANT: 4`
+  - `USER: Write config.json` $\rightarrow$ `HITL: Apply write to config.json? [y/n]` $\rightarrow$ `USER: n` $\rightarrow$ `SKIP: write_file`
+- **Run 2**:
+  - `USER: Write config.json` $\rightarrow$ `HITL: Apply write to config.json? [y/n]` $\rightarrow$ `USER: y` $\rightarrow$ `APPLY: write_file`
+
+---
 
 ## Stop here
-This is a client. Do not copy `CoreAgentKernel`. Do not write `state_store`. Do not start FastAPI. Do not build a TUI. Chapter 07 owns `run_turn` and the session file. Chapter 09 owns the HITL gate object. Lab 3 is the HTML client of the same loop.
+You have successfully implemented a client-agnostic CLI harness! In Chapter 20, we will synthesize all course concepts into an end-to-end autonomous coding agent harness.
+
+Next up: [Chapter 20: Synthesis](../20_synthesis/00_synthesis.md).
+
+---
 
 ## Notes
-- Write `lab5_cli_harness.py` next to this brief. There is no reference `.py` in the repo yet.
-- `run_cli` takes `run_turn` as an argument so a later copy can pass the real kernel. This lab uses `mock_run_turn`.
-- Keys written and read match this brief. Do not edit other `.py` files in the repo.
+*(Record your CLI test executions and HITL outputs here)*
+

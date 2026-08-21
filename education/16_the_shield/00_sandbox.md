@@ -1,41 +1,38 @@
-# 16: Sandbox
+# 16: Sandbox: Isolated Subprocess Execution with Timeouts
 
-After this page untrusted code runs in a subprocess (or container) with limits, not in the agent process. The lab is `lab1_code_sandbox.py`.
+By the end of this chapter, you will implement a secure code execution sandbox (`execute_sandboxed_python`) that runs untrusted LLM-generated code in an isolated subprocess with strict execution timeouts and temporary directory working spaces.
+
+When agents generate and execute Python code, running untrusted code directly in the main agent process poses severe risks to system memory, environment variables, and filesystem integrity.
 
 ## Data
-A **sandbox** is a child process that runs a code string the model (or a test) handed you. The agent process must not `eval` or `exec` that string in its own PID.
-
-**Isolation** in this lab is `subprocess.Popen`. Stricter isolation is Docker, gVisor, or Wasm. Those are the same job with a container runtime. This lab does not start a container.
-
-**Limits** in the lab are:
-
-- A temp directory from `tempfile.TemporaryDirectory(prefix="agent_sandbox_")`. The child `cwd` is that directory.
-- A timeout. Default is `5.0` seconds. Test 3 uses `2.0`.
-- Captured `stdout` and `stderr` pipes. The function returns those strings, not a live handle.
-
-The function is `execute_sandboxed_python(code_snippet, timeout_seconds=5.0)`. It writes `sandbox_script.py` inside the temp dir and runs `[sys.executable, script_path]`.
-
-This lab does not POST to Ollama. `OLLAMA_HOST` should still default to `http://127.0.0.1:11434` and `OLLAMA_MODEL` to `llama3.2:1b` when a later tool calls the model. Port `11434` is the Ollama listener.
+An isolated **Execution Sandbox** manages runtime isolation using Python's `subprocess` module:
+- **Temporary Working Directory**: Created per execution using `tempfile.TemporaryDirectory(prefix="agent_sandbox_")` to isolate disk side effects.
+- **Isolated Subprocess**: Launched via `subprocess.Popen([sys.executable, script_path], cwd=temp_dir, stdout=PIPE, stderr=PIPE)`.
+- **Execution Watchdog & Timeout**: Hard timeout limits (e.g. `5.0s`). If execution exceeds the ceiling, the watchdog invokes `process.kill()` and returns `TIMEOUT_EXCEEDED` (`exit_code: -1`).
+- **Telemetry Payload**: Returns `{"status": "COMPLETED" | "FAILED" | "TIMEOUT_EXCEEDED", "exit_code": int, "stdout": str, "stderr": str, "duration_seconds": float}`.
 
 ## Information
-The model can emit a Python snippet or a shell command. If you `exec` that string in the agent process, a bad line shares your memory, your open files, and your network. A child process dies when it finishes or when you kill it. The parent only sees `stdout`, `stderr`, and `exit_code`.
+Never use Python's built-in `eval()` or `exec()` on arbitrary model outputs within your primary agent process.
 
-In-process `eval` is not a sandbox. A timeout that does not `process.kill()` is not a limit.
+A subprocess sandbox provides essential safeguards:
+- **Crash Containment**: Syntax errors, unhandled exceptions, and memory leaks terminate only the ephemeral child process.
+- **Runaway Loop Protection**: Infinite loops (`while True: pass`) are killed deterministically by the timeout watchdog.
+- **Clean Environment**: The parent process retains full control over stdout, stderr, and exit codes.
 
 ## Knowledge
-1. Receive a code string. Do not run it with `eval` or `exec`.
-2. Write it to a temp file (`sandbox_script.py` in an `agent_sandbox_` directory) or pass it on stdin.
-3. Start a child with `subprocess.Popen`. Set `cwd` to the temp dir. Capture stdout and stderr.
-4. Call `communicate(timeout=timeout_seconds)`. On `subprocess.TimeoutExpired`, `kill` the child.
-5. Return `{ "stdout", "stderr", "exit_code" }` (the lab also adds `status` and `duration_seconds`).
-6. Do not add Docker, gVisor, a network namespace, or a seccomp profile.
+Here is the step-by-step procedure:
+1. Write untrusted code snippets to a temporary file (`sandbox_script.py`) inside an ephemeral directory.
+2. Spawn a subprocess targeting `sys.executable` with redirected stdout and stderr pipes.
+3. Call `process.communicate(timeout=timeout_seconds)` within a try/except block.
+4. Catch `subprocess.TimeoutExpired`, invoke `process.kill()`, and return status `TIMEOUT_EXCEEDED`.
+5. Capture and return trimmed stdout, stderr, and process exit codes.
 
 ## Wisdom
-A subprocess with a timeout is enough to prove the code left the agent PID. Docker, gVisor, and Wasm are the same job with stricter isolation. If you add them now, a timeout failure could come from the container runtime instead of `communicate`.
+A subprocess sandbox with timeout enforcement is the minimum security baseline for any agent capable of code execution.
 
 ## The When and Why
-- **When:** the model can emit a shell command or a Python snippet.
-- **Why:** a bad command in the agent PID is your machine. A child process returns text and an exit code.
+- **When**: Whenever an agent generates, tests, or evaluates executable code, shell scripts, or mathematical calculations.
+- **Why**: In-process `exec()` can corrupt host application memory, leak credentials, or hang the entire server indefinitely. Subprocesses enforce hard boundaries.
 
 ## How it works
 

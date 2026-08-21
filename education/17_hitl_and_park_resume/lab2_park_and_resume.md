@@ -1,46 +1,54 @@
-# Lab 2: Park and resume
+# Lab 2: Persistent State Parking and Asynchronous Resumption
 
-A job row waits with `needs_hitl` and `proposed_action`. `resume_job` continues the same row after a later yes or no.
+In this lab, you will persist in-progress job execution records to disk (`jobs.json`), mark high-risk actions with `status: needs_hitl` and a `proposed_action`, and asynchronously resume them to `status: done` or `status: failed` based on operator approval.
+
+---
 
 ## What you touch
-- Script: `lab2_park_and_resume.py` (write it next to this brief; there is no reference `.py` yet)
-- Functions: `enqueue_job(prompt)`, `claim_job()`, `park_job(job_id, proposed_action)`, `resume_job(job_id, approved)`
-- File: `jobs.json` beside the script (`os.path.join(os.path.dirname(__file__), "jobs.json")`)
-- Row keys: `job_id`, `status`, `prompt`, `result`, `proposed_action`
-- Status values: `pending`, `running`, `done`, `needs_hitl`, `failed`
-- No HTTP. This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`.
-- No UI. Do not call the real command.
+- Script to create: `lab2_park_and_resume.py`
+- Persistence File: `jobs.json` (next to the script)
+- Main Functions:
+  - `enqueue_job(prompt: str) -> dict`
+  - `claim_job() -> dict`
+  - `park_job(job_id: str, proposed_action: str) -> dict`
+  - `resume_job(job_id: str, approved: bool) -> dict`
+- Lifecycle Statuses: `pending`, `running`, `needs_hitl`, `done`, `failed`
+- Pure Python logic (no network calls required)
+
+---
 
 ## Steps
 ```mermaid
-flowchart LR
-    subgraph lab1_park_script [This script]
-        ENQ1P["enqueue_job"]
-        CLM1P["claim_job"]
-        PARK1P["park_job"]
-        RES1P["resume_job"]
-    end
-    subgraph lab1_park_file [jobs.json]
-        LIST1P["jobs list"]
-    end
-    ENQ1P -->|"pending"| LIST1P
-    CLM1P -->|"running"| LIST1P
-    PARK1P -->|"needs_hitl"| LIST1P
-    RES1P -->|"done or failed"| LIST1P
+flowchart TD
+    A["enqueue_job('clean tmp')"] -->|"Write status: 'pending'"| DB[("jobs.json")]
+    DB --> B["claim_job() -> status: 'running'"]
+    B --> C["park_job(job_id, 'rm -rf /tmp/demo') -> status: 'needs_hitl'"]
+    C --> DB
+    DB --> D{"Operator Decision (approved)"}
+    D -->|"True (Approved)"| E["resume_job(..., approved=True) -> status: 'done'"]
+    D -->|"False (Rejected)"| F["resume_job(..., approved=False) -> status: 'failed'"]
+    E & F --> DB
 ```
 
-1. Reuse the `jobs.json` shape from chapter 16. Add `proposed_action` (string or null). Allow `status` `needs_hitl` and `failed`.
-2. Write `enqueue_job` and `claim_job` as in chapter 16 lab 1.
-3. Write `park_job(job_id, proposed_action)`. Set that row to `needs_hitl` and store the string.
-4. Write `resume_job(job_id, approved)`. Set `status` to `running`. If `approved` is true, set `done`. If `approved` is false, set `failed`.
-5. In `__main__`: enqueue one job, claim it, park with `proposed_action` `"rm -rf /tmp/demo"`, print `status` `needs_hitl`. Then `resume_job(..., True)` and print `done`.
-6. Enqueue a second job, claim it, park with the same `proposed_action`, then `resume_job(..., False)` and print `failed`.
-7. Do not run the command. Do not open a UI. Do not POST.
+1. Maintain persistent state in `jobs.json` holding a list of job objects:
+   `{"job_id": str, "status": str, "prompt": str, "result": str | None, "proposed_action": str | None}`.
+2. Implement `enqueue_job(prompt)`:
+   - Create a job record with `status: "pending"` and append to `jobs.json`.
+3. Implement `claim_job()`:
+   - Find the first `pending` job, update its status to `running`, and save.
+4. Implement `park_job(job_id, proposed_action)`:
+   - Update job status to `needs_hitl`, record `proposed_action`, and persist.
+5. Implement `resume_job(job_id, approved: bool)`:
+   - Load the job, update status to `done` if `approved` is True, or `failed` if False.
+6. In `__main__`:
+   - Test approval flow: Enqueue $\rightarrow$ Claim $\rightarrow$ Park (`"rm -rf /tmp/demo"`) $\rightarrow$ Resume (`approved=True`) $\rightarrow$ Assert `done`.
+   - Test rejection flow: Enqueue $\rightarrow$ Claim $\rightarrow$ Park (`"rm -rf /tmp/demo"`) $\rightarrow$ Resume (`approved=False`) $\rightarrow$ Assert `failed`.
+
+---
 
 ## Data contract
-Only the keys this script writes and reads.
 
-**jobs.json**
+**`jobs.json` Record Schema**
 
 ```json
 [
@@ -54,12 +62,22 @@ Only the keys this script writes and reads.
 ]
 ```
 
-**park_job(job_id, proposed_action)** writes `status` `needs_hitl` and `proposed_action`.
+**Completed Job Record**
 
-**resume_job(job_id, approved)** writes `running`, then `done` if `approved` is true, or `failed` if `approved` is false.
+```json
+{
+  "job_id": "job-1",
+  "status": "done",
+  "prompt": "clean tmp",
+  "result": "Action 'rm -rf /tmp/demo' executed successfully.",
+  "proposed_action": "rm -rf /tmp/demo"
+}
+```
+
+---
 
 ## Run
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/17_hitl_and_park_resume/lab2_park_and_resume.py
@@ -69,16 +87,22 @@ python education/17_hitl_and_park_resume/lab2_park_and_resume.py
 python education/17_hitl_and_park_resume/lab2_park_and_resume.py
 ```
 
-This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`. Do not set those vars for this lab.
+---
 
 ## What you should see
-First job: `needs_hitl`, then `done`. Second job: `needs_hitl`, then `failed`. `jobs.json` has both rows. If a command actually ran, you executed the string. Do not.
+- **Job 1 (Approved)**: Transition from `needs_hitl` $\rightarrow$ `done`.
+- **Job 2 (Rejected)**: Transition from `needs_hitl` $\rightarrow$ `failed`.
+- `jobs.json` saved on disk with both finalized records.
+
+---
 
 ## Stop here
-This is the end of the required path. [optional_training](../optional_training/) is a side folder. Do not add a control-plane product.
+You have successfully implemented persistent state parking and resumption! In Chapter 18, we will scale background jobs across concurrent worker queues.
+
+Next up: [Chapter 18: The Job](../18_the_job/00_the_job.md).
+
+---
 
 ## Notes
-- Write `lab2_park_and_resume.py` next to this brief. There is no reference `.py` in the repo yet.
-- `jobs.json` sits next to the script. Do not commit a huge dump.
-- The proposed action is a string. Do not call it.
-- Keys written and read match this brief. Do not edit other `.py` files in the repo.
+*(Record your state parking persistence outputs here)*
+

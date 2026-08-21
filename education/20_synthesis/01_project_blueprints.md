@@ -1,40 +1,36 @@
-# 20: Project blueprints
+# 20: Specialized Project Blueprints
 
-These blueprints are optional vertical slices composing the 20-Stage hierarchy. This page does not add a new primitive.
+By the end of this chapter, you will understand how to apply the core 20-Stage hierarchy to build specialized vertical domain solutions: Multi-Agent Workbenches, Enterprise Text-to-SQL Agents, Autonomous SRE Remediation Agents, Spec-Driven TDD Loops, and Scalable Inference Serving Infrastructure.
+
+Once you master foundational agent primitives, applying them to specific real-world domains is simply a matter of selecting the appropriate toolchains and safety guardrails.
 
 ## Data
-A **blueprint** is one vertical slice: a script that calls pieces you already ran, aimed at one job (workbench, SQL, SRE, serving, spec TDD).
-
-The five scripts in this folder, and the pieces they reuse:
-
-- **Workbench** (`lab3_multi_agent_workbench.py`): `SupervisorAgent.plan`, `CoderAgent.write_code`, `QAReviewerAgent.review`. Chapter 14 handoff (three roles in one process). Chapter 16 sandbox (`subprocess.Popen` in a `workbench_` temp dir). Chapter 01 POST. Files written: `calculator.py`, `test_calculator.py`.
-- **SQL agent** (`lab4_enterprise_sql_agent.py`): `EnterpriseSQLAgent.process_query`, `validate_sql_security`, `init_sample_database`. Chapter 02 JSON/SQL text. Chapter 16 keyword block (`DROP`, `DELETE`, and the rest). Chapter 11 reflexion (feed `sqlite3.OperationalError` back). In-memory SQLite tables `users` and `orders`.
-- **SRE agent** (`lab5_autonomous_sre_agent.py`): `LogTriageEngine.extract_error_signatures`, `SRECommandSafetyGuard.evaluate_command`, `AutonomousSREAgent.investigate_and_remediate`. Chapter 09 filter (keep `ERROR` / `CRITICAL` / `FATAL`). Chapter 17 HITL (`REQUIRES_HITL_APPROVAL`, `FORBIDDEN`). Chapter 10 phases (triage, then RCA, then gate).
-- **Serving infra** (`lab7_agent_serving_infra.py`): `InferenceGatewayRouter.dispatch`, `OTelSpanCollector.record_span`, `ProductionAgentServingRuntime.handle_request`. Chapter 06 gateway (endpoint list). Chapter 12 / 00 trace (`telemetry_spans`). Chapter 19 request handle. Session id `tenant_session_9921`.
-- **Spec TDD** (`lab6_spec_tdd_loop.py`): `compile_ears_spec`, `run_test_suite`, `run_spec_tdd_pipeline`. Chapter 02 contract (EARS lines). Chapter 16 sandbox (temp dir `sdd_tdd_`, files `test_suite.py` and `solution.py`). Also taught on [02_spec_tdd.md](./02_spec_tdd.md).
-
-Moved from the old `modules/09` and `labs/09` trees. Spec TDD also came from old `modules/04/02`. Self-evolution is [03_self_evolution.md](./03_self_evolution.md) (module only, no lab). Generative UI already lives in chapter 17 (`lab1_hitl_approval.py`).
-
-The intended host is `OLLAMA_HOST` from the environment (usually `http://127.0.0.1:11434`). The intended model is `OLLAMA_MODEL` from the environment.
+Our specialized domain blueprints demonstrate end-to-end applications:
+1. **Multi-Agent Workbench (`lab3_multi_agent_workbench.py`)**: Multi-role collaboration (Supervisor, Coder, QA Reviewer) working inside isolated scratch directories to implement and verify software packages.
+2. **Enterprise SQL Agent (`lab4_enterprise_sql_agent.py`)**: Natural-language-to-SQL translator featuring strict AST security validation (preventing `DROP`, `DELETE`, `TRUNCATE`) and reflection-driven query repair against SQLite databases.
+3. **Autonomous SRE Agent (`lab5_autonomous_sre_agent.py`)**: Production log triage engine that parses stack traces, identifies root causes, and gates high-risk remediation commands (`reboot`, `rm`) behind HITL approvals.
+4. **Spec-Driven TDD Loop (`lab6_spec_tdd_loop.py`)**: Acceptance-criteria compiler converting goals into EARS specifications, executing failing test suites, and iteratively generating passing code.
+5. **Production Serving Infrastructure (`lab7_agent_serving_infra.py`)**: Low-latency multi-tenant runtime routing requests across dynamic inference gateways and collecting OpenTelemetry span traces.
 
 ## Information
-These reuse chapters 00-19. Do not invent new stacks. A workbench is chapter 14 roles plus a sandbox. A SQL agent is a POST plus a keyword check plus SQLite. An SRE agent is a filter plus a HITL gate. Serving is a POST plus a span list. Spec TDD is a failing test then a fix.
-
-PATH.md is the required line (00-20 progressive hierarchy). These names stay optional vertical slices.
-
-Keep the `.py` files as reference solutions. Rewrite from the brief if you want. Do not add a new protocol or a new store.
+Domain-specific agent applications do not require inventing novel agent loops:
+- **Consistent Topologies**: Every specialized agent is a composition of our established primitives (ReAct loops, sandboxing, HITL gates, structured schemas).
+- **Domain Specialization**: Domain differences emerge in tools, safety boundaries, and prompt specifications, not in the core loop architecture.
 
 ## Knowledge
-1. Skip this page unless you want one extra slice. Next: [../optional_training/00_pretrain_tiny.md](../optional_training/00_pretrain_tiny.md).
-2. If you stay, pick one blueprint and name the old pieces it calls (file, function, JSON key).
-3. Reuse those labs. Do not invent a new stack.
+Here is the step-by-step procedure:
+1. Identify the core domain requirements and necessary tool capabilities.
+2. Define safety and authorization boundaries (e.g. read-only vs destructive operations).
+3. Select appropriate role topologies (single agent vs supervisor-worker teams).
+4. Implement self-correction and validation mechanisms (test execution, SQL syntax validation, log parsing).
+5. Instrument end-to-end telemetry and observability spans across all tool executions.
 
 ## Wisdom
-Do not add a new primitive; compose what you already have. Blueprints are optional after the path. If you add a new topology here, a failure could come from the old piece or from the extra.
+Build specialized agents by configuring tools, prompts, and safety constraints on top of proven generic foundations—not by rewriting the core engine from scratch.
 
 ## The When and Why
-- **When:** these blueprints are optional vertical slices after the 00-20 core hierarchy.
-- **Why:** the required path is 00-20. These names are optional vertical slices.
+- **When**: Designing real-world domain solutions such as database assistants, developer workbenches, automated incident response bots, or enterprise serving runtimes.
+- **Why**: Standardized architectures accelerate development, reduce operational complexity, and ensure consistent safety guarantees across all company agents.
 
 ## How it works
 

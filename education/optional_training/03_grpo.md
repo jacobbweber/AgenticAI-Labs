@@ -1,38 +1,37 @@
-# OT: GRPO
+# Optional Training: Group Relative Policy Optimization (GRPO)
 
-This folder is optional. It is not on the 00–15 path. After this page you can name a group-relative preference update: sample several answers, score each one, then push the policy toward the ones that scored above the group mean. Finishing this page does not unlock chapter 15.
+By the end of this module, you will understand how Group Relative Policy Optimization (GRPO) aligns language models by sampling a group of candidate completions, evaluating programmatic or reward-model scores, and optimizing policy updates relative to group baseline performance.
+
+Traditional Reinforcement Learning from Human Feedback (RLHF) often requires training a separate critic/value model. GRPO eliminates the critic network by computing advantages directly relative to the sampled group mean.
 
 ## Data
-Three objects exist.
-
-A **group** is several candidate answers for the same prompt. The lab uses four Python snippets for `is_even(n)`. They are hardcoded in [lab3_grpo_preference_alignment.py](./lab3_grpo_preference_alignment.py). A real GRPO run would sample them from a model.
-
-A **reward** is one number per candidate. The lab uses `verify_python_code`: run the snippet, look for `expected_output` in stdout, return `1.0` or `0.0`. That is a checker, the same idea as chapter 12 evals.
-
-An **advantage** is that reward minus the group mean, divided by the group standard deviation. The function is `calculate_grpo_group_advantages`. A positive advantage means "increase the chance of this answer." A negative advantage means "decrease it."
+**GRPO Alignment** operates on candidate completion batches:
+- **Group Candidates ($G$)**: Multiple candidate completions generated for the same input prompt ($G \ge 2$).
+- **Candidate Rewards ($R_i$)**: Scalar scores assigned to each completion (e.g. unit test verification returning $1.0$ or $0.0$).
+- **Group Relative Advantage ($A_i$)**: Normalized scalar score calculated via:
+  $$A_i = \frac{R_i - \text{mean}(R)}{\text{std}(R) + \epsilon}$$
+  - $A_i > 0$: Increases the generation probability of candidate $i$.
+  - $A_i < 0$: Decreases the generation probability of candidate $i$.
 
 ## Information
-The only path on this page is:
-
-prompt → group of candidates → reward per candidate → advantage per candidate → (intended) policy update
-
-That is post-training. It is not an agent loop. It is not a POST to `http://192.168.1.29:11434`. Calling Ollama with `OLLAMA_MODEL=qwen3.6:35b-a3b-65k` does not need GRPO.
-
-Chapter 12 can use a checker as an eval. This page uses a checker as a reward. Same number, different job.
+GRPO brings key advantages to reasoning and coding alignment:
+- **No Critic Network**: Computing baseline statistics across the sampled group eliminates the memory and compute overhead of maintaining an auxiliary value model.
+- **Outcome Supervision**: Automated test execution suites serve as deterministic, objective reward functions for coding and reasoning tasks.
 
 ## Knowledge
-1. Confirm you are studying post-training. The 00–15 line never requires this folder.
-2. Collect a group of answers for one prompt. The lab group size is 4.
-3. Score each answer. `verify_python_code` returns `1.0` or `0.0`.
-4. Call `calculate_grpo_group_advantages(rewards)` to get `A_i = (R_i - mean(R)) / (std(R) + 1e-8)`.
-5. Stop when you can name `group_rewards` and `group_advantages`. Do not wire this into chapter 04 or chapter 15.
+Here is the step-by-step procedure:
+1. Sample a group of candidate completions for a prompt.
+2. Evaluate each candidate using a reward verification function (`verify_python_code`).
+3. Calculate group reward statistics (mean and standard deviation).
+4. Compute group relative advantages ($A_i$) for each candidate.
+5. Apply policy gradient updates to encourage positive-advantage completions.
 
 ## Wisdom
-Skip this folder unless you are aligning a small model. It is optional. Finishing it does not unlock chapter 15. Skip it for the 00–15 line. If you only need a model to answer, POST to `http://192.168.1.29:11434`.
+GRPO is the algorithmic breakthrough behind state-of-the-art reasoning models (like DeepSeek-R1). It allows models to discover reasoning strategies through verifiable outcome rewards.
 
 ## The When and Why
-- **When:** you are aligning a small model with a group of scored answers.
-- **Why:** calling a local server does not need this. Chapter 00 is a POST. This page is a train step.
+- **When**: Aligning models on verifiable reasoning tasks (math, code generation, logic puzzles).
+- **Why**: GRPO delivers sample-efficient reinforcement learning without the complexity of training separate value models.
 
 ## How it works
 

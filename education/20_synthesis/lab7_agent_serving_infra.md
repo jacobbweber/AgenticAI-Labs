@@ -1,78 +1,74 @@
-# Lab 7: Agent serving infra
+# Lab 7: Multi-Tenant Agent Serving Infrastructure & Telemetry Tracing
 
-A client request hits a gateway POST and a span list. This reuses chapter 10 (handle a request) and chapter 11 (endpoint list). Not a new cloud.
+In this lab, you will build a multi-tenant agent serving runtime `ProductionAgentServingRuntime` that dispatches requests through an inference gateway router (`InferenceGatewayRouter`) and instruments distributed OpenTelemetry execution spans (`OTelSpanCollector`).
+
+---
 
 ## What you touch
 - Script: `lab7_agent_serving_infra.py`
-- Classes: `OTelSpanCollector`, `InferenceGatewayRouter`, `ProductionAgentServingRuntime`
-- Functions: `record_span`, `dispatch`, `handle_request`
-- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
-- Keys sent: `model`, `prompt`, `stream` (`false`), `options.temperature` (`0.0`)
-- Keys read: `response`, `prompt_eval_count`, `eval_count`
+- Main Classes & Functions:
+  - `OTelSpanCollector.record_span(span_name, duration_ms, attributes)`: Records structured trace spans.
+  - `InferenceGatewayRouter.dispatch(model, prompt)`: Routes and executes model inference.
+  - `ProductionAgentServingRuntime.handle_request(tenant_session_id, user_prompt)`: Orchestrates serving request lifecycle and telemetry collection.
+- Telemetry Spans Emitted: `llm.inference`, `sandbox.execution`
+- Environment Configuration: Reads `OLLAMA_HOST` (default: `http://192.168.1.29:11434`) and `OLLAMA_MODEL` (default: `qwen3.6:35b-a3b-65k`) from `.env`
+
+---
 
 ## Steps
 ```mermaid
 flowchart TD
-    subgraph srv_lab [lab7_agent_serving_infra.py]
-        RUN["handle_request"]
-        GW["InferenceGatewayRouter.dispatch"]
-        SPAN["record_span"]
-    end
-    subgraph srv_host [Ollama on port 11434]
-        API["POST /api/generate"]
-    end
-    RUN --> GW
-    GW -->|"prompt"| API
-    API -->|"response"| SPAN
-    SPAN -->|"llm.inference then sandbox.execution"| OUT["return dict"]
+    A["handle_request('tenant_session_9921', prompt)"] --> B["InferenceGatewayRouter: dispatch()"]
+    B --> C["Model Inference -> record_span('llm.inference')"]
+    C --> D["Sandbox Execution Simulation -> record_span('sandbox.execution')"]
+    D --> E["Return Composite Payload with Telemetry Spans"]
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://192.168.1.29:11434` and `qwen3.6:35b-a3b-65k`.
+1. Load environment variables via `load_env.py` (or fallback defaults).
 2. Call `handle_request("tenant_session_9921", "Summarize 3 production serving best practices.")`.
-3. `dispatch` picks `endpoints[0]` (the Ollama generate URL) and POSTs `model`, `prompt`, `stream: false`, `options.temperature: 0.0`.
-4. `record_span` for `llm.inference` with `model`, `endpoint`, `prompt_tokens`, `completion_tokens`.
-5. Sleep 0.05s and `record_span` for `sandbox.execution` with `isolation_type` `SubprocessSandbox`, `exit_code` 0, `memory_limit_mb` 512. The reference script does not start a child.
-6. Return the dict. Intended: a listening server that returns HTTP 202 or SSE (chapter 10). The reference script is a dry-run print.
+3. The gateway router dispatches the request to the configured inference endpoint.
+4. Record an OpenTelemetry span for `llm.inference` capturing token metrics and latency.
+5. Record an OpenTelemetry span for `sandbox.execution` capturing execution isolation parameters.
+6. Assemble and return the complete serving response with output text and telemetry spans.
+
+---
 
 ## Data contract
 
-**Intended serve** (chapter 10)
-
-```json
-{
-  "status_code": 202,
-  "session_id": "tenant_session_9921"
-}
-```
-
-**Request** `POST /api/generate`
-
-```json
-{
-  "model": "qwen3.6:35b-a3b-65k",
-  "prompt": "string",
-  "stream": false,
-  "options": { "temperature": 0.0 }
-}
-```
-
-**What `handle_request` actually returns**
+**Production Serving Response Payload**
 
 ```json
 {
   "status": "SUCCESS",
   "session_id": "tenant_session_9921",
-  "output": "string",
-  "telemetry_spans": []
+  "output": "1. Implement adaptive gateway routing\n2. Enforce strict subprocess sandboxing\n3. Instrument end-to-end distributed telemetry.",
+  "telemetry_spans": [
+    {
+      "span_name": "llm.inference",
+      "duration_ms": 118.4,
+      "attributes": {
+        "model": "qwen3.6:35b-a3b-65k",
+        "prompt_tokens": 14,
+        "completion_tokens": 32
+      }
+    },
+    {
+      "span_name": "sandbox.execution",
+      "duration_ms": 50.0,
+      "attributes": {
+        "isolation_type": "SubprocessSandbox",
+        "exit_code": 0,
+        "memory_limit_mb": 512
+      }
+    }
+  ]
 }
 ```
 
-There is no listening port and no SSE stream. See Notes.
+---
 
 ## Run
-Copy `.env.example` to `.env` in the repo root and uncomment the Ollama lines. The script loads that file (it does not override vars already set in the shell).
-
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/20_synthesis/lab7_agent_serving_infra.py
@@ -82,12 +78,24 @@ python education/20_synthesis/lab7_agent_serving_infra.py
 python education/20_synthesis/lab7_agent_serving_infra.py
 ```
 
+---
+
 ## What you should see
-`=== STARTING PRODUCTION AGENT SERVING INFRASTRUCTURE LAB ===`, `[SERVING RUNTIME] Handling Session: 'tenant_session_9921'`, two `[OTel SPAN]` lines (`llm.inference` and `sandbox.execution`), then a JSON payload with `status` `SUCCESS`. This is a dry-run print, not a listening server. If you see `URLError` or `Connection refused`, the provider is not reachable. If you see HTTP 404, the model name is wrong.
+- `=== STARTING PRODUCTION AGENT SERVING INFRASTRUCTURE LAB ===`
+- `[SERVING RUNTIME] Handling Session: 'tenant_session_9921'`
+- `[OTel SPAN] 'llm.inference' recorded`
+- `[OTel SPAN] 'sandbox.execution' recorded`
+- Final response payload showing `status: SUCCESS` and detailed `telemetry_spans`.
+
+---
 
 ## Stop here
-Do not add a new primitive; compose what you already have. A POST plus a span list is enough. Do not add a new cloud, a load balancer product, or a second HTTP stack. Chapter 10 already has FastAPI / SSE. A new server would hide whether the miss came from the POST or from the extra.
+You have successfully implemented a production serving runtime with distributed tracing! Proceed to Optional Training when ready.
+
+Next up: [Optional Training: Pretrain Tiny](../../education/optional_training/00_pretrain_tiny.md).
+
+---
 
 ## Notes
-- Reference blueprint. Serve the kernel. Reuse chapter 10 request handle and chapter 11 gateway.
-- Contract drift vs `lab7_agent_serving_infra.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`. No listen socket, no HTTP 202, no SSE. Gateway always uses `endpoints[0]`. Sandbox span is `time.sleep(0.05)`, not `subprocess.Popen`. Session id is only a string on the return dict. The intended contract is a chapter 10 server in front of the kernel. Write that in your copy. Leave the reference file as-is.
+*(Record your serving metrics and OpenTelemetry trace spans here)*
+

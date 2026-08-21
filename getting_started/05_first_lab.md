@@ -1,18 +1,24 @@
-# Run the first lab
+# Running Your First Lab
+ 
+Let's test your connection by running a single Python script. When this script prints generated text from your model to the screen, you'll know your environment is fully ready!
 
-This page is one script. If it prints text from a model, your setup works.
+---
 
-## 1. Confirm Python
+## 1. Verify Your Python Installation
+
+Open your terminal and check that Python is installed:
 
 ```text
 python --version
 ```
 
-If that fails, try `python3 --version`. Use whichever command works in the steps below.
+If that command returns an error or is unrecognized, try `python3 --version`. Use whichever command works on your system for the remaining steps.
 
-## 2. Confirm the model is reachable
+---
 
-Copy the env template if you have not yet:
+## 2. Check Your Model Connection
+
+If you haven't created your `.env` file yet, copy the example template from your terminal at the repository root:
 
 ```bash
 cp .env.example .env
@@ -22,53 +28,55 @@ cp .env.example .env
 copy .env.example .env
 ```
 
-Uncomment one provider in `.env`.
+Make sure your active provider is configured in `.env`:
 
-**Ollama**
+- **For Ollama**: Verify that Ollama is running and has your model downloaded by running `ollama list`. The model name in `.env` should match the name in that list.
+- **For LM Studio**: Start the local server inside the app, and make sure `OLLAMA_HOST` in `.env` matches the server's port (typically `http://127.0.0.1:1234`).
+- **For Cloud Providers**: Ensure your API key and URL are uncommented in `.env` as described in [Cloud APIs](./03_cloud_apis.md).
 
-```text
-ollama list
-```
+---
 
-You should see the model name you pulled. The Ollama lines in `.env` should match it.
+## 3. Run the Reference Test Script
 
-**LM Studio**
+This repository includes a pre-written reference script for the first lab so you can immediately test your setup.
 
-Start the local server in the app. Use its port (often `1234`) and the model name it shows in `.env`.
-
-**Cloud**
-
-Uncomment that provider in `.env` from [cloud APIs](./03_cloud_apis.md). You will write the chat-style JSON from chapter 00, not the Ollama `prompt` field.
-
-## 3. Run the reference script (optional)
-
-This repo already has a finished `lab1_script_posts_json.py`. You may run it once to test the connection. Then delete it if you want to write it yourself. Deleting `.py` files is how you start from scratch. Keep every `.md`.
-
-From the repo root:
+From the root directory, run:
 
 ```text
 python education/00_atoms/lab1_script_posts_json.py
 ```
 
-The script loads `.env` from the repo root.
+The script will automatically read your `.env` configuration, connect to the provider, and request a response.
 
-## What you should see
+---
 
-A short paragraph about HTTP POST. That is success.
+## What You Should See
 
-| What you see | What it means |
+If everything is connected properly, the model will output a short response describing HTTP POST requests. 
+
+| Output | Meaning & Next Steps |
 |---|---|
-| A few sentences of text | Setup works. Read the chapter 00 module next. |
-| `URLError` or connection refused | Nothing is listening at `OLLAMA_HOST`. Start Ollama or LM Studio, or fix the URL in `.env`. |
-| HTTP 404 | The model name is wrong or not pulled. Run `ollama list`. |
-| Empty `response` | The model returned no visible text. Try a larger model, or a shorter prompt. The script still taught you the keys. |
+| **A few sentences of text** | **Success!** Your setup is working smoothly. You are ready to start Chapter 00. |
+| **`URLError` or Connection Refused** | The script cannot reach the server at `OLLAMA_HOST`. Make sure Ollama or LM Studio is running. |
+| **HTTP 404 Error** | The provider is running, but cannot find the specified model name. Check `ollama list` or your `.env` model string. |
+| **Empty Response** | The model responded but generated no text. Try a slightly larger model or check model availability. |
 
-## 4. Write it yourself
+---
 
-Open [`education/00_atoms/lab1_script_posts_json.md`](../education/00_atoms/lab1_script_posts_json.md). That file is the whole assignment.
+## 4. Writing the Lab Yourself
 
-Read the module [education/00_atoms/00_script_provider_weights.md](../education/00_atoms/00_script_provider_weights.md) first. Then write lab1 from the brief, or keep the reference and go to lab2. [education/PATH.md](../education/PATH.md) is the rest of the course.
+Now that your setup is verified, you are ready to learn by building!
 
-## If the answers look bad
+Open [`education/00_atoms/00_script_provider_weights.md`](../education/00_atoms/00_script_provider_weights.md) to read the core concept. Then open [`education/00_atoms/lab1_script_posts_json.md`](../education/00_atoms/lab1_script_posts_json.md) to see the lab brief.
 
-Keep going. A 1B model on a laptop with no GPU will sound worse than Claude. The course is still the same POST, the same keys, and the same loop. Write what you saw under **Notes** in the lab brief.
+> **Tip**: If you want to write the code from scratch, delete `lab1_script_posts_json.py` and implement it following the brief. Keeping markdown briefs while deleting `.py` files allows you to reset any lab at any time.
+
+---
+
+## Keep in Mind
+
+If you are using a compact 1B model on a CPU, its responses may be brief or simplistic. That is completely normal! The value of these labs is learning how scripts send JSON, parse responses, and manage tool loops. Whenever you observe unexpected model behaviors, record them under the **Notes** section of your lab brief.
+
+---
+
+**Next**: Head over to [Chapter 00: Script, Provider, Weights](../education/00_atoms/00_script_provider_weights.md) to begin the course!

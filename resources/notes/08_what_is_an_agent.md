@@ -1,8 +1,8 @@
-# The Literal Anatomy of an AI Agent
+# The Anatomy of an AI Agent
 
-Marketing literature describes an AI agent with anthropomorphic abstractions such as "autonomous digital worker", "synthetic intelligence", or "cognitive persona". In engineering terms, an AI agent is a single operating system process executing a bounded control loop that feeds a structured context list to an inference API, inspects the response for tool calls, executes registered local functions, and persists execution state to disk.
+In modern software development, AI agents are often described using buzzwords like *"autonomous digital workers"* or *"synthetic intelligence."* In reality, an AI agent is simply a straightforward Python program that runs a bounded loop, sends messages to an AI model, executes local functions when asked, and saves its progress to disk.
 
-An agent runtime has no mystical properties. It consists of exactly five concrete architectural components.
+When you look under the hood, every agent runtime is made up of five practical building blocks working together.
 
 ---
 
@@ -24,10 +24,10 @@ flowchart TD
 
 ### 1. The Model Process (Inference Engine)
 The model is an external or local HTTP server process hosting frozen neural network weights (such as Ollama on `http://127.0.0.1:11434` or a cloud API endpoint).
-- **Protocol**: HTTP `POST` transmitting a JSON body (`model`, `messages`, `tools`, `temperature`).
-- **Input**: An array of message dictionaries (`role`, `content`, optional `tool_calls` or `tool_call_id`).
-- **Output**: A JSON response containing a completion message (`role: assistant`, `content: str`, and optional `tool_calls: list[dict]`).
-- **Nature**: Stateless function mapping token inputs to probability distributions over tokens. The model process retains zero memory across HTTP requests unless explicitly passed in the `messages` array.
+- **Protocol**: Standard HTTP `POST` transmitting a JSON body containing `model`, `messages`, `tools`, and `temperature`.
+- **Input**: An array of message dictionaries containing `role`, `content`, and optional `tool_calls` or `tool_call_id`.
+- **Output**: A JSON response containing a completion message (`role: "assistant"`, `content: str`, and optional `tool_calls: list[dict]`).
+- **Nature**: A stateless function that predicts the next tokens. The model process retains zero memory across HTTP requests unless previous conversation turns are included in the `messages` array.
 
 ### 2. The Context Message List (Working Memory)
 An append-only in-memory list of standard dictionaries representing the dialogue history and tool interactions:

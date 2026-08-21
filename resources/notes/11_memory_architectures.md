@@ -1,8 +1,10 @@
-# Memory Architectures: Working Context, Episodic Facts, Procedural Rules, and Local RAG
+# Memory Architectures: How Agents Store and Retrieve Information
 
-In software engineering, an LLM possesses zero internal persistent memory across HTTP requests. The neural weights are static arrays of floating-point numbers. What marketing materials term "agent memory" is simply **structured file I/O and text string concatenation** executed by the host process before transmitting a payload to the model.
+Because language models are stateless by default, an AI model has no built-in memory across individual HTTP requests. Every time you ask a question, the model only sees the text passed in that specific request payload.
 
-To build robust, low-latency, and cost-effective local agents, systems architects utilize a **4-Tier Memory Hierarchy**.
+What we call "agent memory" is actually a collection of standard software patterns: saving data to files or databases and feeding relevant snippets back into the model's prompt when needed.
+
+To organize memory cleanly, we use a **4-Tier Memory Hierarchy**.
 
 ---
 

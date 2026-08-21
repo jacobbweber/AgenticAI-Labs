@@ -1,47 +1,52 @@
-# Lab 1: Episodic vs procedural memory
+# Lab 1: Distinguishing Episodic Facts from Procedural Instructions
 
-One fact row is episodic. How-to text in the system `content` is procedural. A query prints which store it would hit. There is no vector DB and no HTTP.
+In this lab, you will implement memory persistence for cross-session episodic facts (`facts.json`) and a query router `route_query()` that directs questions to either episodic facts or procedural system instructions.
+
+---
 
 ## What you touch
-- Script: `lab1_episodic_vs_procedural.py` (write it next to this brief; there is no reference `.py` yet)
-- File: `facts.json` beside the script (`os.path.join(os.path.dirname(__file__), "facts.json")`)
-- Fact row: `{ "key": "preferred_name", "value": "Ada" }`
-- Procedural text: `{ "role": "system", "content": "You add numbers. Show each step." }`
-- Functions: `save_fact(row)`, `load_facts()`, `route_query(query, facts, procedural_content)`
-- Two queries in `__main__`: `What is the preferred name?` and `How do I add numbers?`
-- No HTTP. This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`.
-- No vector store. No window. No repo walk. Do not INSERT the system `content` as a fact.
+- Script to create: `lab1_episodic_vs_procedural.py`
+- Main Functions:
+  - `save_fact(row: dict)`
+  - `load_facts() -> list`
+  - `route_query(query: str, facts: list, procedural_content: str) -> dict`
+- Episodic Fact Store: `facts.json` next to the script
+- Procedural Prompt: System instruction string (`"You add numbers. Show each step."`)
+- Pure Python logic (no network calls required)
+
+---
 
 ## Steps
 ```mermaid
-flowchart LR
-    subgraph lab2_mem_script [This script]
-        SAVE["save_fact"]
-        LOAD["load_facts"]
-        RTE["route_query"]
-    end
-    subgraph lab2_mem_stores [Two stores]
-        FACT["facts.json episodic"]
-        SYS["system content procedural"]
-    end
-    SAVE --> FACT
-    FACT --> LOAD
-    LOAD --> RTE
-    SYS --> RTE
+flowchart TD
+    A["User Query"] --> B["route_query()"]
+    B -->|"Matches fact key/value"| C["Return {store: 'episodic', row: ...}"]
+    B -->|"Matches 'how' or 'step'"| D["Return {store: 'procedural', content: ...}"]
+    B -->|"No match"| E["Return {store: 'none'}"]
 ```
 
-1. Set the path to `os.path.join(os.path.dirname(__file__), "facts.json")`.
-2. Write `save_fact(row)`. Load the list if the file exists, else start `[]`. Append `row`. `json.dump` the list with `indent=2`. Print the path.
-3. Write `load_facts()`. `json.load` the same path. If the file is missing, return `[]`.
-4. Write `route_query(query, facts, procedural_content)`. Lowercase the query. For each fact, also build `key.replace("_", " ")`. If the query contains the `key`, that spaced key, or the `value` (case-insensitive), return `{ "store": "episodic", "row": that fact }`. Else if the query contains `how` or `step`, return `{ "store": "procedural", "content": procedural_content }`. Else return `{ "store": "none" }`.
-5. In `__main__`, call `save_fact({ "key": "preferred_name", "value": "Ada" })`. That is session A. Start a new `messages` list for session B with only the procedural system item. Call `load_facts()`. Do not put the system `content` into `facts.json`.
-6. Call `route_query("What is the preferred name?", facts, procedural_content)`. Print `query`, `store`, and `row`. Call `route_query("How do I add numbers?", facts, procedural_content)`. Print `query`, `store`, and `content`.
-7. Confirm the first hit is `episodic` with `Ada`. Confirm the second hit is `procedural` with `Show each step`. Do not POST. Do not call `search`.
+1. Set the episodic facts path to `os.path.join(os.path.dirname(__file__), "facts.json")`.
+2. Implement `save_fact(row: dict)`:
+   - Load existing facts if present; otherwise initialize `[]`.
+   - Append `row` and save with `json.dump(..., indent=2)`.
+3. Implement `load_facts() -> list`:
+   - Read and return the deserialized fact list from `facts.json`.
+4. Implement `route_query(query, facts, procedural_content)`:
+   - Normalize `query` to lowercase.
+   - For each fact, check if query contains `key`, spaced key (`key.replace("_", " ")`), or `value`. If matched, return `{"store": "episodic", "row": fact}`.
+   - If query contains `"how"` or `"step"`, return `{"store": "procedural", "content": procedural_content}`.
+   - Otherwise return `{"store": "none"}`.
+5. In `__main__`:
+   - Simulate Session A: Save fact `{"key": "preferred_name", "value": "Ada"}`.
+   - Simulate Session B: Initialize fresh session with procedural prompt `"You add numbers. Show each step."` and load facts.
+   - Route query `"What is the preferred name?"` -> verify `episodic` store match with `Ada`.
+   - Route query `"How do I add numbers?"` -> verify `procedural` store match with the system prompt.
+
+---
 
 ## Data contract
-Only the keys this script writes and reads.
 
-**facts.json**
+**Episodic Store: `facts.json`**
 
 ```json
 [
@@ -49,48 +54,60 @@ Only the keys this script writes and reads.
 ]
 ```
 
-**Procedural system item** (not a fact row)
+**Procedural Prompt Payload**
 
 ```json
-{ "role": "system", "content": "You add numbers. Show each step." }
+{
+  "role": "system",
+  "content": "You add numbers. Show each step."
+}
 ```
 
-**Episodic hit**
+**Router Return Shapes**
 
 ```json
-{ "store": "episodic", "row": { "key": "preferred_name", "value": "Ada" } }
+// Episodic Match
+{
+  "store": "episodic",
+  "row": { "key": "preferred_name", "value": "Ada" }
+}
+
+// Procedural Match
+{
+  "store": "procedural",
+  "content": "You add numbers. Show each step."
+}
 ```
 
-**Procedural hit**
-
-```json
-{ "store": "procedural", "content": "You add numbers. Show each step." }
-```
-
-The script does not POST. Lab 3 is RAG. Chapter 14 is `SKILL.md`.
+---
 
 ## Run
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/09_agentic_memory_and_rag/lab1_episodic_vs_procedural.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/09_agentic_memory_and_rag/lab1_episodic_vs_procedural.py
 ```
 
-This script ignores `OLLAMA_HOST` and `OLLAMA_MODEL`. They are listed so the lab Run block matches the other chapters. There is no HTTP call.
+---
 
 ## What you should see
-The path of `facts.json`. Then `query` `What is the preferred name?` with `store` `episodic` and `row` `{ "key": "preferred_name", "value": "Ada" }`. Then `query` `How do I add numbers?` with `store` `procedural` and `content` `You add numbers. Show each step.`. If both print `episodic`, the how-to string was written as a fact. If you see a retrieved chunk or `[PERSON_1]`, you opened lab 3. If you see a POST, you added HTTP this lab does not need.
+- `facts.json` path printed upon saving.
+- Query `"What is the preferred name?"` routing to `store: episodic` with `value: Ada`.
+- Query `"How do I add numbers?"` routing to `store: procedural` with the calculation instructions.
+
+---
 
 ## Stop here
-This is two stores. Do not add a vector DB. Do not compact the list. Do not walk a repo. Do not load `SKILL.md` (chapter 14). Do not POST. Lab 1 is the window. Lab 3 is RAG. Lab 4 is symbol hits.
+You have successfully separated episodic facts from procedural instructions! In Lab 2, we will implement local private RAG with in-flight PII redaction.
+
+Next up: [Lab 2: Local Private RAG](./lab2_local_private_rag.md).
+
+---
 
 ## Notes
-- Write `lab1_episodic_vs_procedural.py` next to this brief. There is no reference `.py` in the repo yet.
-- `facts.json` sits next to the script. Do not commit a huge dump.
-- Keys written and read match this brief. Do not edit other `.py` files in the repo.
+*(Record your memory routing results here)*
+

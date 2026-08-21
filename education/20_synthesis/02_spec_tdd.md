@@ -1,44 +1,36 @@
-# 20: Spec-Driven TDD
+# 20: Specification-Driven Test-Driven Development (Spec TDD)
 
-After this page a spec file drives a red/green loop. This is not a new agent type. This page does not add a new primitive.
+By the end of this chapter, you will understand how to drive automated agent development workflows using rigorous specifications (such as Easy Approach to Requirements Syntax / EARS) and strict Red-Green-Refactor test cycles.
+
+Allowing an LLM to generate code without independent automated test verification frequently results in undetected regressions and subtle logical bugs.
 
 ## Data
-A **spec** is acceptance text written before the code. It can be markdown, JSON assertions, or EARS lines (`WHEN [trigger], the system SHALL [action].`).
-
-**Red** means a test ran and failed (nonzero exit). **Green** means the same test ran and passed (exit 0). The order is: spec, then failing test, then code, then re-run.
-
-The lab file is `lab6_spec_tdd_loop.py`. Functions:
-
-- `compile_ears_spec(user_goal)` POSTs the goal and asks for two EARS lines.
-- `run_test_suite(temp_dir)` starts `test_suite.py` with `subprocess.Popen` and returns the exit code.
-- `run_spec_tdd_pipeline(user_goal)` writes `test_suite.py` and `solution.py` in a temp dir prefixed `sdd_tdd_`.
-
-The default goal in `__main__` is `Create a multiply function that takes two numbers and returns their product.` The test file imports `multiply` from `solution` and asserts `multiply(4, 5) == 20`.
-
-Moved from old `modules/04/02` and `labs/04/lab3_spec_tdd_loop`.
-
-`OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. The intended model route is still `POST /api/chat` if you ask the model to write the test or the code. The reference script POSTs `/api/generate` only for the EARS spec.
+A **Spec-Driven TDD Loop** couples natural-language requirements with automated test harnesses:
+- **Formal Specification**: Structured requirements represented in EARS format (`WHEN [trigger], the system SHALL [action]`).
+- **Red Test Phase**: Generating and executing a test suite before implementing code $\rightarrow$ verifying test failure (non-zero exit code).
+- **Green Code Phase**: Generating the target implementation and executing the test suite $\rightarrow$ verifying test pass (exit code `0`).
+- **Sandbox Execution**: Running test suites inside isolated temporary directories via subprocess workers (`run_test_suite`).
 
 ## Information
-Write the check first, then the code. Code-first skips the contract: you cannot tell a pass from a lucky script.
-
-This reuses chapter 02 (ask for structured text and check it), chapter 09 (run the test in a child process), and chapter 12 evals (the score is the exit code). It is not a new loop type and not a new agent.
-
-The agent can write the code, or you can. The required fact is the failing test before the fix.
+Spec TDD provides critical quality guarantees:
+- **Contract Enforcement**: Writing acceptance tests prior to code prevents "lucky passes" and hallmarked hallucinated logic.
+- **Measurable Evals**: The pass/fail status of unit tests provides a deterministic, zero-cost evaluation metric for agent code generation.
+- **Iterative Refinement**: If a test fails, the agent feeds the stack trace back into context to iteratively repair the implementation until all tests turn green.
 
 ## Knowledge
-1. Write or compile a spec (markdown, JSON assertions, or EARS lines).
-2. Write a test that encodes one assertion from that spec. Run it. It must fail.
-3. The agent or you write the code under test.
-4. Re-run the same test. It must pass.
-5. Do not add a new agent type or a new store.
+Here is the step-by-step procedure:
+1. Compile user goals into formal EARS requirements using `compile_ears_spec(user_goal)`.
+2. Generate an automated test suite (`test_suite.py`) encoding the specification assertions.
+3. Run the test suite against a stubbed solution to confirm failure (Red Phase).
+4. Prompt the agent to generate the actual implementation (`solution.py`).
+5. Re-run the test suite inside the subprocess sandbox to confirm passing execution (Green Phase).
 
 ## Wisdom
-Do not add a new primitive; compose what you already have. A spec plus a failing test plus a child-process re-run is enough. If you add a new agent here, a red-to-green miss could come from the spec, the test, or the extra host.
+Never trust an agent's code without an independent test suite. Define the contract, watch the test fail, and only accept the code once the test turns green.
 
 ## The When and Why
-- **When:** you have acceptance text.
-- **Why:** code-first skips the contract.
+- **When**: Building automated code generators, software refactoring agents, or complex algorithmic solutions.
+- **Why**: Test-first development provides a deterministic feedback loop that prevents hallucinations and ensures software correctness.
 
 ## How it works
 

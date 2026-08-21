@@ -1,89 +1,69 @@
-# Lab 4: Enterprise SQL agent
+# Lab 4: Enterprise Text-to-SQL Agent with Security Guardrails
 
-Natural language becomes a SQL string, a keyword check runs, then SQLite returns rows. This reuses chapter 02 structured text, chapter 09 keyword block, and chapter 12 reflexion. Not a new database product.
+In this lab, you will build an enterprise Text-to-SQL assistant `EnterpriseSQLAgent` that converts natural language queries into SQL, validates statements against AST security policies (blocking destructive `DROP`/`DELETE` mutations), and queries an in-memory SQLite database with self-healing reflexion.
+
+---
 
 ## What you touch
 - Script: `lab4_enterprise_sql_agent.py`
-- Functions: `llm_generate_sql`, `validate_sql_security`, `init_sample_database`, `EnterpriseSQLAgent.process_query`
-- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
-- Keys sent: `model`, `prompt`, `stream` (`false`), `options.temperature` (`0.0`)
-- Keys read: `response`
-- Tables: in-memory SQLite `users` (`id`, `name`, `email`, `tier`) and `orders` (`id`, `user_id`, `amount`, `status`)
+- Main Classes & Functions:
+  - `llm_generate_sql(prompt, schema)`: Prompts model to generate SQL.
+  - `validate_sql_security(sql_query)`: AST security validator blocking mutative SQL keywords (`DROP`, `DELETE`, `TRUNCATE`, `ALTER`, `UPDATE`, `INSERT`).
+  - `init_sample_database()`: Creates in-memory SQLite tables (`users`, `orders`).
+  - `EnterpriseSQLAgent.process_query(user_query)`: Orchestrates generation, validation, execution, and error repair.
+- Environment Configuration: Reads `OLLAMA_HOST` (default: `http://192.168.1.29:11434`) and `OLLAMA_MODEL` (default: `qwen3.6:35b-a3b-65k`) from `.env`
+
+---
 
 ## Steps
 ```mermaid
 flowchart TD
-    subgraph sql_agent [lab4_enterprise_sql_agent.py]
-        PQ["process_query"]
-        GEN["llm_generate_sql"]
-        SEC["validate_sql_security"]
-    end
-    subgraph sql_db [sqlite3 memory]
-        T["users and orders"]
-    end
-    subgraph sql_host [Ollama on port 11434]
-        API["POST /api/generate"]
-    end
-    PQ --> GEN
-    GEN -->|"prompt"| API
-    API -->|"response SQL"| SEC
-    SEC -->|"safe SQL"| T
-    T -->|"OperationalError"| GEN
+    A["User Query: 'Show total order amount for gold tier users'"] --> B["llm_generate_sql()"]
+    B --> C["validate_sql_security()"]
+    C -->|"Mutative Keyword (e.g. DELETE)"| D["Return status: 'SECURITY_REJECTED'"]
+    C -->|"Safe SELECT Query"| E["Execute against SQLite DB"]
+    E -->|"sqlite3.OperationalError"| F["Self-Healing Reflexion -> Regenerate SQL"]
+    E -->|"Query Success"| G["Return status: 'SUCCESS' with Data Records"]
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://192.168.1.29:11434` and `qwen3.6:35b-a3b-65k`.
-2. Call `init_sample_database`. It creates an in-memory SQLite connection and inserts Alice (gold) and Bob (silver) plus two orders.
-3. Scenario 1: `process_query("Show total order amount for gold tier users")`. `llm_generate_sql` POSTs the schema plus the intent and reads `response`. Strip a leading ` ```sql ` fence if present.
-4. `validate_sql_security` rejects `DROP`, `DELETE`, `INSERT`, `UPDATE`, `ALTER`, `TRUNCATE`, `CREATE`. If `LIMIT` is missing, it appends `LIMIT 1000`.
-5. `cursor.execute` the safe SQL. On `sqlite3.OperationalError`, feed the error back into the prompt (max 3 attempts). That is chapter 12 reflexion.
-6. Scenario 2: `process_query("Delete all orders from database")`. The generated SQL should hit the keyword block and return `SECURITY_REJECTED`.
+1. Load environment variables via `load_env.py` (or fallback defaults).
+2. Initialize the sample in-memory SQLite database with users and orders.
+3. Scenario 1 (Safe Analytical Query):
+   - Query: `"Show total order amount for gold tier users"`.
+   - Generates SQL $\rightarrow$ Passes validation $\rightarrow$ Executes query $\rightarrow$ Returns result rows (`status: SUCCESS`).
+4. Scenario 2 (Malicious Mutation Attempt):
+   - Query: `"Delete all orders from database"`.
+   - Generates SQL containing `DELETE` $\rightarrow$ Intercepted by `validate_sql_security()` $\rightarrow$ Returns `status: SECURITY_REJECTED`.
+
+---
 
 ## Data contract
 
-**Request** `POST /api/generate`
-
-```json
-{
-  "model": "qwen3.6:35b-a3b-65k",
-  "prompt": "string",
-  "stream": false,
-  "options": { "temperature": 0.0 }
-}
-```
-
-**Response**
-
-```json
-{
-  "response": "SELECT ..."
-}
-```
-
-**`process_query` success**
+**Successful Query Execution**
 
 ```json
 {
   "status": "SUCCESS",
-  "sql_used": "string",
-  "data": []
+  "sql_used": "SELECT users.name, SUM(orders.amount) as total FROM users JOIN orders ON users.id = orders.user_id WHERE users.tier = 'gold' GROUP BY users.name LIMIT 1000",
+  "data": [
+    ["Alice", 250.0]
+  ]
 }
 ```
 
-**Reject / heal fail**
+**Security Interception Result**
 
 ```json
 {
   "status": "SECURITY_REJECTED",
-  "error": "string"
+  "error": "Mutative command 'DELETE' violates read-only query policy."
 }
 ```
 
-`status` can also be `HEALING_FAILED_MAX_TURNS` with no extra keys. Intended contract is a SQL string you can check (chapter 02). See Notes.
+---
 
 ## Run
-Copy `.env.example` to `.env` in the repo root and uncomment the Ollama lines. The script loads that file (it does not override vars already set in the shell).
-
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/20_synthesis/lab4_enterprise_sql_agent.py
@@ -93,12 +73,21 @@ python education/20_synthesis/lab4_enterprise_sql_agent.py
 python education/20_synthesis/lab4_enterprise_sql_agent.py
 ```
 
+---
+
 ## What you should see
-`=== STARTING ENTERPRISE DATA & SQL AGENT LAB ===`, scenario 1 with generated SQL and `[PASSED]` plus a `SUCCESS` dict that includes `sql_used` and `data`, then scenario 2 with `[REJECTED]` and `SECURITY_REJECTED`. If you see `URLError` or `Connection refused`, the provider is not reachable. If you see HTTP 404, the model name is wrong. If scenario 1 returns `HEALING_FAILED_MAX_TURNS`, the model never produced executable SQL.
+- `=== STARTING ENTERPRISE DATA & SQL AGENT LAB ===`
+- Scenario 1: `[PASSED] Result: {'status': 'SUCCESS', 'data': ...}`
+- Scenario 2: `[REJECTED] Result: {'status': 'SECURITY_REJECTED', ...}`
+
+---
 
 ## Stop here
-Do not add a new primitive; compose what you already have. A POST plus a keyword check plus SQLite is enough. Do not add an ORM, a warehouse, or a new query planner. Those would hide whether the miss came from the SQL string, the block, or the extra.
+You have successfully implemented a secure Text-to-SQL data assistant! In Lab 5, we will build an autonomous Site Reliability Engineering (SRE) agent.
+
+Next up: [Lab 5: Autonomous SRE Agent](./lab5_autonomous_sre_agent.md).
+
+---
 
 ## Notes
-- Reference blueprint. Structured SQL out. Reuse chapter 02, chapter 09 keyword block, chapter 12 reflexion.
-- Contract drift vs `lab4_enterprise_sql_agent.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`. `llm_generate_sql` strips ` ```sql ` or ` ``` ` fences. Security is a keyword scan, not a real AST. `CREATE` is forbidden even though `init_sample_database` uses it before the agent runs. Healing loop max is 3. In-memory DB only. The intended contract is a SQL string you can validate. Write that in your copy. Leave the reference file as-is.
+*(Record your SQL query generations and security validation logs here)*

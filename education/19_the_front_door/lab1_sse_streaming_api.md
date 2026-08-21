@@ -1,77 +1,87 @@
-# Lab 1: SSE streaming API
+# Lab 1: Server-Sent Events (SSE) Streaming API
 
-A client received framed lines in `data: {json}` form.
+In this lab, you will implement an asynchronous SSE event generator `generate_agent_sse_stream()` that formats and streams structured agent lifecycle frames (`format_sse_frame`) in `data: {json}\n\n` syntax.
+
+---
 
 ## What you touch
 - Script: `lab1_sse_streaming_api.py`
-- Function: `format_sse_frame(event_type, data, event_id)` returns `data: {json}\n\n`
-- Wrapper keys on every frame: `event_id`, `event_type`, `timestamp`, `data`
-- Generator: `generate_agent_sse_stream(prompt)` yields those strings
-- `event_type` order: `session_started`, six `token_delta`, `tool_call_start`, `tool_call_result`, `turn_complete`
-- Token chunks in `data.delta`: `Analyzing `, `user `, `query... `, `Formulating `, `action `, `plan.`
-- Tool frames: `tool_name` `read_file`, `args.path` `config.json`, `output` `{'env': 'prod'}`
-- Prompt in `__main__`: `Read config and summarize environment`
-- This script does not start FastAPI and does not POST. Env defaults still apply to the rest of the chapter: `OLLAMA_HOST` `http://192.168.1.29:11434`, `OLLAMA_MODEL` `qwen3.6:35b-a3b-65k`
+- Main Functions:
+  - `format_sse_frame(event_type: str, data: dict, event_id: int) -> str`
+  - `generate_agent_sse_stream(prompt: str)` (Async Generator)
+- Event Types Emitted: `session_started`, `token_delta`, `tool_call_start`, `tool_call_result`, `turn_complete`
+- Stream Tokens: `"Analyzing "`, `"user "`, `"query... "`, `"Formulating "`, `"action "`, `"plan."`
+- Pure Python logic (no network calls required)
+
+---
 
 ## Steps
 ```mermaid
 flowchart TD
-    subgraph lab1_sse_script [lab1_sse_streaming_api.py]
-        FMT["format_sse_frame"]
-        GEN["generate_agent_sse_stream"]
-        MAIN["main"]
-    end
-    GEN --> FMT
-    FMT -->|"data JSON newline newline"| MAIN
+    A["generate_agent_sse_stream(prompt)"] --> B["Emit 'session_started'"]
+    B --> C["Yield 6 'token_delta' chunks"]
+    C --> D["Emit 'tool_call_start' (read_file config.json)"]
+    D --> E["Emit 'tool_call_result' ({'env': 'prod'})"]
+    E --> F["Emit 'turn_complete' (status: SUCCESS)"]
+    F --> G["Client reads formatted 'data: {...}\n\n' lines"]
 ```
 
-1. Write `format_sse_frame`. Build `{ event_id, event_type, timestamp, data }` and return `data: ` plus `json.dumps` plus `\n\n`.
-2. Write `generate_agent_sse_stream(prompt)`. Yield `session_started` with `data.status` `ACTIVE` and `data.prompt` set.
-3. Yield six `token_delta` frames. Each `data.delta` is one of the chunks listed above.
-4. Yield `tool_call_start` (`read_file`, `config.json`) then `tool_call_result` (`{'env': 'prod'}`) then `turn_complete` with `status` `SUCCESS` and `total_events` equal to the last `event_id`.
-5. In `main`, iterate the generator and print each frame as `[CLIENT READ] ` plus the stripped line.
-6. Confirm you see every `event_type`. Do not start uvicorn. Do not open a WebSocket.
+1. Implement `format_sse_frame(event_type, data, event_id)`:
+   - Construct a dictionary: `{"event_id": event_id, "event_type": event_type, "timestamp": time.time(), "data": data}`.
+   - Return formatted SSE line: `f"data: {json.dumps(payload)}\n\n"`.
+2. Implement `generate_agent_sse_stream(prompt)` as an async generator:
+   - Yield `session_started` with `{"status": "ACTIVE", "prompt": prompt}`.
+   - Yield 6 `token_delta` frames with sequential text chunks.
+   - Yield `tool_call_start` with `{"tool_name": "read_file", "args": {"path": "config.json"}}`.
+   - Yield `tool_call_result` with `{"tool_name": "read_file", "output": {"env": "prod"}}`.
+   - Yield `turn_complete` with `{"status": "SUCCESS", "total_events": current_event_id}`.
+3. In `__main__`:
+   - Consume the async generator and print each frame to verify complete event sequencing.
+
+---
 
 ## Data contract
-Intended SSE line a FastAPI route should write. The reference script wraps more keys (Notes).
 
-**Intended line**
+**Formatted SSE Line Output**
 
-```
-data: {"token": "string"}\n\n
-```
+```text
+data: {"event_id": 1, "event_type": "session_started", "timestamp": 1700000000.0, "data": {"status": "ACTIVE", "prompt": "Read config and summarize environment"}}
 
-`Content-Type` is `text/event-stream` when this is served over HTTP.
+data: {"event_id": 2, "event_type": "token_delta", "timestamp": 1700000000.1, "data": {"delta": "Analyzing "}}
 
-**Reference script yield**
+data: {"event_id": 8, "event_type": "tool_call_start", "timestamp": 1700000000.7, "data": {"tool_name": "read_file", "args": {"path": "config.json"}}}
 
-```
-data: {"event_id": 1, "event_type": "session_started", "timestamp": 0.0, "data": {"status": "ACTIVE", "prompt": "string"}}\n\n
+data: {"event_id": 10, "event_type": "turn_complete", "timestamp": 1700000000.9, "data": {"status": "SUCCESS", "total_events": 10}}
 ```
 
-`token_delta` puts the chunk in `data.delta`, not `token`. There is no `[DONE]` line.
+---
 
 ## Run
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/19_the_front_door/lab1_sse_streaming_api.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/19_the_front_door/lab1_sse_streaming_api.py
 ```
 
-The reference script does not read those env vars and does not POST. They are listed so the Run block matches the other chapters.
+---
 
 ## What you should see
-`=== STARTING SERVER-SENT EVENTS (SSE) STREAMING API LAB ===`. Then `[SSE STREAM] Starting agent stream for prompt: 'Read config and summarize environment'...`. Then `=== RECEIVING SSE STREAM FRAMES FROM AGENT ===`. Then ten `[CLIENT READ] data: {...}` lines: `session_started`, six `token_delta`, `tool_call_start`, `tool_call_result`, `turn_complete`. If you see `[DONE]` or a browser page, you added something this script does not do.
+- `=== STARTING SERVER-SENT EVENTS (SSE) STREAMING API LAB ===`
+- Sequential `[CLIENT READ] data: {...}` output lines spanning `session_started` through `turn_complete`.
+
+---
 
 ## Stop here
-Do not add FastAPI, uvicorn, `EventSource`, or a Next.js app. Do not open a WebSocket. Lab 2 is the inbound interrupt. Chapter 12 splits `<think>` from visible text.
+You have successfully generated structured SSE frames! In Lab 2, we will implement interactive WebSocket cancellation interrupts.
+
+Next up: [Lab 2: WebSocket Interrupt](./lab2_websocket_interrupt.md).
+
+---
 
 ## Notes
-- Keep the five `event_type` values, the six token strings, and `read_file` / `config.json`.
-- Contract drift vs `lab1_sse_streaming_api.py`: no FastAPI app, no port `8000`, no `EventSource`, no POST to Ollama, no `[DONE]`. The intended line is `data: {"token": "..."}\n\n`. The script wraps `{event_id, event_type, timestamp, data}` and puts the chunk in `data.delta`. Write a FastAPI route in your copy if you want a browser. Do not edit the `.py` in the repo.
+*(Record your SSE streaming output frames here)*
+

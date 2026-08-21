@@ -1,38 +1,38 @@
-# OT: GGUF quant
+# Optional Training: GGUF Format and Uniform 4-Bit Quantization
 
-This folder is optional. It is not on the 00–15 path. After this page you can name what quantization does: store the same weight numbers in fewer bits, then point llama.cpp or Ollama at a `.gguf` path. Finishing this page does not unlock chapter 15.
+By the end of this module, you will understand how model quantization compresses 16-bit floating point weights (FP16) into compact integer representations (such as 4-bit integers with scale $S$ and zero-point $Z$) and packages them into the standard GGUF format for local execution via Ollama and llama.cpp.
+
+Full-precision model weights require massive VRAM. Quantization compresses weights by up to 75% with minimal degradation in output quality.
 
 ## Data
-Three objects exist.
-
-A **weight list** is the original numbers, usually 16-bit floats (FP16). Chapter 00 called this the weight file. Here you look at the bits per number.
-
-A **quantized copy** stores each number as a small integer plus a **scale** `S` and a **zero-point** `Z`. The lab uses 4 bits, so each integer is 0 to 15. The function is `Uniform4BitQuantizer.quantize_tensor` in [lab2_gguf_quantization.py](./lab2_gguf_quantization.py).
-
-A **`.gguf` file** is the on-disk format llama.cpp and Ollama load. A **Modelfile** is a short text file that tells Ollama `FROM` that path. The function `generate_ollama_modelfile` builds that text. It does not write the `.gguf` bytes.
+**Weight Quantization** compresses numerical precision:
+- **FP16 Base Tensor**: High-precision 16-bit floating point weights ($2\text{ bytes per parameter}$).
+- **Uniform 4-Bit Quantizer**:
+  - `Scale (S)`: Step size calculated via $(W_{\max} - W_{\min}) / (2^b - 1)$.
+  - `Zero-Point (Z)`: Offset calculated via $\text{round}(-W_{\min} / S)$ clamped to range.
+  - `Quantized Value (q)`: $\text{round}(w / S) + Z$ stored in 4 bits ($0.5\text{ bytes per parameter}$).
+- **Dequantization**: Reconstructs approximate weights via $\hat{w} = (q - Z) \cdot S$.
+- **GGUF & Modelfile**: The industry standard single-file binary container used by llama.cpp and Ollama.
 
 ## Information
-The only path on this page is:
-
-FP16 weights → 4-bit integers + `S` + `Z` → (intended) `.gguf` path → Ollama or llama.cpp loads it
-
-That is not a train loop. LoRA changes `A` and `B`. This page does not train. It compresses numbers that already exist.
-
-If you only `ollama pull` a tag, you already have a quantized file. Skip this page. The provider at `http://192.168.1.29:11434` with `OLLAMA_MODEL=qwen3.6:35b-a3b-65k` is enough for 00–15.
+Quantization trade-offs are straightforward:
+- **VRAM Compression**: Compresses model size from 16 GB down to ~4.5 GB, allowing 7B+ parameter models to run smoothly on consumer laptops.
+- **Quantization Error**: Reconstructing floating-point values from 4-bit bins introduces minor rounding errors (measured via Mean Squared Error / MSE and Mean Absolute Error / MAE).
 
 ## Knowledge
-1. Confirm you need a smaller file. FP16 may not fit in VRAM. A pulled Ollama tag may already be quantized.
-2. Map each float `w` to an integer `q` with `q = round(w / S) + Z`, then clamp to 0..15.
-3. Reconstruct with `w_hat = (q - Z) * S`. The lab prints `mse` and `mae` from `evaluate_quantization_loss` so you can see the error.
-4. For a real export, write a `.gguf` and a Modelfile whose `FROM` line is that path. Then `ollama create` and POST to `/api/generate` as in chapter 00.
-5. Stop when you can name `S`, `Z`, bits per weight, and the `.gguf` path. Do not start GRPO on this page.
+Here is the step-by-step procedure:
+1. Determine the tensor dynamic range ($W_{\min}$ and $W_{\max}$).
+2. Calculate the scaling factor $S$ and zero-point offset $Z$.
+3. Quantize float arrays into discrete 4-bit integer values (`quantize_tensor`).
+4. Evaluate reconstruction loss via `evaluate_quantization_loss(original, dequantized)`.
+5. Generate an Ollama `Modelfile` linking the quantized `.gguf` weight container.
 
 ## Wisdom
-Skip this folder if you only pull Ollama tags. It is optional. Finishing it does not unlock chapter 15. If you only need a model to answer, stay on chapter 00 and POST to `http://192.168.1.29:11434`.
+Quantization is the primary technology enabling local on-device AI. Choose 4-bit or 8-bit quantized GGUF weights to maximize token generation speed on CPU and edge hardware.
 
 ## The When and Why
-- **When:** you need a smaller weight file than FP16.
-- **Why:** FP16 may not fit. A GGUF with fewer bits per number is what llama.cpp and Ollama load.
+- **When**: Packaging fine-tuned models for distribution, running models locally on CPU/Apple Silicon, or optimizing server density.
+- **Why**: 4-bit quantization reduces memory bandwidth bottlenecks by 4x while preserving over 99% of model benchmark performance.
 
 ## How it works
 

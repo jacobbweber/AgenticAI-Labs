@@ -1,39 +1,33 @@
-# 14: Skill Wrapper vs Two Agents
+# 14: Skill Wrapper vs Two Agents: Selecting the Right Architecture
 
-After this page a second agent is a choice, not the default. Most of the time the parent should call a function and wait for one JSON result.
+By the end of this chapter, you will understand how to choose between wrapping sub-tasks in a synchronous skill tool versus creating a separate autonomous agent process with full handoff protocol support.
+
+Not every specialized task warrants a distinct agent loop. In this chapter, we evaluate the architectural trade-offs between skill function wrappers and multi-agent coordination.
 
 ## Data
-Two shapes exist. They are not the same object.
-
-A **skill / tool wrapper** is a function the parent calls, for example `run_specialist(payload)`. That function runs a script or an in-process loop to completion and returns one JSON object. The parent blocks until the function returns. Chapter 03 `lab1_tool_dispatch` is this shape with a short function body. A specialist skill is the same dispatcher with a longer body.
-
-**Two agents** means each side has its own loop and its own `messages` list. They pass a handoff JSON (the five keys from `01_handoff_protocol.md`) on a queue or as a function argument. `lab2_agent_handoff.py` is the small version: `create_a2a_handoff_payload` then `agent_developer`. `lab1_supervisor_worker.py` is two workers under one supervisor, not a long-lived pair of loops.
-
-The intended host is `OLLAMA_HOST` from the environment (usually `http://127.0.0.1:11434`). The intended model is `OLLAMA_MODEL` from the environment. The intended route is `POST /api/chat`. The shape you pick does not change the host or the port.
+We compare two key architectural patterns:
+1. **Skill / Tool Wrapper**: A standard Python function invoked by the parent agent (e.g. `run_specialist(payload) -> dict`). The parent blocks until the function returns a final JSON deliverable.
+2. **Two Autonomous Agents**: Two distinct agent runtimes, each maintaining its own loop and message history, communicating via validated A2A handoff envelopes (the 5 keys: `context`, `content`, `action`, `state_dump`, `verification`).
 
 ## Information
-Both shapes isolate context. The parent never needs the child's raw trial-and-error tokens. The difference is whether the parent blocks and waits, or both loops stay alive and pass messages.
-
-A skill wrapper gives you one stack trace. If the child fails, the exception lands in the parent call. Two agents give you two processes (or two loops) and a handoff object. A missing `verification` key fails in `validate_handoff_middleware` before the next POST.
-
-A common production shape is both: the parent sees one skill name in `TOOLS_SCHEMA`. Inside that skill, a full child loop runs and returns one JSON object.
+Both patterns prevent context pollution by encapsulating sub-task tokens. The primary architectural distinction is lifecycle control:
+- **Skill Wrapper**: Simple stack trace, synchronous blocking execution, ideal when sub-tasks can complete reliably without parent oversight.
+- **Two Agents**: Asynchronous message passing, ideal when the parent needs to monitor, approve, or steer mid-flight work.
 
 ## Knowledge
-1. If the child can finish alone (retries, checks, one deliverable), wrap it as a tool. See [00_tool_dispatch.md](../03_the_dispatcher/00_tool_dispatch.md).
-2. If the child must stay up, or the parent must approve a mid-run artifact, use two agents and the five-key handoff. See [lab2_agent_handoff.md](./lab2_agent_handoff.md).
-3. If two specialist jobs can run at the same time and only the join matters, use hub-and-spoke. See [lab1_supervisor_worker.md](./lab1_supervisor_worker.md).
-4. If the work is the same shape and many rows are pending, use many workers on one job table. Volume, not mid-run inspection. See [lab2_two_workers.md](../18_the_job/lab2_two_workers.md).
-5. Do not stand up Kafka, Redis, or a gossip bus because you have two job titles. Two job titles still do not require a fleet.
+Here is the decision guide:
+1. Use a **Skill Wrapper** when the child task is self-contained and only the final result is required.
+2. Use **Two Agents (Peer Handoff)** when work transitions sequentially across distinct role boundaries with strict verification requirements.
+3. Use **Hub-and-Spoke** when independent specialist tasks can execute concurrently in parallel.
+4. Use a **Job Queue** (Chapter 18) when processing high-volume batches of homogeneous tasks.
 
 ## Wisdom
-A function call is enough until you need mid-run inspection or overlapping work. A bus adds routing, serialization, and failure modes that are not this chapter. Two job titles (Architect, Developer) do not require two loops. Two job titles still do not require a fleet.
+A Python function call is always simpler, faster, and easier to debug than a multi-agent message bus. Only introduce multi-agent handoffs when you need asynchronous oversight or strict permission isolation.
 
 ## The When and Why
-- **When (skill):** the task is self-contained. The parent only needs the final payload. You want a simple stack trace.
-- **When (two agents):** the parent must watch, correct, or approve work while it is still running, or two loops must run at the same time (watcher vs doer).
-- **When (hub-and-spoke):** two specialist jobs can run at the same time and only the join matters.
-- **When (job table):** volume. Same work, many pending rows. Not mid-run inspection. See [lab2_two_workers.md](../18_the_job/lab2_two_workers.md).
-- **Why:** a bus adds routing, serialization, and failure modes. Skip it until a skill wrapper cannot do the job. Two job titles still do not require a fleet.
+- **When (Skill)**: Self-contained tasks where you only care about the final JSON output.
+- **When (Two Agents)**: Tasks requiring mid-execution human/parent checkpoints or distinct security boundaries.
+- **Why**: Multi-agent setups introduce serialization and synchronization overhead. Use the simplest pattern that solves the problem.
 
 ## How it works
 

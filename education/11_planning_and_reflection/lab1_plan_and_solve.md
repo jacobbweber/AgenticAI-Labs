@@ -1,42 +1,46 @@
-# Lab 1: Plan and solve
+# Lab 1: Plan-and-Solve Task Decomposition with Dynamic Replanning
 
-Decompose a high-level goal into a structured JSON execution plan, execute steps sequentially against a tool registry, and dynamically replan when a step fails.
-This file is the brief. It is short. It does not reteach the module. Read the module first.
+In this lab, you will decompose a high-level goal into a structured JSON execution plan, execute steps sequentially against a tool registry, and dynamically replan with fallback tools when an execution step fails.
+
+---
 
 ## What you touch
 - Script: `lab1_plan_and_solve.py`
-- Functions: `generate_initial_plan(goal, tool_schemas)`, `execute_plan(plan, tool_registry, tool_schemas)`, `replan_on_failure(plan, failed_step_idx, error_msg, tool_schemas)`
-- Tools: `primary_db_query(user_id)`, `fallback_cache_query(user_id)`, `format_user_report(user_data)`
-- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://127.0.0.1:11434/api/generate`)
-- Keys sent: `model`, `prompt`, `stream` (`false`), `options.temperature` (`0.0`)
-- Keys read: `response`
-- Return keys: `plan_id`, `goal`, `steps`, `status`, `replan_count`
+- Main Functions:
+  - `generate_initial_plan(goal, tool_schemas) -> dict`
+  - `execute_plan(plan, tool_registry, tool_schemas) -> dict`
+  - `replan_on_failure(plan, failed_step_idx, error_msg, tool_schemas) -> dict`
+- Tool Registry: `primary_db_query(user_id)`, `fallback_cache_query(user_id)`, `format_user_report(user_data)`
+- URL / Endpoint: `{OLLAMA_HOST}/api/generate` (defaults to `http://127.0.0.1:11434/api/generate`)
+- Return Fields: `plan_id`, `goal`, `steps`, `status`, `replan_count`
+
+---
 
 ## Steps
 ```mermaid
 flowchart TD
-    G["User Goal + Tool Schemas"] --> P["generate_initial_plan"]
-    P --> E["execute_plan (Step Loop)"]
-    E --> T{"Tool Call Status"}
-    T -->|"Success"| S["Record result, advance step"]
-    S --> N{"More Steps?"}
-    N -->|"Yes"| E
-    N -->|"No"| D["Status: completed"]
-    T -->|"Failure / Error"| R["replan_on_failure"]
-    R -->|"Revised Step"| E
+    A["User Goal + Available Tool Schemas"] --> B["generate_initial_plan()"]
+    B --> C["execute_plan() (Step Loop)"]
+    C --> D{"Step Execution Result"}
+    D -->|"Success"| E["Record step result & advance"]
+    E --> F{"More Steps Remaining?"}
+    F -->|"Yes"| C
+    F -->|"No"| G["Status: 'completed'"]
+    D -->|"Simulated DB Timeout"| H["replan_on_failure()"]
+    H -->|"Substitute fallback_cache_query"| C
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment via `load_env()`.
-2. Generate an `ExecutionPlan` JSON dictionary with `plan_id`, `goal`, `steps` array, `status="pending"`, and `replan_count=0`.
-3. Provide available tool schemas (`primary_db_query`, `fallback_cache_query`, `format_user_report`).
-4. Execute steps sequentially in `execute_plan`. Resolve inter-step variable references (e.g. `$step_1_result`).
-5. Handle step execution failure: when `primary_db_query` encounters an error, intercept the failure string and invoke `replan_on_failure`.
-6. Update the failed step in place with an alternate fallback tool (`fallback_cache_query`) and increment `replan_count`.
-7. Re-execute the revised step and continue remaining pipeline steps until all complete.
-8. Output the final completed `ExecutionPlan` payload.
+1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from environment variables, defaulting to `http://127.0.0.1:11434` and `llama3.2:1b`.
+2. Generate an initial `ExecutionPlan` JSON dictionary containing `plan_id`, `goal`, `steps`, `status="pending"`, and `replan_count=0`.
+3. Provide available tool schemas: `primary_db_query`, `fallback_cache_query`, and `format_user_report`.
+4. Execute steps sequentially in `execute_plan`, resolving variable bindings from earlier step results (e.g. `$step_1_result`).
+5. When `primary_db_query` encounters a simulated timeout error, intercept the failure and invoke `replan_on_failure()`.
+6. Update the failed step with `fallback_cache_query`, increment `replan_count`, and re-execute the step.
+7. Execute subsequent reporting steps and verify that the entire plan completes successfully.
+
+---
 
 ## Data contract
-Only the keys this script sends and reads.
 
 **Initial Plan Request**
 
@@ -51,7 +55,7 @@ Only the keys this script sends and reads.
 }
 ```
 
-**Plan Output Schema**
+**Final Executed Plan Payload**
 
 ```json
 {
@@ -82,19 +86,37 @@ Only the keys this script sends and reads.
 }
 ```
 
-## Run
-From the repo root. The script loads `.env` (copy `.env.example` to `.env` first).
+---
 
-```text
+## Run
+From the repository root, run:
+
+```bash
 python education/11_planning_and_reflection/lab1_plan_and_solve.py
 ```
 
+```powershell
+python education/11_planning_and_reflection/lab1_plan_and_solve.py
+```
+
+---
+
 ## What you should see
-An initial JSON plan decomposition, execution of Step 1 triggering simulated primary DB timeout, `[REPLANNER TRIGGERED]` alert, execution of replacement `fallback_cache_query` step, successful execution of Step 2, and final JSON plan status `"completed"` with `replan_count: 1`. If tool execution fails unhandled, check tool parameter dictionary matching.
+- Initial structured plan decomposition into discrete steps.
+- Execution of Step 1 triggering the primary DB error.
+- `[REPLANNER TRIGGERED]` alert showing substitution of `fallback_cache_query`.
+- Step 2 resolving `$step_1_result` and producing the audit report.
+- Final JSON plan output with `status: "completed"` and `replan_count: 1`.
+
+---
 
 ## Stop here
-This lab decomposes tasks into sequential step arrays and handles runtime tool replanning. Do not add asynchronous swarm workers or sandboxed Python interpreters here. Code evaluation and self-healing loops belong in Lab 2.
+You have successfully decomposed goals into structured plans with dynamic replanning! In Lab 2, we will build a self-healing code reflection loop.
+
+Next up: [Lab 2: Reflexion Loop](./lab2_reflexion_loop.md).
+
+---
 
 ## Notes
-- Planning isolates decomposition from execution, ensuring every tool invocation has an inspectable step index and argument payload.
-- Replanning adapts only the failed and downstream steps, preserving successfully completed step results.
+*(Record your plan execution and replanning trace here)*
+

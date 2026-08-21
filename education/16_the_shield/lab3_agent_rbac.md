@@ -1,65 +1,46 @@
-# Lab 3: Agent RBAC
+# Lab 3: Role-Based Access Control (RBAC) Tool Interceptor
 
-A tool call not on the role list is rejected.
+In this lab, you will implement an RBAC permission gate `rbac_tool_interceptor()` that checks incoming tool calls against an explicit role whitelist (`ROLE_TOOL_PERMISSIONS`), allowing authorized tools (`status: 200`) and blocking unauthorized actions with HTTP 403 Forbidden.
+
+---
 
 ## What you touch
 - Script: `lab3_agent_rbac.py`
-- Map: `ROLE_TOOL_PERMISSIONS` (`dict[str, list[str]]`)
-- Function: `rbac_tool_interceptor(agent_role, tool_name, tool_args)`
-- Mock executors: `mock_read_file`, `mock_write_file`, `mock_run_tests`, `mock_run_command` in `TOOL_EXECUTORS`
-- Reference grants: `ARCHITECT` → `read_file`, `list_dir`; `DEVELOPER` → `read_file`, `write_file`; `AUDITOR` → `read_file`, `run_tests`
-- Four calls in `__main__`: Architect `read_file` (allow), Architect `run_command` (deny), Developer `write_file` (allow), Developer `run_tests` (deny)
-- This script does not POST. It does not read `OLLAMA_HOST` or `OLLAMA_MODEL`.
+- Permission Grants: `ROLE_TOOL_PERMISSIONS` mapping roles (`ARCHITECT`, `DEVELOPER`, `AUDITOR`) to allowed tool lists
+- Interceptor: `rbac_tool_interceptor(agent_role: str, tool_name: str, tool_args: dict) -> dict`
+- Mock Tool Executors: `read_file`, `write_file`, `run_tests`, `run_command` in `TOOL_EXECUTORS`
+- Test Scenarios in `__main__`:
+  - Architect: `read_file` (Allow $\rightarrow$ 200), `run_command` (Deny $\rightarrow$ 403)
+  - Developer: `write_file` (Allow $\rightarrow$ 200), `run_tests` (Deny $\rightarrow$ 403)
+
+---
 
 ## Steps
 ```mermaid
 flowchart TD
-    subgraph lab3_rbac_script [lab3_agent_rbac.py]
-        MAP["ROLE_TOOL_PERMISSIONS"]
-        INT["rbac_tool_interceptor"]
-        EX["TOOL_EXECUTORS"]
-    end
-    INT --> MAP
-    MAP -->|"name missing"| INT
-    MAP -->|"name present"| EX
+    A["Tool Invocation: rbac_tool_interceptor(role, tool_name, args)"] --> B["Lookup ROLE_TOOL_PERMISSIONS[role]"]
+    B --> C{"Is tool_name in allowed_tools?"}
+    C -->|"Yes (Authorized)"| D["Execute TOOL_EXECUTORS[tool_name](**args)"]
+    D --> E["Return {status: 200, result: ...}"]
+    C -->|"No (Forbidden)"| F["Return {status: 403, error: 'Permission Denied...'}"]
 ```
 
-1. Write `ROLE_TOOL_PERMISSIONS` as a dict from role name to a list of tool name strings. The reference keys are `ARCHITECT`, `DEVELOPER`, `AUDITOR`.
-2. Write mock functions for `read_file`, `write_file`, `run_tests`, and `run_command`. Put them in `TOOL_EXECUTORS`.
-3. Write `rbac_tool_interceptor(agent_role, tool_name, tool_args)`. Look up `allowed_tools = ROLE_TOOL_PERMISSIONS.get(agent_role, [])`. If `tool_name` is not in that list, return `{ "status": 403, "error": "..." }` and do not call the executor.
-4. If the name is on the list, call `TOOL_EXECUTORS[tool_name](**tool_args)` and return `{ "status": 200, "result": "..." }`.
-5. In `__main__`, run the four calls: Architect `read_file` on `architecture.md`, Architect `run_command` with `rm -rf /`, Developer `write_file` on `main.py`, Developer `run_tests` with `pytest`. Print each return dict.
-6. Confirm one allow and one deny per role you test. The denied function must not run. Do not add a model POST, Docker, or a HITL pause.
+1. Define role permission grants:
+   - `ARCHITECT`: `["read_file", "list_dir"]`
+   - `DEVELOPER`: `["read_file", "write_file"]`
+   - `AUDITOR`: `["read_file", "run_tests"]`
+2. Implement mock functions in `TOOL_EXECUTORS` for `read_file`, `write_file`, `run_tests`, and `run_command`.
+3. Implement `rbac_tool_interceptor(agent_role, tool_name, tool_args)`:
+   - Query `allowed_tools = ROLE_TOOL_PERMISSIONS.get(agent_role, [])`.
+   - If `tool_name` is not in `allowed_tools`, return `{"status": 403, "error": f"Permission Denied: Role '{agent_role}' cannot execute tool '{tool_name}'."}`.
+   - If authorized, execute the target tool and return `{"status": 200, "result": output}`.
+4. In `__main__`, test both allowed and denied calls across roles, asserting proper HTTP 200 vs 403 responses.
+
+---
 
 ## Data contract
-Intended keys this lab should return. The reference file differs (Notes).
 
-**Intended deny**
-
-```json
-{
-  "error": "Execution rejected by policy engine"
-}
-```
-
-**Intended allow**
-
-```json
-{
-  "result": "string"
-}
-```
-
-**Reference script deny**
-
-```json
-{
-  "status": 403,
-  "error": "Permission Denied: Role 'ARCHITECT' cannot execute tool 'run_command'."
-}
-```
-
-**Reference script allow**
+**Authorized Tool Result (HTTP 200)**
 
 ```json
 {
@@ -68,8 +49,19 @@ Intended keys this lab should return. The reference file differs (Notes).
 }
 ```
 
+**Denied Tool Result (HTTP 403)**
+
+```json
+{
+  "status": 403,
+  "error": "Permission Denied: Role 'ARCHITECT' cannot execute tool 'run_command'."
+}
+```
+
+---
+
 ## Run
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/16_the_shield/lab3_agent_rbac.py
@@ -79,15 +71,23 @@ python education/16_the_shield/lab3_agent_rbac.py
 python education/16_the_shield/lab3_agent_rbac.py
 ```
 
-This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`. Do not set those vars for this lab.
+---
 
 ## What you should see
-`=== STARTING AGENT ROLE-BASED ACCESS CONTROL (RBAC) LAB ===`. Architect `read_file` prints `[GRANTED]` and `status` 200. Architect `run_command` prints `[DENIED] PERMISSION DENIED (HTTP 403 Forbidden)` and `status` 403. Developer `write_file` is 200. Developer `run_tests` is 403. If `run_command` prints `Executed bash command`, the interceptor did not check the list.
+- `[GRANTED] Role 'ARCHITECT' executed 'read_file' -> Status: 200`
+- `[DENIED] Role 'ARCHITECT' blocked from 'run_command' -> Status: 403`
+- `[GRANTED] Role 'DEVELOPER' executed 'write_file' -> Status: 200`
+- `[DENIED] Role 'DEVELOPER' blocked from 'run_tests' -> Status: 403`
+
+---
 
 ## Stop here
-Do not add a model POST, a sandbox, or a HITL pause. Persona text is not enough; the list is the control. Next: [../17_hitl_and_park_resume/00_hitl_and_park_resume.md](../17_hitl_and_park_resume/00_hitl_and_park_resume.md).
+You have successfully enforced role-based tool permissions! In Chapter 17, we will implement Human-in-the-Loop approval workflows and stateful park/resume lifecycles.
+
+Next up: [Chapter 17: Human in the Loop and Park/Resume](../17_hitl_and_park_resume/00_hitl_and_park_resume.md).
+
+---
 
 ## Notes
-- `run_command` exists in `TOOL_EXECUTORS` but is on no grant, so every role that calls it gets 403.
-- Contract drift vs `lab3_agent_rbac.py`: deny is `{ "status": 403, "error": "Permission Denied: ..." }`, not `{ "error": "Execution rejected by policy engine" }`. Allow includes `status` 200. Role keys are uppercase. Tool names are `read_file`, `list_dir`, `write_file`, `run_tests`, not the chapter 14 teaching names (`view_file`, `write_spec`, `write_to_file`). No POST. The intended teaching deny is a rejected call that does not run the function. Write that in your copy. Do not edit the `.py` in the repo.
-- Chapter 14 named the grant. This lab enforces it.
+*(Record your RBAC authorization and rejection logs here)*
+

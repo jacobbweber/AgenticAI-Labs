@@ -1,41 +1,38 @@
-# 10: Deterministic DAGs
+# 10: Deterministic DAGs: Fixed-Sequence Pipeline Execution
 
-After this page you pass a dict through named functions in a fixed order. One node may call the model to pick a branch. That is a DAG. A back edge (test, then refactor, then test again) is the next page.
+By the end of this chapter, you will build a deterministic Directed Acyclic Graph (DAG) pipeline where a shared state dictionary passes sequentially through named worker functions, using an LLM classifier node to route decisions dynamically.
+
+In Chapter 04, we built freeform ReAct loops. In this chapter, we explore deterministic DAGs—where the execution order is fixed in code, and the model is called only when an intelligent routing decision is required.
 
 ## Data
-A **DAG** is a directed acyclic graph: named steps with arrows, and no arrow that goes back to an earlier step. In the lab the steps are Python functions. Each one takes a `state` dict and returns that same dict with more keys.
-
-**State** starts in `node_ingest_request`. That function does not take a dict. It takes the raw user string and returns `{ "raw_input", "timestamp", "status": "INGESTED" }`. Every later node is `state = node(state)`.
-
-**Nodes** in `lab1_dag_pipeline.py`:
-- `node_ingest_request` (build the dict)
-- `node_route_intent` (the only HTTP call)
-- `node_worker_code_fix` or `node_worker_general_qa` (plain string stubs, no model)
-- `node_format_output` (build `final_payload`)
-
-The **router** POSTs to `{OLLAMA_HOST}/api/generate` (default host `http://127.0.0.1:11434`, model `llama3.2:1b`). It asks for a raw JSON object with `intent` (`code_fix` or `general_qa`) and `confidence` (0.0 to 1.0). It reads `response`, strips a leading ` ```json ` fence if present, then `json.loads`. On parse or HTTP error it sets `intent = "general_qa"` and `confidence = 0.0`.
-
-`run_dag_pipeline` is the runner: ingest, route, `if state["intent"] == "code_fix"` else the QA worker, then format.
+A **DAG (Directed Acyclic Graph)** is a sequence of processing steps where data moves strictly forward without loops:
+- **Pipeline State**: A dictionary initialized at ingestion and updated by each consecutive node:
+  `{"raw_input": str, "timestamp": float, "status": "INGESTED", ...}`.
+- **Node Functions**:
+  1. `node_ingest_request`: Captures user input and timestamps the start of execution.
+  2. `node_route_intent`: Queries the LLM (`POST /api/generate`) to classify the user request into a structured JSON intent (`code_fix` vs `general_qa`) with confidence scoring.
+  3. `node_worker_code_fix` / `node_worker_general_qa`: Specialized worker functions that execute the appropriate task.
+  4. `node_format_output`: Constructs the final structured completion payload.
 
 ## Information
-A ReAct loop (chapter 04) can skip or reorder steps because the model picks the next tool. A DAG cannot. The order is in Python: ingest, then route, then one worker, then format. Deterministic nodes do ingest and format. The model sits only at the ambiguous junction (which worker?).
-
-The workers do not call Ollama. They set `worker_output` to a stub string. The point of this page is the fixed order and the one router POST, not a real code-repair model.
+In mission-critical enterprise systems, not every step should be autonomous or open-ended:
+- **Deterministic Pipeline Structure**: Ingestion, validation, and final formatting always execute in a predictable order.
+- **Targeted Intelligence**: The LLM is used precisely where natural language classification is needed, while the rest of the pipeline executes predictably in pure Python.
 
 ## Knowledge
-1. Ingest the user string into a dict (`raw_input`, `timestamp`, `status`).
-2. In the router node, POST `model`, `prompt`, `stream: false`, `options.temperature: 0.0` to `{OLLAMA_HOST}/api/generate`. Parse `response` as `{ "intent", "confidence" }`.
-3. If parse or HTTP fails, set `intent` to `general_qa` and do not crash.
-4. `if state["intent"] == "code_fix"` run `node_worker_code_fix`, else `node_worker_general_qa`.
-5. Format `{ "status": "COMPLETED", "processed_intent", "result", "pipeline_duration_seconds" }` and print it.
-6. Do not add a back edge or an event queue here.
+Here is the step-by-step procedure:
+1. Accept raw user input and initialize state in `node_ingest_request()`.
+2. In `node_route_intent()`, prompt the model to return JSON with `intent` (`code_fix` or `general_qa`) and `confidence`.
+3. Safely parse the response with fallback handling (`except Exception -> intent="general_qa"`).
+4. Branch deterministically based on `state["intent"]` to invoke the corresponding worker function.
+5. Package the result in `node_format_output()` and return the final payload.
 
 ## Wisdom
-Use a DAG when the sequence must be audited: ingest always runs, format always runs, and you can name which worker ran. Use the chapter 04 loop when the next step is unknown. A graph with a retry loop is the next page. If you add that loop now, you will not know whether a skip came from the router or from a back edge.
+Use deterministic DAGs when process compliance, auditability, and predictable step execution are mandatory.
 
 ## The When and Why
-- **When:** the steps must happen in a fixed order (ingest, classify, process, format).
-- **Why:** a free loop can skip a required step. A DAG names the order in code.
+- **When**: Use DAG pipelines when workflows follow a strict multi-stage lifecycle (e.g. Ingest $\rightarrow$ Triage $\rightarrow$ Process $\rightarrow$ Format).
+- **Why**: Unrestricted loops can hallucinate or skip necessary compliance checks. DAGs enforce reliable execution order in code.
 
 ## How it works
 

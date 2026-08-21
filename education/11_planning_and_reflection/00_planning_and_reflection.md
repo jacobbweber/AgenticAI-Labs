@@ -1,32 +1,38 @@
-# 11: Planning and Reflection
+# 11: Planning and Reflection: Task Decomposition and Self-Healing Feedback Loops
 
-Decompose complex goals into sequential step arrays before execution, and use feedback from test or execution failures to revise actions dynamically.
+By the end of this chapter, you will implement two powerful reasoning patterns: **Plan-and-Solve** (decomposing complex goals into structured step arrays with dynamic replanning) and **Reflexion** (using error tracebacks from a compiler or test critic to iterate and self-heal generated code).
+
+In Chapter 04, we built basic ReAct loops. In this chapter, we add high-level planning to keep long-horizon tasks on track and programmatic reflection to fix errors automatically.
 
 ## Data
-A **plan** is a structured list of discrete execution steps (`[{"step_id": 1, "description": "...", "tool_name": "...", "tool_args": {}, "status": "pending"}]`).
-A **plan-and-solve executor** iterates through steps in order, passing previous step outputs into subsequent steps.
-**Replanning** occurs when a step fails: the replanner generates an alternate sub-plan or modifies pending steps given the error message.
-**Reflexion** is a self-correction loop where code or output is executed against a critic (e.g. a Python interpreter or test suite), and any captured `stderr` or error diagnostic is appended to the conversation context to prompt a revised attempt.
-The labs in this chapter are `lab1_plan_and_solve.py` and `lab2_reflexion_loop.py`.
+We define two core architectural concepts:
+1. **Execution Plan**: A structured JSON array of discrete steps:
+   `{"plan_id": str, "goal": str, "steps": [{"step_id": 1, "description": str, "tool_name": str, "tool_args": dict, "status": "pending"}], "replan_count": int}`.
+2. **Replanning on Failure**: When a specific step fails during execution (e.g. database timeout), a replanner adjusts the remaining sub-plan without re-executing steps that already succeeded.
+3. **Reflexion Critic**: A sandboxed execution environment (e.g. Python subprocess or test suite) that evaluates generated code. If execution fails, captured `stderr` and tracebacks are fed back into the prompt context to guide the next iteration.
 
 ## Information
-Direct ReAct loops decide only one step at a time without an explicit future horizon, making them prone to wandering on multi-step workflows. Planning creates an explicit global roadmap before invoking actuators.
-When execution encounters an unexpected error or failing test assertion, reflection feeds the failure traceback directly back into the context window, allowing the model to analyze what broke and emit a corrected solution rather than repeating the same mistake.
+Unstructured ReAct loops decide only one action at a time. On complex tasks with many dependencies, models easily wander off track.
+
+Planning and reflection solve this:
+- **Upfront Decomposition**: The model outlines a clear multi-step roadmap before executing any tools.
+- **Self-Correcting Reflexion**: When code crashes or fails a test assertion, providing the exact traceback allows the model to diagnose what went wrong and produce a corrected patch on turn 2.
 
 ## Knowledge
-1. Generate an initial plan JSON array from a high-level goal using the available tool definitions.
-2. Execute each plan step sequentially, updating its status to `completed` and storing its result.
-3. If a step fails, invoke `replan_on_failure` with the failure diagnostic to adjust remaining steps.
-4. For code generation or task verification, execute the generated artifact in a sandboxed subprocess critic.
-5. If the critic returns a nonzero exit code, capture `stderr` and append it as a user/tool feedback message to trigger self-reflection.
-6. Bound the reflection loop with a strict maximum turn budget (e.g. 3 turns) to prevent infinite retry loops.
+Here is the step-by-step procedure:
+1. Deconstruct user goals into a structured step array (`generate_initial_plan`).
+2. Execute each step sequentially, resolving dependencies from prior step outputs (e.g. `$step_1_result`).
+3. If a tool fails, invoke `replan_on_failure` with the error diagnostic to swap in fallback tools and adjust pending steps.
+4. For code generation, write the solution to a temporary file and run it in a sandboxed critic process.
+5. If the critic returns a non-zero exit code, capture `stderr` and re-prompt the model with the error trace.
+6. Cap reflection loops at a strict turn limit (`max_turns = 3`) to bound execution.
 
 ## Wisdom
-Planning upfront provides determinism and inspectability for multi-stage tasks. Reflection provides resilient self-healing for verifiable artifacts. Do not use full replanning when a simple deterministic script or single-turn tool dispatch is sufficient.
+Planning provides inspectability and predictability for complex workflows. Reflection provides automated self-repair for verifiable artifacts like code.
 
 ## The When and Why
-- **When:** the task requires multiple interdependent tool calls where subsequent actions depend on prior outputs, or when generated code must pass automated validation before acceptance.
-- **Why:** without planning, agents drift off-track on long horizons; without reflection, agents repeat failed actions identically without learning from errors.
+- **When**: Use planning when tasks require sequential, interdependent tool executions. Use reflection when outputs can be automatically verified by compilers, linters, or test suites.
+- **Why**: Without planning, long tasks lose direction. Without reflection, models repeat the same code syntax errors without learning from compiler feedback.
 
 ## How it works
 

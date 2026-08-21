@@ -1,42 +1,39 @@
-# 16: Security overview
+# 16: Security Overview: Defense-in-Depth for Agent Systems
 
-After this page you can name injection, redaction, and least privilege as separate controls. Sandbox, the high-risk allowlist, RBAC, and HITL are the scripts in this folder. They are not the same control.
+By the end of this chapter, you will understand the full defense-in-depth security model for autonomous agents: combining **Code Sandboxing**, **High-Risk Permission Allowlisting**, **Role-Based Access Control (RBAC)**, and **Human-in-the-Loop (HITL)** approval gates.
+
+Agent systems connect natural language reasoning directly to real-world actuators. A robust security model enforces defense-in-depth across multiple independent layers.
 
 ## Data
-**Prompt injection** is untrusted text inside `messages`. Tool output, a user file, or a web page can contain instructions that the model treats as its job. That is a string problem in the prompt. There is no injection lab in this folder.
-
-**Redaction** is stripping secrets before they enter the prompt or the logs. An API key in `stdout` must not be appended as `role: tool`. There is no redaction lab in this folder.
-
-**Least privilege** is the smallest tool list for a role. Chapter 14 named the grant. `lab3_agent_rbac.py` stores it as `ROLE_TOOL_PERMISSIONS` and enforces it in `rbac_tool_interceptor`.
-
-**Sandbox** is `execute_sandboxed_python` in `lab1_code_sandbox.py`. It stops code from running in the agent PID.
-
-**Allowlist** is `TOOL_HIGH_RISK` in lab 2. A dict from tool name to a `high_risk` bool. `lookup_permission` returns `{ "allowed": true }` or `{ "needs_hitl": true, "tool": name }`. It does not call the tool. It sits after the sandbox and before lab 3 RBAC and chapter 17 HITL.
-
-**RBAC** is the role-to-tool list. A name not on the list returns status `403` and the function does not run.
-
-**HITL** is a pause before a write. `AgentHITLEngine.execute_action_with_hitl_gate` in chapter 17 `lab1_hitl_approval.py` checks `is_high_risk`. If true, it stores a checkpoint and returns a pause object. `resume_agent_execution` continues after a human `decision`.
-
-This chapter's labs do not POST to Ollama. `OLLAMA_HOST` should still default to `http://127.0.0.1:11434` and `OLLAMA_MODEL` to `llama3.2:1b` when a tool later calls the model.
+We define four distinct security controls:
+1. **Subprocess Sandbox**: Runs untrusted code in isolated child processes with hard timeout limits (`execute_sandboxed_python`).
+2. **Permission Allowlist**: Evaluates tool risk classifications (`TOOL_HIGH_RISK: dict[str, bool]`). Non-destructive tools execute automatically (`{"allowed": true}`), while destructive tools require approval (`{"needs_hitl": true, "tool": str}`).
+3. **Role-Based Access Control (RBAC)**: Enforces least-privilege tool grants per agent role, returning HTTP 403 Forbidden for unauthorized tools (`rbac_tool_interceptor`).
+4. **Human-in-the-Loop (HITL)**: Pauses execution before irreversible write actions (e.g. database migrations), checkpointing state until a human operator approves (`execute_action_with_hitl_gate`).
 
 ## Information
-Sandbox stops code. The allowlist names which tools must pause. RBAC stops the wrong tool. HITL stops the write you did not approve. Injection is a string problem in the prompt. Redaction is a string problem before the prompt. One control is not the others.
+Each security control protects against a different class of failure:
+- **Sandbox** prevents CPU lockups and host process memory corruption.
+- **RBAC** prevents role privilege escalation (e.g. an auditor executing arbitrary bash commands).
+- **Allowlists & HITL** prevent destructive write actions and data loss without human review.
+- **Prompt Sanitization** defends against prompt injection from untrusted external text.
 
-A writer that is sandboxed can still call `run_command` if RBAC is missing. An allowed `write_file` can still run if HITL is missing. A paused write can still leak a key if redaction is missing.
+No single control is sufficient on its own. Layering them provides comprehensive defense-in-depth.
 
 ## Knowledge
-1. Treat tool output and user files as untrusted text. Do not append them as instructions.
-2. Grant the smallest tool list. Store it as `dict[str, list[str]]`.
-3. Run model-emitted code in `execute_sandboxed_python`, not with `eval`.
-4. Look up `TOOL_HIGH_RISK` with `lookup_permission` before a write. Destructive names (`apply_db_migration`, `run_command`, `write_file`) return `{ "needs_hitl": true, "tool": name }`.
-5. Use the existing scripts. Do not invent a new red-team lab.
+Here is the step-by-step procedure:
+1. Treat all external text (files, web pages, tool outputs) as untrusted data.
+2. Enforce strict role-based tool whitelists via `rbac_tool_interceptor()`.
+3. Check `TOOL_HIGH_RISK` allowlists before invoking any actuator tool.
+4. If a tool is flagged high-risk, pause execution with an HITL checkpoint before proceeding.
+5. Isolate all script execution inside sandboxed subprocesses with watchdog timeouts.
 
 ## Wisdom
-Do not invent a new red-team lab. Use the existing scripts. A WAF or input filter is the same job in front of HTTP and is not this chapter. Chapter 19 is the socket that can stream the HITL pause to a browser.
+Security is not a single feature—it is a layered defense. Enforce policies deterministically in Python rather than relying on prompt guidelines.
 
 ## The When and Why
-- **When:** a tool can change the host or leak a secret.
-- **Why:** one control is not the others. Sandbox, the allowlist, RBAC, and HITL fail in different places.
+- **When**: In all production agent deployments capable of reading files, modifying databases, executing shell commands, or interacting with users.
+- **Why**: Prompt instructions alone can be bypassed by prompt injection. Deterministic code interceptors and sandboxes guarantee hard security boundaries.
 
 ## How it works
 

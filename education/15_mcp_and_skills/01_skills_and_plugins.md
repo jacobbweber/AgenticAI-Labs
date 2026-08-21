@@ -1,40 +1,37 @@
-# 15: Skills and plugins
+# 15: Skills and Plugins: Dynamic Procedural Prompt Injection
 
-After this chapter a skill is a markdown file (or a small helper script) loaded when a trigger matches. It is not a second model and not an MCP server. You read the file and append the text to the system or user message.
+By the end of this chapter, you will understand and implement a dynamic skill loader (`load_skill`) that injects procedural markdown instructions (`SKILL.md`) into prompt context only when specific trigger rules or intent keywords match.
+
+In the previous module, we examined MCP for executing code in external processes. In this module, we examine Skills—which are specialized instructions and guidance documents injected directly into the LLM context.
 
 ## Data
-A **skill** is a file bundle. The usual file is `SKILL.md`: a markdown string with extra instructions for one workflow (how to format a PR, how to query a table, how to write a test). A plugin can also include a helper script next to that file. The body you care about is still a string.
-
-A **trigger** is the rule that says "load this file now". It can be a keyword in the user text, a path match, or an explicit name. If the trigger does not match, you do not read the file. Lab 2 uses the keyword `pr-review`.
-
-Loading means: `open("SKILL.md").read()`, then append that string to `messages` as `role: "system"` (or as extra `content` on the user turn). The next POST includes it. The model is the same `OLLAMA_MODEL`. Lab 2 prints the body and does not POST.
-
-Lab 2 is `lab2_skills.py` plus `SKILL.md`. Function: `load_skill(user_text, skill_path)`. Match return: `{ "loaded": true, "path", "body" }`. Miss return: `{ "loaded": false }`.
-
-This file was moved from `modules/01/02_skills_plugins_and_mcp.md`. The MCP half lives on `00_mcp_overview.md`. Chapter 13 called this procedural memory: how to do a job, not a fact row.
-
-`OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. The route is still `POST /api/generate` or `POST /v1/chat/completions`. The new work is the file read, not a new host.
+A **Skill** represents procedural guidance for specialized workflows:
+- **`SKILL.md` File**: A concise markdown document outlining specific rules, checklists, or formatting instructions (e.g. PR code review rules, database migration checklists).
+- **Trigger Rule**: A conditional check (such as matching the keyword `"pr-review"` in user input) that dictates when to read and load `SKILL.md`.
+- **Dynamic Context Injection**: Appending the skill markdown body to the agent's `role: "system"` message or active turn context.
 
 ## Information
-MCP is a process. A skill is a file in the prompt. Do not merge them into one mechanism. `tools/call` runs code in another PID. `SKILL.md` is text you stuff into `content`.
+Stuffing every available skill, rubric, and guideline into the system prompt on every single turn quickly exhausts the model's context window and increases inference costs.
 
-Stuffing every skill every turn wastes the context window (chapter 13 compaction). Load one file when the trigger matches. Leave the others on disk.
-
-A skill is not a second model. You do not start another provider. You do not change `OLLAMA_MODEL`. You add instructions to the same POST.
+Dynamic skill loading solves this:
+- **On-Demand Loading**: Unused skill documents remain dormant on disk.
+- **Selective Injection**: Only the specific instructions relevant to the immediate user prompt are injected into context.
+- **Context Economy**: Keeps prompt sizes lean, fast, and focused.
 
 ## Knowledge
-1. Detect the trigger (a keyword, a path, or a name the user typed).
-2. Read the file: `SKILL.md` or the helper script's docstring. The body is a markdown string.
-3. Append that string to the system message (`role: "system"`, key `content`) or to the user message.
-4. POST `model` and `messages` (or `prompt`) to `{OLLAMA_HOST}/api/generate` or `/v1/chat/completions`. Lab 2 stops after the print.
-5. Do not start an MCP server and do not `import` a tool function as a substitute for the file.
+Here is the step-by-step procedure:
+1. Author focused procedural skill guides (e.g. `SKILL.md`).
+2. Implement a trigger evaluator (`load_skill(user_text, skill_path)`).
+3. If trigger criteria are met, read `SKILL.md` and return `{"loaded": True, "path": path, "body": content}`.
+4. If no triggers match, return `{"loaded": False}` without reading the filesystem.
+5. Append loaded skill text to system or user messages for inference.
 
 ## Wisdom
-Stop when one `SKILL.md` was read and its text appeared in the POST body. Do not merge skill loading with `tools/list` / `tools/call`. If you merge them, a missing instruction could be a missing file or a failed RPC.
+Remember: MCP is for running code; Skills are for providing instructions. Load skills just-in-time when triggered rather than bloating every conversation.
 
 ## The When and Why
-- **When:** a workflow has extra instructions that are not needed on every turn.
-- **Why:** stuffing every skill every turn wastes the window. A file you load on a trigger keeps the unused text on disk.
+- **When**: Specialized multi-step tasks (e.g. style guides, code reviews, release checklists) that apply only to specific user requests.
+- **Why**: Static prompts containing every possible instruction degrade model focus and waste token budgets. Dynamic loading provides surgical instruction injection.
 
 ## How it works
 

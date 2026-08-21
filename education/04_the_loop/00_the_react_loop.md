@@ -1,41 +1,43 @@
-# 04: The Loop
+# 04: The Loop: The ReAct Pattern in Pure Python
 
-After this chapter you run a `for turn in range` over the chapter 03 dispatcher. That loop is ReAct. Cycle detection and thinking-token demux are chapter 06.
+By the end of this chapter, you will build an automated ReAct (Reason + Act) loop using a standard Python `for` or `while` loop. This allows an AI model to sequence multiple tool calls step-by-step to solve multi-stage problems.
+
+In Chapter 03, we executed a single tool dispatch. In this chapter, we automate the process so the model can inspect a tool's result, decide on the next action, and continue until the task is complete.
 
 ## Data
-Chapter 03 already has one dispatch: the model returns `tool_calls`, Python looks up the name in `TOOL_REGISTRY`, runs the function, and prints the result. This chapter keeps those same objects and adds one new one.
-
-A **turn** is one `POST /api/chat` plus whatever the script does with that reply. The loop is `for turn in range(1, max_turns + 1)` inside `run_react_agent` in `lab1_react_loop.py`. The lab sets `max_turns` to 5.
-
-**State** for this chapter is the `messages` list in memory. It starts with a `system` message and a `user` message. Each turn appends the assistant `message` object the provider returned. If that object has `tool_calls`, the script also appends one `{ "role": "tool", "content": result }` per call. The list is sent again on the next POST. Nothing is written to disk. Chapter 05 saves this list.
-
-The **tools** are the same pair as chapter 03: `TOOLS_SCHEMA` (what the model sees) and `TOOL_REGISTRY` (name to Python function). The lab registers `add_numbers` and `multiply_numbers`. Both take `a` and `b` as numbers and return a string.
-
-The **stop condition** is `message.tool_calls` missing or empty. Then the script prints `message.content` and returns. If the loop hits `max_turns` with no empty `tool_calls`, it prints a warning and stops.
-
-`OLLAMA_HOST` defaults to `http://192.168.1.29:11434`. `OLLAMA_MODEL` defaults to `qwen3.6:35b-a3b-65k`. The route is `POST /api/chat` on port `11434`.
+We build on the exact same primitives from Chapter 03:
+- **A Conversation Turn**: One iteration consisting of sending `messages` and `tools` to `POST /api/chat`, inspecting the response, and handling any tool calls.
+- **The Turn Loop**: A loop running for up to `max_turns` iterations (typically 5 turns for simple tasks).
+- **Working Memory**: An in-memory Python list `messages` that grows on each turn. When the model requests a tool, we append the assistant's request message and the corresponding `{"role": "tool", "content": result}` message.
+- **Stop Condition**: When the model returns a response with no `tool_calls` (only text in `message.content`), the loop terminates and returns the final answer.
 
 ## Information
-One turn is: POST `messages` plus `tools` to the provider. If the reply has `tool_calls`, run each name through `TOOL_REGISTRY`, append `role: tool`, go to the next turn. If the reply has only `content`, that string is the answer and the function returns.
+The **ReAct** pattern (Reason + Act) operates as an iterative feedback loop:
+1. **Reason**: The model examines the conversation history and determines what calculation or action is needed next.
+2. **Act**: The Python runtime executes the requested function and appends the result to `messages`.
+3. **Observe & Repeat**: The updated history is sent back to the model, allowing it to use the intermediate result in subsequent steps.
 
-The model chooses the next tool name and arguments. That is the policy. Python runs the function and appends the string. That is the runtime. The model cannot add 42 and 58, then multiply by 3, in one tool-less turn if it must use your functions. It needs the first result in `messages` before it can call the second tool.
-
-ReAct means Reason + Act. It is a 2022 design pattern, not a product and not a language. The reason step is the model picking a tool or final text. The act step is Python running `TOOL_REGISTRY[tool_name](**tool_args)`.
+For example, when solving `(42 + 58) * 3`, the model first calls `add_numbers(42, 58)`. Once it sees the returned `100`, it immediately triggers `multiply_numbers(100, 3)` on the next turn, finally returning `300`.
 
 ## Knowledge
-1. Keep a `messages` list. Start it with `role: system` and `role: user`.
-2. Each turn POST `model`, `messages`, `tools` (`TOOLS_SCHEMA`), `stream: false`, and `options.temperature: 0.0` to `{OLLAMA_HOST}/api/chat`.
-3. Read `data["message"]`. Append that object to `messages`.
-4. If `message["tool_calls"]` is a non-empty list, for each call read `function.name` and `function.arguments`, run `TOOL_REGISTRY[name](**arguments)`, and append `{ "role": "tool", "content": result }`.
-5. If `tool_calls` is missing or empty, print `message["content"]` and return that string.
-6. Cap the loop at 5 turns. Do not add cycle hashing, thinking-token demux, or a second agent.
+Here is the step-by-step implementation:
+1. Initialize `messages` with a system prompt and the user's initial prompt.
+2. Loop over turns: `for turn in range(1, max_turns + 1):`.
+3. Send `model`, `messages`, and `tools` to `{OLLAMA_HOST}/api/chat`.
+4. Append `data["message"]` to `messages`.
+5. If `tool_calls` are present:
+   - For each tool call, look up the function name in `TOOL_REGISTRY` and call it with the parsed arguments.
+   - Append `{"role": "tool", "content": str(result)}` to `messages`.
+6. If `tool_calls` is empty or `None`:
+   - Print and return `message["content"]`.
+7. If the loop reaches `max_turns` without completing, terminate with a warning.
 
 ## Wisdom
-A loop over one dispatcher is enough for multi-step tool use. Plan-Execute, ReWoo, and Tree of Thoughts are not this chapter. Saving `messages` to disk is chapter 07. Cycle detection and thinking-token demux are chapter 06. If you add those now, a wrong answer could come from the loop, the save, or the demux, and you will not know which.
+A clean Python loop over your dispatcher is all that is required to build a functioning ReAct agent. You do not need third-party agent orchestration frameworks to achieve multi-step reasoning.
 
 ## The When and Why
-- **When:** one dispatch is not enough because the next tool needs the previous result.
-- **Why:** the model cannot add, then multiply, in one tool-less turn if it must use your functions. The loop is how the second POST sees the first tool string.
+- **When**: Use a ReAct loop whenever solving a goal requires a sequence of dependent steps (e.g. searching for a document, reading its contents, and summarizing findings).
+- **Why**: Language models cannot know the result of a tool before calling it. An iterative loop is necessary to feed intermediate results back into the model's working memory.
 
 ## How it works
 

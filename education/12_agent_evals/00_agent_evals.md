@@ -1,32 +1,41 @@
-# 12: Agent Evals
+# 12: Agent Evals: Benchmarking Accuracy and Execution Traces
 
-Benchmark agent performance, accuracy, and trajectory quality using deterministic test fixtures, scorecards, and model-graded evaluation suites.
+By the end of this chapter, you will build an automated evaluation suite to benchmark agent performance, trace execution spans, verify structured outputs against deterministic fixtures, and compute pass-rate scorecards.
+
+In Chapter 11, we built reflection loops for single-task repair. In this chapter, we evaluate systemic agent behavior across whole test suites to prevent regressions as prompts, tools, and models evolve.
 
 ## Data
-An **eval fixture** is a structured test case containing input stimuli, expected behaviors, and grading criteria (`{"id": "eval_01", "prompt": "...", "expected_tools": ["..."], "expected_output": "..."}`).
-An **evaluator** runs an agent against a dataset of fixtures and records execution metrics: turn counts, latency, tool call sequences, and final output correctness.
-A **scorecard** aggregates results into quantitative metrics (pass rate percentage, precision, average turns to completion).
-A **model-based judge** is an optional secondary evaluation prompt where an LLM inspects agent trajectory logs against a rubric to assign a qualitative rating (`{"score": 1..5, "verdict": "PASS | FAIL", "reason": "..."}`).
-The lab for this chapter is `lab1_agent_evals.py`.
+We define four core evaluation components:
+1. **Eval Fixtures**: Standardized test cases with expected outputs:
+   `{"id": "case_01", "prompt": str, "expected_tool": str, "expected_output": str}`.
+2. **Execution Tracer**: Instruments the agent runtime to record execution spans (e.g. latency, turn count, token usage, tool invocations).
+3. **Deterministic & LLM Evaluators**:
+   - **Deterministic Checkers**: Regex pattern matching, JSON schema validation, or tool invocation assertions.
+   - **LLM Judge**: Evaluates qualitative reasoning and rubric alignment, returning a structured score (`{"score": int, "verdict": "PASSED" | "FAILED", "reason": str}`).
+4. **Summary Scorecard**: Aggregates test runs into quantitative metrics (`{"total_cases": int, "passed": int, "failed": int, "pass_rate": float}`).
 
 ## Information
-Agent systems are non-deterministic: code edits or prompt tweaks that improve one test case may silently degrade others. Automated evaluation suites provide regression testing for agent behavior across diverse edge cases.
-Deterministic evaluations test explicit contracts (e.g. valid JSON output, expected tool invocations, exit codes). Model-graded evaluations test open-ended linguistic quality, reasoning adherence, and safety boundaries.
+Agent systems are non-deterministic. An update that improves one prompt might unexpectedly break edge cases elsewhere.
+
+Evaluation suites provide essential regression testing:
+- **Fast Deterministic Checks**: Test strict contracts (e.g. valid JSON formatting, correct tool selection, clean error exits).
+- **Graded Rubrics**: Evaluate complex conversational responses or open-ended reasoning.
+- **Continuous Benchmarking**: Run evals in CI pipelines before deploying prompt or agent architecture changes.
 
 ## Knowledge
-1. Define a benchmark dataset of test cases covering standard tasks, ambiguous inputs, and adversarial prompts.
-2. Instrument the agent execution kernel to record span traces (input prompt, tool call arguments, tool outputs, turn count, token usage).
-3. Execute the agent over the fixture set under deterministic generation settings (`temperature: 0.0`).
-4. Evaluate outputs using exact match assertions, regex assertions, JSON schema validation, or model judge rubrics.
-5. Generate an evaluation report with overall pass rate, per-category accuracy, and failure breakdown.
-6. Run evals as part of continuous integration before deploying agent changes.
+Here is the step-by-step procedure:
+1. Define a benchmark dataset of test fixtures covering expected tasks and edge cases.
+2. Instrument the agent execution harness with tracing spans to log latency and tool calls.
+3. Run the evaluation suite with zero temperature (`temperature: 0.0`) for maximum reproducibility.
+4. Evaluate agent trajectory logs using deterministic assertions or an LLM judge.
+5. Calculate aggregate statistics (overall pass rate, average latency, turn count).
 
 ## Wisdom
-Always start with fast, deterministic code-based assertions before adding expensive LLM judges. A failing unit test or missing JSON key is unambiguous; LLM judges can suffer from grading variance and prompt sensitivity.
+Always start with deterministic, code-based assertions before adding expensive LLM judges. Unit assertions are fast, cheap, and unambiguous.
 
 ## The When and Why
-- **When:** modifying prompts, updating system instructions, refactoring tools, or changing the underlying model provider.
-- **Why:** manual spot-checking misses subtle regressions; comprehensive evals verify agent reliability quantitatively across known test vectors.
+- **When**: Whenever you modify system prompts, update tool schemas, refactor dispatcher code, or test new foundation models.
+- **Why**: Manual spot-checking cannot catch subtle behavior regressions across diverse workflows. Automated evals provide quantitative proof of reliability.
 
 ## How it works
 

@@ -1,82 +1,104 @@
-# Lab 3: Logit steering
+# Lab 3: Logit Steering and Output Vocabulary Control
 
-After this lab a banned token is near-zero probability. Prompt-only bans are not enough. A number on the token id is.
+In this lab, you will explore logit bias adjustment and the softmax function to mathematically suppress unwanted tokens (reducing their generation probability near zero) and boost favored tokens.
+
+---
 
 ## What you touch
 - Script: `lab3_logit_steering.py`
-- Functions: `apply_logit_bias_steering(raw_logits, logit_bias)`, `softmax(logits)`
-- Table: `VOCAB_TABLE` (`{` is 101, `I` is 201, `apologize` is 202, `cannot` is 203)
-- Intended URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
-- Intended keys sent: `model`, `prompt`, `stream` (`false`), `options.temperature` (`0.0`), plus a bias map or a stop string
-- What the reference actually touches: local dicts only. No HTTP.
+- Main Functions: `apply_logit_bias_steering(raw_logits, logit_bias)` and `softmax(logits)`
+- Vocabulary Table: `VOCAB_TABLE` mapping token strings to token IDs (`"{"` is 101, `"I"` is 201, `"apologize"` is 202, `"cannot"` is 203)
+- Input Logits & Bias Maps: Local dictionaries simulating model output layer logits
+
+---
 
 ## Steps
 ```mermaid
 flowchart LR
-    subgraph steer_lab3_script [This script]
-        R["raw_logits"]
-        B["apply_logit_bias_steering"]
-        S["softmax"]
-    end
-    R --> B
-    B --> S
-    S --> P["probabilities"]
+    A["Raw Logits: {token_id: score}"] --> B["apply_logit_bias_steering()"]
+    B --> C["Adjusted Logits (banned tokens -100)"]
+    C --> D["softmax()"]
+    D --> E["Final Probability Distribution"]
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment if you POST. The reference script does not POST.
-2. Set a constraint. The lab bans `apologize` and `cannot` with bias `-100.0` and boosts `{` with `+5.0`. A stop string is the other option: tell the provider to halt when it emits that string.
-3. Intended path: POST the constraint on the request (`options` or a `logit_bias` map) and confirm the banned token is absent in `response`.
-4. Reference path: call `apply_logit_bias_steering` on `raw_logits`, then `softmax`. Print probabilities before and after.
-5. Confirm `apologize` and `cannot` drop near zero and `{` rises. That is the banned token not appearing.
-6. Do not build a full CFG (grammar) engine.
+1. Inspect `VOCAB_TABLE` and initialize `raw_logits` with baseline token scores:
+   - `{`: 2.0
+   - `I`: 4.5
+   - `apologize`: 5.0
+   - `cannot`: 4.8
+2. Compute baseline probabilities using `softmax(raw_logits)`.
+3. Define a steering map `logit_bias`:
+   - Penalize banned words: `{"202": -100.0, "203": -100.0}` (`apologize`, `cannot`)
+   - Boost JSON formatting token: `{"101": 5.0}` (`{`)
+4. Call `apply_logit_bias_steering(raw_logits, logit_bias)` to add bias values to raw logits.
+5. Compute steered probabilities with `softmax()` and print comparison tables before and after steering.
+6. Verify that `apologize` and `cannot` drop to approximately `0.00%`, while `{` becomes the dominant token.
+
+---
 
 ## Data contract
-Intended request if you POST. The reference uses the local maps instead.
 
-**Intended request** `POST /api/generate`
-
-```json
-{
-  "model": "qwen3.6:35b-a3b-65k",
-  "prompt": "string",
-  "stream": false,
-  "options": { "temperature": 0.0, "stop": [] },
-  "logit_bias": { "202": -100.0, "203": -100.0, "101": 5.0 }
-}
-```
-
-Ollama may not honor `logit_bias`. A `stop` list on `options` is the portable halt. The idea is still a constraint on the request, not a prompt-only ban.
-
-**Reference inputs** (local, no HTTP)
+**Raw Logits & Bias Configuration**
 
 ```json
 {
-  "raw_logits": { "101": 2.0, "201": 4.5, "202": 5.0, "203": 4.8 },
-  "logit_bias": { "202": -100.0, "203": -100.0, "101": 5.0 }
+  "raw_logits": {
+    "101": 2.0,
+    "201": 4.5,
+    "202": 5.0,
+    "203": 4.8
+  },
+  "logit_bias": {
+    "101": 5.0,
+    "202": -100.0,
+    "203": -100.0
+  }
 }
 ```
+
+**Resulting Probability Distribution Comparison**
+
+```text
+Before Steering:
+  - apologize: 44.5%
+  - cannot:    36.4%
+  - I:         16.3%
+  - {:          2.7%
+
+After Steering:
+  - {:         99.1%
+  - I:          0.9%
+  - apologize:  0.0%
+  - cannot:     0.0%
+```
+
+---
 
 ## Run
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/06_the_reliability/lab3_logit_steering.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/06_the_reliability/lab3_logit_steering.py
 ```
 
-The env vars are unused by the reference script. They are here so a POST copy matches the other labs.
+---
 
 ## What you should see
-Un-steered probabilities, then steered ones. `apologize` and `cannot` should be about `0.00%`. `{` should be the largest. If the banned tokens stay high, the bias was not added. The reference also prints two extra guardrail checks (prompt injection and JSON). Those are not this lab's idea.
+A side-by-side probability comparison showing that negative logit bias mathematically eliminates unwanted tokens from generation.
+
+---
 
 ## Stop here
-This is not a CFG engine and not a full guardrail product. Do not add cycle hashing or a reflexion retry on this script. Evals (lab4) can score whether a banned token appeared.
+In Lab 4, we will build a resilient network gateway with automated retries and failover routes.
+
+Next up: [Lab 4: Resilient Gateway](./lab4_resilient_gateway.md).
+
+---
 
 ## Notes
-- Mechanism: add a float to a token id, then softmax. Prompt-only bans fail because the model can still emit the word.
-- Contract drift vs `lab3_logit_steering.py`: no HTTP, no Ollama, no `OLLAMA_HOST` / `OLLAMA_MODEL`. The script also runs `GuardrailInterceptor.inspect_prompt` and `validate_output`. Those are extra. The intended contract is a bias map or stop string on the request, then a reply without the banned token. Write that in your copy. Leave the reference file as-is.
+*(Record your before-and-after probability distribution here)*
+

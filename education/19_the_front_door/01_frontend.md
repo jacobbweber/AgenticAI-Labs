@@ -1,40 +1,38 @@
-# 19: Frontend as a Client
+# 19: Frontend as a Client: Decoupling UI Rendering from Agent Execution
 
-After this page React or Next.js is a client of the SSE or WebSocket API. The agent loop stays in Python. The lab is one HTML file that holds `tokens`, `job_id`, and a stop button.
+By the end of this chapter, you will understand how to construct a lightweight web frontend (`lab3_frontend_client.html`) that connects to streaming agent endpoints via `EventSource`, manages UI state (`tokens`, `job_id`), and issues interrupt signals over WebSockets.
+
+In production architectures, agent loops must remain securely in Python processes rather than being embedded inside frontend client state.
 
 ## Data
-A **frontend** here is a page that opens an HTTP stream and draws text. React and Next.js are two ways to build that page. The page is not the agent. Lab 3 is a single HTML file, not a Next.js app.
-
-**UI state** on the page is three things:
-
-- `tokens`: the string you append to as frames arrive.
-- `job_id`: the id of the run you opened, so a second click does not mix two streams.
-- `interrupt`: a flag or button that sends a stop message (lab 2).
-
-The server is this chapter's routes plus the queue from chapter 06. The page does not own the queue.
-
-`EventSource` reads SSE (`text/event-stream`) on a GET. A WebSocket (`new WebSocket`) is a two-way socket. Use SSE to watch tokens. Use the WebSocket when the button must send `{ "type": "interrupt" }`.
-
-The intended start route is `POST /jobs` returning `{ "job_id": "string" }`. The intended SSE route is `GET /jobs/{job_id}/stream`. The intended WebSocket is `/jobs/{job_id}/ws`. Labs 1 and 2 do not serve those paths. Lab 3 writes the page and a proof script that reads the HTML. `OLLAMA_HOST` defaults to `http://192.168.1.29:11434`. `OLLAMA_MODEL` defaults to `qwen3.6:35b-a3b-65k`. Port `11434` is Ollama. The intended API port is `8000`.
+A **Frontend Client** consumes server events and renders visual UI state:
+- **`tokens`**: Accumulating string of generated response text.
+- **`job_id`**: Active task tracking identifier to multiplex concurrent streams.
+- **`interrupt`**: Bidirectional stop signal sent over WebSockets (`{"type": "interrupt"}`).
+- **Client Protocols**:
+  - Outbound Streaming: Consumes `GET /jobs/{job_id}/stream` via `EventSource`.
+  - Inbound Control: Connects `ws://host/jobs/{job_id}/ws` to dispatch interrupts.
 
 ## Information
-The loop (ReAct, tools, retries) runs in Python. The page renders frames. If you put the loop in `useEffect`, a refresh kills the run and the contract is hidden inside React state.
-
-`useEffect` is a React hook that runs after the page paints. It can open `EventSource`. It must not call the model or pick tools. Lab 3 uses `DOMContentLoaded` or a Start click for the same job.
+Never embed core agent logic (planning, tool dispatch, prompt templates) inside browser JavaScript frameworks:
+- **Separation of Concerns**: The Python backend owns the execution loop, tools, state stores, and retries.
+- **Resilience**: If the user refreshes or closes the browser tab, the background agent job continues uninterrupted.
+- **Security**: Database keys and environment secrets remain protected on the server rather than exposed to the client.
 
 ## Knowledge
-1. Open `EventSource` on the SSE route, or `new WebSocket` on the WS route.
-2. On each message, parse the JSON. Append the token field to `tokens`.
-3. Keep `job_id` from the first frame or from the POST that started the job.
-4. On the stop button, send `{ "type": "interrupt" }` on the WebSocket. SSE cannot do this.
-5. Do not put ReAct, tool dispatch, or the chapter 06 queue in `useEffect` or `DOMContentLoaded`.
+Here is the step-by-step procedure:
+1. Initiate tasks by sending a `POST /jobs` request and storing the returned `job_id`.
+2. Open an `EventSource` connection to `/jobs/{job_id}/stream`.
+3. Parse incoming event JSON payloads and append token deltas to `tokens`.
+4. Render response text dynamically in the browser DOM.
+5. On user cancellation, send an `{"type": "interrupt"}` control frame over the WebSocket.
 
 ## Wisdom
-Stop when the page appends frames from the API. Do not move the loop into the browser. If you do, a bad token could come from React, from the socket, or from the model, and you will not know which.
+The browser is purely a presentation layer. Keep the agent loop on the server and use standard streaming contracts to communicate.
 
 ## The When and Why
-- **When:** you need a screen a person can watch.
-- **Why:** mixing the loop into the page hides the contract. The contract is HTTP frames. The page is a client.
+- **When**: Building web dashboards, chat interfaces, or monitoring tools for autonomous agents.
+- **Why**: Separating frontend rendering from agent execution prevents tab crashes from killing in-flight tasks and preserves system security.
 
 ## How it works
 

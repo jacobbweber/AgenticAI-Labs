@@ -1,36 +1,37 @@
-# 19: Machine Experience vs User Experience
+# 19: Machine Experience (MX) vs User Experience (UX)
 
-After this page you can say which payload is for the model and which is for the person. The lab tags frames `ux` or `mx` and prints two streams.
+By the end of this chapter, you will understand how to separate internal Machine Experience (MX) payloads (tool JSON, execution traces, `<think>` tags) from visible User Experience (UX) tokens using channel tagging and stream demultiplexing (`split_streams`).
+
+When autonomous agents think and invoke tools, raw telemetry mixed directly into user chat windows results in cluttered, confusing interfaces.
 
 ## Data
-**MX** (machine experience) is the payload the model and the tools need. In this chapter that means tool JSON, traces, and `<think>` blocks. A trace is a log of what the loop did (which tool, which args, which error). `<think>` is text the model produces for itself before the visible answer. Chapter 06 strips it.
-
-**UX** (user experience) is the payload the person needs. Visible tokens, buttons, and errors in one sentence.
-
-A **channel** is one stream of frames with one job. MX and UX are two channels. They can share one HTTP connection if you tag each frame. They must not share one text box.
-
-**Demux** means split one incoming stream into those two channels. Chapter 06 does the CoT (chain-of-thought) split. This page only names the two sides. Lab 4 tags a fixture by `type` / `event_type`, or splits a string once on `<think>` / `</think>`. It does not copy `CoTStreamDemuxer`.
-
-Lab 4 is `lab4_mx_vs_ux.py`. Functions: `tag_frame(frame)` returns `{ "channel": "ux" }` or `{ "channel": "mx" }`. `split_think_fence(text)` returns `{ "ux", "mx" }`. `split_streams(frames)` returns `{ "ux": [strings], "mx": [strings] }`. The SSE lab yields both MX-like frames (`tool_call_start`, `tool_call_result`) and UX-like frames (`token_delta`). `OLLAMA_HOST` defaults to `http://192.168.1.29:11434`. `OLLAMA_MODEL` defaults to `qwen3.6:35b-a3b-65k`. Port `11434` is Ollama. Lab 4 does not POST.
+We separate communication into two distinct channels:
+1. **User Experience (UX)**: The human-facing conversation channel containing readable text tokens, Markdown formatting, and user action buttons.
+2. **Machine Experience (MX)**: The technical telemetry channel containing raw tool JSON arguments, AST execution traces, and internal `<think>` reasoning chains.
+3. **Channel Tagging**: Classifying streaming frames via `tag_frame(frame)` into `{"channel": "ux"}` or `{"channel": "mx"}`.
 
 ## Information
-If you dump MX into the page, the person sees tool JSON and `<think>` text. That looks like a broken UI. It is not a model bug. The page drew the wrong channel.
+Dumping raw tool JSON and scratchpad reasoning directly into user text boxes creates poor user experiences and leaks internal system prompts.
 
-A debug panel can show MX. The main view should not. Split first. Then draw UX. Log MX.
+Channel separation solves this:
+- **Clean Chat Interfaces**: The primary conversation view renders only polished natural language responses.
+- **Dedicated Telemetry Panels**: Collapsible developer trays or logs display tool calls and execution metrics separately.
+- **Model Cleanliness**: Stripping internal `<think>` reasoning tags before final display ensures responses are concise and human-friendly.
 
 ## Knowledge
-1. Tag each frame as MX or UX, or put them on two routes.
-2. Show UX on the main view: tokens, buttons, one-sentence errors.
-3. Log MX: tool JSON, traces, `<think>`.
-4. Do not print `tool_call_start` args or `<think>` into the same string as `token_delta`.
-5. Do not write the chapter 06 splitter here. Name the two channels. Lab 4 is the tag and the fence split only.
+Here is the step-by-step procedure:
+1. Evaluate streaming frames using `tag_frame(frame)`.
+2. Map `token_delta` and `type: "token"` frames to the `ux` channel.
+3. Map `tool_call_start`, `tool_call_result`, and session metadata to the `mx` channel.
+4. Use `split_think_fence(text)` to extract `<think>` blocks into `mx` while retaining conversational text in `ux`.
+5. Direct `ux` text to the main user view and route `mx` data to telemetry logs or collapsible debug panels.
 
 ## Wisdom
-Stop when you can point at a frame and say MX or UX. Do not build the demuxer or a debug panel yet. If you add them now, a leaked `<think>` block could come from the splitter or from the page.
+Never let machine-facing scratchpad tokens pollute human-facing UI text. Maintain strict channel separation across the stream.
 
 ## The When and Why
-- **When:** you have both a model stream and a person watching a page.
-- **Why:** mixing MX and UX looks like a broken UI. The person asked for tokens, not tool JSON.
+- **When**: Building chat interfaces for tool-calling or reasoning agents.
+- **Why**: Users need concise answers, not JSON dumps. Channel demuxing delivers clean conversational responses while preserving debugging telemetry.
 
 ## How it works
 

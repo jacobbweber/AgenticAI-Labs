@@ -1,40 +1,37 @@
-# 18: The Job
+# 18: The Job: Decoupling Tasks with Asynchronous Job Queues
 
-After this page a job is a JSON object with `job_id`, `status`, `prompt`, and `result`. Status is `pending`, `running`, or `done` (`failed` is allowed). The process can exit and the file still has the row.
+By the end of this chapter, you will understand how to decouple user requests from agent execution loops using a durable, file-based job queue (`jobs.json`) with atomic job claiming, concurrency controls, and state transitions.
+
+In interactive sessions, closing the terminal or dropping a network connection kills in-flight agent tasks. In this chapter, we convert agent runs into persistent job records that survive process restarts.
 
 ## Data
-A **job** is one object in a list written to `jobs.json`.
-
-Required keys: `job_id` (string), `status` (string), `prompt` (string), `result` (string or null).
-
-Allowed `status` values: `pending`, `running`, `done`. `failed` is allowed.
-
-Functions: `enqueue_job(prompt)` writes a `pending` row and returns that dict. `claim_job()` finds the first `pending` row, sets `running`, and returns it (or `None`). `finish_job(job_id, result)` sets `status` to `done` and writes `result`.
-
-The file sits next to the script: `os.path.join(os.path.dirname(__file__), "jobs.json")`.
-
-No HTTP. These labs do not read `OLLAMA_HOST` or `OLLAMA_MODEL`.
+A **Job Record** represents an asynchronous unit of work stored in `jobs.json`:
+- **`job_id`**: A unique string identifier (e.g. `job-101`).
+- **`status`**: Lifecycle state (`pending` $\rightarrow$ `running` $\rightarrow$ `done` or `failed`).
+- **`prompt`**: The user request or instruction payload.
+- **`result`**: The finalized agent deliverable (or `None` while pending/running).
+- **`claimed_by`**: The identifier of the worker currently processing the record.
 
 ## Information
-Chapter 07 starts a loop from stdin. This chapter starts the same kind of work from a row. The row lives in a file, so the work outlives the process.
-
-A session file is one conversation. A job row is one unit of work. A worker claims a row, runs it, and writes the result back.
-
-Two workers can read the same list. A claimed row is `running`, so the next worker skips it.
+In production architectures, user requests should not run synchronously on web server threads:
+- **Resilience**: If a worker crashes or restarts, uncompleted jobs remain safely persisted in the queue.
+- **Concurrency**: Multiple worker processes (`worker_a`, `worker_b`) can poll and claim jobs concurrently without duplicate execution.
+- **Decoupling**: The front-end API can return an immediate `202 Accepted` response with a `job_id`, allowing clients to poll or listen for completion asynchronously.
 
 ## Knowledge
-1. Write `jobs.json` as a list of job objects.
-2. Call `enqueue_job(prompt)` to append a `pending` row.
-3. Call `claim_job()` to take the first `pending` row and set it `running`.
-4. Call `finish_job(job_id, result)` to set `done` and store `result`.
-5. Exit the process. Open the file. The row is still there.
+Here is the step-by-step procedure:
+1. Initialize the persistent jobs store (`jobs.json`).
+2. Implement `enqueue_job(prompt)`: Write a new record with `status: "pending"`.
+3. Implement `claim_job(worker_id)`: Find the first unclaimed `pending` job, set `status: "running"`, assign `claimed_by: worker_id`, and save.
+4. Worker executes the task in its own lifecycle loop.
+5. Implement `finish_job(job_id, result)`: Set `status: "done"` and persist the resulting output.
 
 ## Wisdom
-A session file (chapters 05 and 07) is one conversation. A job row is one unit of work that a worker claims. Do not add Redis or Kafka. A list in a file is enough.
+A simple, durable file-based or database-backed queue provides 90% of the reliability benefits of complex message brokers without the operational overhead.
 
 ## The When and Why
-- **When:** the work must outlive the terminal, or more than one worker must pick work.
-- **Why:** stdin dies with the process. A row in a file does not.
+- **When**: Multi-step batch tasks, background tasks that outlive single HTTP requests, or systems scaling across multiple worker processes.
+- **Why**: Synchronous in-memory execution loses state on crashes. Persistent queues guarantee durable task execution and clean worker separation.
 
 ## How it works
 

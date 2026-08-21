@@ -1,77 +1,79 @@
-# Lab 2: Local private RAG
+# Lab 2: Local Private RAG with In-Flight PII Redaction
 
-After this lab a local chunk is in the prompt and the printed answer uses the original name, not the mask token.
+In this lab, you will build a private Retrieval-Augmented Generation (RAG) pipeline that scrubs personally identifiable information (PII) before search and generation, injects relevant local document context, and restores real identities upon return.
+
+---
 
 ## What you touch
 - Script: `lab2_local_private_rag.py`
-- Functions: `LocalPIIRedactor.sanitize`, `LocalPIIRedactor.restore`, `LocalVectorStore.add_document`, `LocalVectorStore.search`, `run_airgapped_private_rag`
-- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
-- Keys sent: `model`, `prompt`, `stream` (`false`), `options.temperature` (`0.0`)
-- Keys read: `response`
-- Intended chunk keys: `text`, `source`
+- Main Classes & Functions:
+  - `LocalPIIRedactor.sanitize(text) -> str`
+  - `LocalPIIRedactor.restore(text) -> str`
+  - `LocalVectorStore.add_document(doc_id, content)`
+  - `LocalVectorStore.search(query) -> str`
+  - `run_airgapped_private_rag(query: str) -> str`
+- URL / Endpoint: `{OLLAMA_HOST}/api/generate` (defaults to `http://127.0.0.1:11434/api/generate`)
+- Request Keys: `model`, `prompt`, `stream` (`false`), `options.temperature` (`0.0`)
+- Response Keys Read: `response`
+
+---
 
 ## Steps
 ```mermaid
-flowchart LR
-    subgraph rag_lab3_script [This script]
-        S["lab2_local_private_rag.py"]
-        RED["sanitize"]
-        IDX["add_document"]
-        Q["search"]
-        RST["restore"]
-    end
-    subgraph rag_lab3_host [Ollama on port 11434]
-        H["POST /api/generate"]
-    end
-    S --> RED
-    RED --> IDX
-    Q -->|"Context + Question"| H
-    H -->|"response"| RST
+flowchart TD
+    A["Raw Document & Query"] --> B["LocalPIIRedactor.sanitize()"]
+    B --> C["LocalVectorStore: Index Sanitized Text"]
+    C --> D["Search & Retrieve Top Relevant Chunk"]
+    D --> E["Construct Prompt: Context + Question"]
+    E --> F["POST {OLLAMA_HOST}/api/generate"]
+    F --> G["LocalPIIRedactor.restore() on Output"]
+    G --> H["Render Final User Response with De-anonymized Text"]
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://192.168.1.29:11434` and `qwen3.6:35b-a3b-65k`.
-2. Start with two local documents (intended: files on disk with `{ "text", "source" }`). The reference script uses two hardcoded strings: a patient note for John Doe and an admin note for Jane Smith.
-3. Call `LocalPIIRedactor.sanitize` on each document. Emails become `[EMAIL_N]`. The names `John Doe`, `Jane Smith`, and `Alice Johnson` become `[PERSON_N]`. Store token to original in the vault dict.
-4. Call `LocalVectorStore.add_document(doc_id, content)` with the sanitized text.
-5. Sanitize the query `What is the diagnosis for John Doe?`. Call `search`. Take the top chunk.
-6. Build `prompt` as `Context: {chunk}\nQuestion: {sanitized query}\nAnswer in 1 sentence:`.
-7. POST `model`, `prompt`, `stream: false`, `options.temperature: 0.0` to `{host}/api/generate` with header `Content-Type: application/json`.
-8. Read `data["response"]`. Print it as the masked output. Call `restore` and print the final line. The final line should contain `John Doe` and the diagnosis from the first document, not `[PERSON_1]`.
+1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from environment variables, defaulting to `http://127.0.0.1:11434` and `llama3.2:1b`.
+2. Define `LocalPIIRedactor` to replace names and emails with deterministic tokens (`[PERSON_1]`, `[EMAIL_1]`) and store reverse lookups in an internal vault.
+3. Index local document records into `LocalVectorStore` after sanitization.
+4. When a user asks a question (e.g. `"What is the diagnosis for John Doe?"`):
+   - Sanitize the query to replace `"John Doe"` with `"[PERSON_1]"`.
+   - Retrieve the top matching document chunk from `LocalVectorStore`.
+   - Construct the prompt: `Context: {chunk}\nQuestion: {sanitized_query}\nAnswer in 1 sentence:`.
+   - Send the POST request to `{OLLAMA_HOST}/api/generate`.
+5. Run `LocalPIIRedactor.restore()` on the returned model response so the user sees real names restored without sending PII over the wire.
+
+---
 
 ## Data contract
-Only the keys this script sends and reads, plus the intended chunk.
 
-**Intended chunk**
-
-```json
-{ "text": "string", "source": "path" }
-```
-
-**Request**
+**Document Chunk Structure**
 
 ```json
 {
-  "model": "qwen3.6:35b-a3b-65k",
-  "prompt": "Context: {chunk text}\\nQuestion: {query}\\nAnswer in 1 sentence:",
+  "text": "Patient [PERSON_1] (email: [EMAIL_1]) presented with mild hypertension.",
+  "source": "medical_records/patient_101.txt"
+}
+```
+
+**Generation Request Payload**
+
+```json
+{
+  "model": "llama3.2:1b",
+  "prompt": "Context: Patient [PERSON_1] (email: [EMAIL_1]) presented with mild hypertension.\nQuestion: What is the diagnosis for [PERSON_1]?\nAnswer in 1 sentence:",
   "stream": false,
   "options": { "temperature": 0.0 }
 }
 ```
 
-**Response**
+**Final Output**
 
-```json
-{
-  "response": "string"
-}
+```text
+The diagnosis for John Doe is mild hypertension.
 ```
 
-The printed result is `restore(response)`.
+---
 
 ## Run
-Copy `.env.example` to `.env` in the repo root and uncomment the Ollama lines. The script loads that file (it does not override vars already set in the shell).
-
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/09_agentic_memory_and_rag/lab2_local_private_rag.py
@@ -81,12 +83,23 @@ python education/09_agentic_memory_and_rag/lab2_local_private_rag.py
 python education/09_agentic_memory_and_rag/lab2_local_private_rag.py
 ```
 
+---
+
 ## What you should see
-`=== STARTING AIR-GAPPED PRIVATE DATA RAG LAB ===`, then each document as Original and Sanitized. The first sanitized line should show `[PERSON_1]` and `[EMAIL_1]` in place of `John Doe` and `john@acme.com`. Then a retrieved context line, a raw model line that may still contain mask tokens, and `[DE-ANONYMIZATION] Restored Final Result for User:` with `John Doe` and mild hypertension. If you see `URLError` or connection refused, the provider is not reachable. If you see HTTP 404, the model name is wrong or not pulled. If the final line still has `[PERSON_1]`, `restore` did not run on `response`.
+- Document sanitization logs showing original vs masked text (`[PERSON_1]`, `[EMAIL_1]`).
+- Retrieved context chunk containing masked identifiers.
+- Raw model response containing masked tokens.
+- `[DE-ANONYMIZATION]` restored final result showing `John Doe` and his diagnosis accurately restored.
+
+---
 
 ## Stop here
-This is not a hosted vector service and not a codebase walker. Do not add Pinecone, a cloud embed API, or `os.walk` over a repo. Compaction is `00_context_engine.md`. Symbol hits are `03_codebase_indexing.md`. Do not copy this redactor into those pages.
+You have successfully implemented private local RAG! In Lab 3, we will build a codebase indexer to search repository files and symbols.
+
+Next up: [Lab 3: Codebase Indexing](./lab3_codebase_index.md).
+
+---
 
 ## Notes
-- Mechanism: redact, keyword-overlap search, POST, restore. `search` returns the top 1 `content` string.
-- Contract drift vs `lab2_local_private_rag.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Documents are hardcoded strings, not files. Store items are `{ "id", "content" }`, not `{ "text", "source" }`. There is no `source` path in the prompt or the printout. The intended contract is still `{ "text", "source" }` chunks from local files, then POST. Write that in your copy. Leave the reference file as-is.
+*(Record your private RAG trace and restored answer here)*
+

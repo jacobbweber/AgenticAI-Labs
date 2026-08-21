@@ -1,48 +1,40 @@
-# 15: Model Context Protocol
+# 15: Model Context Protocol: External Tool Servers via JSON-RPC
 
-After this chapter the chapter 03 dispatcher is another process speaking JSON-RPC. Your agent does not import the tool function. It lists tools and calls one by name. This page does not ship a 200-line server.
+By the end of this chapter, you will understand and implement an MCP (Model Context Protocol) client that discovers and invokes tools hosted in separate processes via JSON-RPC 2.0 messages over standard I/O (stdio) or HTTP/SSE.
+
+In Chapter 03, we called local Python functions in the same process. In this chapter, we decouple tools across process boundaries so multiple agents and applications can share the same tool servers.
 
 ## Data
-**MCP** (Model Context Protocol) is a JSON-RPC conversation between a client (your agent script) and a server (a separate process that owns the functions).
-
-**JSON-RPC** is a JSON object with `jsonrpc` (`"2.0"`), `id` (a number or string), `method` (a string), and `params` (an object). The reply has the same `id` and either `result` or `error`.
-
-Two methods matter here:
-
-1. `tools/list` - the server returns the tool names and schemas it owns.
-2. `tools/call` - the client sends `{ "name": "string", "arguments": {} }`. The server runs the local function and returns a JSON result.
-
-Two **transports** move those objects:
-
-- **stdio:** the client starts the server as a child process and writes JSON lines to stdin. The server writes JSON lines to stdout. No port.
-- **SSE / HTTP:** the server listens on a port. The client POSTs JSON-RPC to that URL. Same methods, different pipe.
-
-Chapter 03 used `TOOL_REGISTRY[name](**arguments)` in the same PID. MCP is that lookup after a process boundary.
-
-This file was moved from modules/13 and the MCP half of the old tool-use / 01/02 skills pages. `SKILL.md` is not MCP. Skills are `01_skills_and_plugins.md`.
-
-`OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. The model POST is still chapter 03 (`tools` on `/api/chat`). MCP is the hop from your script to the other process after you read `message.tool_calls`.
+**Model Context Protocol (MCP)** standardizes client-server tool interactions using JSON-RPC 2.0:
+- **`tools/list`**: Request sent by the agent to discover available tools and their JSON schemas:
+  `{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}`.
+- **`tools/call`**: Request sent by the agent to execute a specific tool with arguments:
+  `{"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "add_numbers", "arguments": {"a": 2, "b": 3}}}`.
+- **Transports**:
+  - **`stdio`**: The agent launches the MCP server as a subprocess, communicating over stdin/stdout lines.
+  - **`SSE / HTTP`**: The server listens on an HTTP port, allowing networked remote access.
 
 ## Information
-Your agent does not `import` the tool. It calls a server. Two apps can share the same server. An in-process registry cannot do that: each app has its own dict.
+In production systems, tools often need to run in dedicated environments with custom dependencies, elevated privileges, or shared database pools.
 
-The path is: start or attach to a server, send `tools/list`, pick a `name`, send `tools/call`, read the JSON `result`. Then you append `{ "role": "tool", "content": "..." }` the same way chapter 03 did.
-
-This is not RAG-for-tools and not a skill file. A skill is markdown stuffed into the prompt. MCP is a process that runs code.
+MCP solves this:
+- **Process Isolation**: The tool server runs independently. A crash or hang in a tool does not take down the main agent loop.
+- **Shared Utilities**: Multiple agent runtimes can connect to the same MCP server simultaneously.
+- **Standard Protocol**: Any MCP-compliant client can use any MCP-compliant tool server without custom integration code.
 
 ## Knowledge
-1. Start a server (stdio child, or an HTTP listener) that implements `tools/list` and `tools/call` for one function, for example `add_numbers`.
-2. From the client, send a JSON-RPC request with `method: "tools/list"`. Read `result.tools` (each item has `name`, `description`, `inputSchema`).
-3. Send `method: "tools/call"` with `params: { "name": "add_numbers", "arguments": { "a": 2, "b": 3 } }`.
-4. Read `result` (often `{ "content": [{ "type": "text", "text": "5" }] }`). Print the text.
-5. Keep the client under 50 lines. Do not invent a 200-line fake server on this page.
+Here is the step-by-step procedure:
+1. Launch or connect to the target MCP server process.
+2. Send a `tools/list` JSON-RPC message and parse available tool definitions.
+3. When the LLM generates a tool call, map it to `tools/call` and transmit arguments.
+4. Parse the `result` content and format it as a standard observation message for the agent context.
 
 ## Wisdom
-Stop when `tools/list` printed a name and `tools/call` printed a result from another process. Do not add a skill loader, a vector search over schemas, or a full MCP SDK stack here. If you add them now, a miss could come from the RPC, the transport, or the prompt.
+MCP is a process boundary for running executable code, whereas Skill files (`SKILL.md`) are prompt instructions loaded into context. Keep these two concepts distinct.
 
 ## The When and Why
-- **When:** tools must live outside the agent PID, or two apps must share the same functions.
-- **Why:** the chapter 03 registry is a dict in one process. It cannot be shared across apps.
+- **When**: When tools have specialized dependencies, require separate security sandbox boundaries, or are shared across multiple services.
+- **Why**: In-process tool registries cannot be shared across processes or languages. MCP provides a universal, language-agnostic interface.
 
 ## How it works
 

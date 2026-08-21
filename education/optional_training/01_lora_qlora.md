@@ -1,40 +1,39 @@
-# OT: LoRA / QLoRA
+# Optional Training: Low-Rank Adaptation (LoRA) and QLoRA
 
-This folder is optional. It is not on the 00–15 path. After this page you can name what a LoRA adapter is: two small matrices sitting on a frozen base weight matrix. Finishing this page does not unlock chapter 15.
+By the end of this module, you will understand how Low-Rank Adaptation (LoRA) and Quantized LoRA (QLoRA) enable parameter-efficient fine-tuning of large models by freezing base weights and training small low-rank matrix pairs.
+
+Full fine-tuning of multi-billion parameter models requires immense GPU memory. LoRA dramatically reduces computational overhead by freezing existing weights and learning low-rank delta matrices.
 
 ## Data
-Three matrices exist inside one linear layer.
-
-A **base weight** `W0` is the large matrix that already came from pretrain or from a downloaded model. During LoRA it stays frozen. The numbers do not change.
-
-An **adapter** is two smaller matrices, `A` and `B`, plus a scale `alpha / rank`. `A` is `rank` by `in_features`. `B` is `out_features` by `rank`. Only `A` and `B` are trained.
-
-A **forward pass** adds the two paths: `W0 * x + (alpha / rank) * (B * (A * x))`. That is the function `PurePythonLoRALayer.forward` in [lab1_lora_qlora.py](./lab1_lora_qlora.py).
-
-QLoRA is the same adapter on a 4-bit copy of `W0`. The base uses fewer bits so it fits in less VRAM. The adapter is still trained in higher precision.
+A **LoRA Layer** decomposes weight updates inside linear transformations:
+- **Frozen Base Weight (`W0`)**: The pre-existing large weight matrix (e.g. $4096 \times 4096$).
+- **Low-Rank Decomposition Matrices (`A` and `B`)**:
+  - `A`: Matrix of shape $\text{rank} \times \text{in\_features}$.
+  - `B`: Matrix of shape $\text{out\_features} \times \text{rank}$.
+  - `rank` ($r$): Low-rank dimension (typically $4$ to $64$).
+  - `alpha` ($\alpha$): Scaling factor.
+- **Forward Pass Computation**: $y = W_0 x + \frac{\alpha}{r} (B \cdot A \cdot x)$.
+- **QLoRA (Quantized LoRA)**: Quantizes the frozen base weight $W_0$ into 4-bit NormalFloat precision while training $A$ and $B$ in 16-bit precision.
 
 ## Information
-The only path on this page is:
-
-frozen `W0` + trainable `A`, `B` → forward → adapter files (or, in this repo, printed counts)
-
-That is not a call to Ollama. There is no POST to `http://192.168.1.29:11434`. There is no `prompt` key. If you only need a model to answer, stay on chapter 00.
-
-A full finetune updates every number in `W0`. LoRA updates only `A` and `B`. For a 4096 by 4096 layer at rank 8, `calculate_lora_parameter_savings` in the lab prints that cut: 16,777,216 base parameters versus 65,536 adapter parameters.
+LoRA provides massive parameter and memory efficiency:
+- **Parameter Savings**: In a $4096 \times 4096$ matrix, full tuning updates $16,777,216$ parameters; rank-8 LoRA updates only $65,536$ parameters ($>99.6\%$ parameter reduction).
+- **Modularity**: Small adapter checkpoints ($<100\text{ MB}$) can be hot-swapped onto a single shared base model to serve diverse domain tasks.
 
 ## Knowledge
-1. Confirm you want an adapter, not a new pretrain. Pretrain is [00_pretrain_tiny.md](./00_pretrain_tiny.md).
-2. Keep `W0` frozen. Train only `lora_A` and `lora_B`.
-3. Pick a rank (the lab uses 8 for the budget print, 4 for the tiny forward demo).
-4. Run [lab1_lora_qlora.py](./lab1_lora_qlora.py) if you want to see the math on CPU. A real GPU train is a different program and is not required for 00–15.
-5. Stop when you can name `W0`, `A`, `B`, `rank`, and `alpha`. Do not export GGUF on this page.
+Here is the step-by-step procedure:
+1. Freeze base weight parameters $W_0$.
+2. Initialize matrix $A$ with Gaussian distribution and matrix $B$ with zeros.
+3. Compute forward activations through both the base path and the low-rank adapter path.
+4. Scale adapter output by $\frac{\alpha}{r}$ and sum with base activations.
+5. Save only the trained $A$ and $B$ adapter weights upon training completion.
 
 ## Wisdom
-Skip this folder unless you need a small domain adapter. It is optional. Finishing it does not unlock chapter 15. Skip a real GPU train if you are on CPU only. The reference script in this repo is pure Python and does run on CPU. If you only need to call a model, POST to `http://192.168.1.29:11434` with `OLLAMA_MODEL=qwen3.6:35b-a3b-65k`.
+LoRA allows you to customize large models for specific tasks without the cost of full fine-tuning.
 
 ## The When and Why
-- **When:** you need a small domain adapter on top of a frozen base.
-- **Why:** a full finetune updates every weight and is larger. Calling a local server does not need an adapter.
+- **When**: Fine-tuning foundational models on specialized domain datasets, custom tool-calling schemas, or unique corporate writing styles.
+- **Why**: LoRA reduces GPU VRAM requirements by over 75% and produces lightweight, portable adapter checkpoints.
 
 ## How it works
 

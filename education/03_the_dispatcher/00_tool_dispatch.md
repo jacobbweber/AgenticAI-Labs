@@ -1,38 +1,39 @@
-# 03: The Dispatcher
+# 03: The Dispatcher: Function Registries and Tool Execution
 
-After this chapter you read `tool_calls`, run a local function from a registry dict, and send a `role: tool` message back. Chapter 02 validated JSON fields. This chapter runs your Python. MCP and RAG-for-tools are chapter 14.
+By the end of this chapter, you will understand how AI models trigger local Python code. You will declare a function's schema, inspect the model's `tool_calls` request, execute the matching Python function from a local registry, and feed the result back using a `role: tool` message.
+
+In Chapter 02, the model returned structured data for you to read. In this chapter, the model asks your program to perform an action on its behalf.
 
 ## Data
-The route stays `POST /api/chat` on `{OLLAMA_HOST}` (default `http://192.168.1.29:11434`). The model is still `OLLAMA_MODEL` (default `qwen3.6:35b-a3b-65k`). `stream` stays `false`.
+We use the standard chat endpoint (`POST /api/chat` for Ollama or `POST /v1/chat/completions` for OpenAI-compatible APIs).
 
-A new request key appears: `tools`. It is a list. Each item looks like `{ "type": "function", "function": { "name", "description", "parameters" } }`. `parameters` is a JSON Schema object: `type`, `properties`, `required`.
-
-A new response key appears: `message.tool_calls`. It is a list. Each item has `function.name` (a string) and `function.arguments` (an object, or a JSON string you must `json.loads`).
-
-A **registry** is a Python dict from name to function, for example `TOOL_REGISTRY = {"add_numbers": add_numbers}`. Lookup is `TOOL_REGISTRY[name]`. Call is `fn(**arguments)`.
-
-The result goes back on the message list as `{ "role": "tool", "content": "<result string>" }`. Some APIs also want `tool_call_id`. Ollama native chat often accepts the role and content alone.
+Three new components are introduced:
+1. **The `tools` Schema List**: A list sent in your request describing available functions using standard JSON Schema (including name, description, and required parameters).
+2. **The `message.tool_calls` Array**: The model's response field containing the requested function name and argument values (e.g. `{"name": "add_numbers", "arguments": {"a": 2, "b": 3}}`).
+3. **The Tool Registry & Dispatcher**: A standard Python dictionary mapping function names to callable functions (e.g. `TOOL_REGISTRY = {"add_numbers": add_numbers}`). When a tool call is received, your script calls `TOOL_REGISTRY[name](**arguments)`.
+4. **The `role: tool` Message**: A dictionary formatted as `{"role": "tool", "content": "<result string>"}` appended to the conversation history so the model can observe the function's output.
 
 ## Information
-The model does not run your function. It emits a JSON call. Your script looks up the name, calls the Python function, and appends the result. The next POST includes that tool message so the model can see the number it asked for. That lookup is the dispatcher.
+An AI model cannot execute code on your computer directly. Instead, when the model recognizes that answering a prompt requires a specific tool, it outputs a structured JSON command specifying which function to call and what arguments to supply.
 
-Chapter 02 JSON (`intent`, `confidence`) is a shape the model invented. A tool result is a value your process computed. If the model guesses `2 + 3 = 6`, the dispatcher still returns `5` because `add_numbers` ran.
-
-One dispatch is this chapter. A `while` loop that keeps dispatching until there are no `tool_calls` is chapter 04 (ReAct).
+Your Python host program inspects that command, executes the actual Python function in your environment, and appends the computed result back into the `messages` array. This process—looking up a requested tool name and invoking the corresponding function—is called **tool dispatching**.
 
 ## Knowledge
-1. Define one local function, for example `add_numbers(a, b) -> str`. Put it in a registry dict.
-2. Send its JSON Schema in `tools` on the same `/api/chat` POST as `messages`.
-3. POST a user message that needs that function (for example `What is 2 plus 3? Use the tool.`).
-4. If `message.tool_calls` is present, read `name` and `arguments`. If `arguments` is a string, `json.loads` it. Then `result = TOOL_REGISTRY[name](**arguments)`.
-5. Append `{ "role": "tool", "content": result }` to `messages`. POST once more if you want a final sentence. Do not write a `while` loop.
+Here is the step-by-step procedure:
+1. Define a standard Python function (e.g. `add_numbers(a: float, b: float) -> str`) and register it in a dictionary: `TOOL_REGISTRY = {"add_numbers": add_numbers}`.
+2. Define a JSON schema for the function and send it in the `tools` parameter of your chat request.
+3. Send a user message that requires tool usage (e.g. `"What is 2 plus 3? Please use the tool."`).
+4. When `tool_calls` is returned, extract the function name and arguments. If `arguments` is a JSON string, deserialize it with `json.loads()`.
+5. Execute the callable from your registry: `result = TOOL_REGISTRY[name](**arguments)`.
+6. Append a `role: tool` message containing the result back into your `messages` array.
+7. Optionally make one follow-up POST request with the updated message list to allow the model to summarize the final answer in plain English.
 
 ## Wisdom
-A registry dict is enough for a handful of functions you wrote. Do not add MCP, vector search over 100 schemas, or parallel `asyncio.gather` here. If the model only needs to fill fields you already declared, chapter 02 is enough and you do not need `tools`.
+A simple dictionary lookup is clean, secure, and easy to debug for local applications. Keep your dispatcher focused: do not add heavy external protocols or automatic discovery mechanisms until you need them.
 
 ## The When and Why
-- **When:** the model must use a value your process can compute (math, a file, a row) instead of guessing.
-- **Why:** without a dispatcher, `tool_calls` is unused JSON. Without the tool role, the model never sees the result.
+- **When**: Use tool dispatching whenever the model needs real-time calculations, file system access, database queries, or external API data to answer accurately.
+- **Why**: Language models are not calculators and cannot inspect your local machine on their own. Giving models access to deterministic Python tools prevents hallucinations and enables real-world actions.
 
 ## How it works
 

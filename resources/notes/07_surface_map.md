@@ -1,38 +1,42 @@
-# Surface map
+# Surface Map: Connecting User Interfaces to Backend Protocols
 
-How a control on the page maps to a path, a JSON key, and a script. The page is a client ([19](../../education/19_the_front_door/01_frontend.md)). If this page disagrees with a lab brief, the brief wins.
+When building web, mobile, or terminal interfaces for an AI agent, you don't need complicated design documents or heavy frontend frameworks to specify behavior.
 
-You keep track by naming four things: the control, the path, the key, the script. That table is the spec. Not a Figma file. Not React.
+Instead, track the connection by naming four concrete elements:
+1. **The UI Control** (e.g. a button or input field).
+2. **The HTTP / WebSocket Endpoint**.
+3. **The JSON Payload Keys**.
+4. **The Backend Python Handler / Script**.
 
-## The map
+---
 
-| Control | Path | Key | Script |
+## The UI-to-Backend Protocol Map
+
+| User Action / Control | Endpoint & Method | JSON Request / Response Keys | Backend Python Component |
 |---|---|---|---|
-| Send | `POST /jobs` | body `{ "prompt" }`, response `{ "job_id" }` | Starts the [04](../../education/04_the_loop/00_the_react_loop.md) / [13](../../education/13_one_agent/00_persona_tools_loop_state.md) loop |
-| Stream | `GET /jobs/{job_id}/stream` | `{ "token" }` (lab 1 uses `data.delta`) | [19 lab1](../../education/19_the_front_door/lab1_sse_streaming_api.md) SSE frames |
-| Stop | `WS /jobs/{job_id}/ws` | `{ "type": "interrupt" }` | [19 lab2](../../education/19_the_front_door/lab2_websocket_interrupt.md) |
-| History | the session file | `session_id`, `messages` | [07](../../education/07_the_state/00_save_the_messages.md) / [13](../../education/13_one_agent/00_persona_tools_loop_state.md) `state_store`. Not drawn on the lab 3 HTML page. |
-| Person text vs model text | same stream | ux vs mx | [19 lab4](../../education/19_the_front_door/lab4_mx_vs_ux.md) |
-
-`job_id` is one run. A sidebar of past chats is a list of those session files. Lab 3 does not list them.
+| **Send Message** | `POST /jobs` | Request: `{"prompt": str}`<br>Response: `{"job_id": str}` | Launches the ReAct loop ([Chapter 04](../../education/04_the_loop/00_the_react_loop.md) & [Chapter 13](../../education/13_one_agent/00_persona_tools_loop_state.md)). |
+| **Stream Tokens** | `GET /jobs/{job_id}/stream` | SSE Event Payload: `{"token": str}` or `{"delta": str}` | Streams chunks via FastAPI SSE ([Chapter 19 Lab 1](../../education/19_the_front_door/lab1_sse_streaming_api.md)). |
+| **Cancel / Interrupt** | `WS /jobs/{job_id}/ws` | Message: `{"type": "interrupt"}` | WebSocket interrupt handler ([Chapter 19 Lab 2](../../education/19_the_front_door/lab2_websocket_interrupt.md)). |
+| **View History** | File / Database Read | Session Data: `session_id`, `messages` array | Checkpoint state store ([Chapter 07](../../education/07_the_state/00_save_the_messages.md) & [Chapter 13](../../education/13_one_agent/00_persona_tools_loop_state.md)). |
+| **Filter Model vs User Text** | Stream Parser | Separates `ux` (user text) from `mx` (internal model thoughts) | Demuxing filter ([Chapter 19 Lab 4](../../education/19_the_front_door/lab4_mx_vs_ux.md)). |
 
 ```mermaid
 flowchart LR
-    notes07_btn["control"]
-    notes07_http["path plus JSON key"]
-    notes07_api["intended FastAPI"]
-    notes07_loop["04 / 13 loop"]
+    notes07_btn["UI Button / Input"]
+    notes07_http["HTTP / WebSocket Request (JSON)"]
+    notes07_api["FastAPI Server (Port 8000)"]
+    notes07_loop["Agent ReAct Loop (Chapter 04 / 13)"]
+    
     notes07_btn --> notes07_http
     notes07_http --> notes07_api
     notes07_api --> notes07_loop
 ```
 
-## Spec
+---
 
-A row in the table is the surface spec. [Chapter 20 spec TDD](../../education/20_synthesis/02_spec_tdd.md) is the red/green order (write a failing check, then the code). It is not Figma-to-code. Do not add a design-tool chapter for this.
+## Architectural Principles
 
-Labs 1 and 2 do not start the server. The intended listener is port `8000`. Write the page against the keys above. Leave the reference `.py` files as-is.
+- **The frontend does not execute the agent loop**: The browser or mobile app simply displays streaming tokens and sends user events.
+- **State lives on the backend**: The conversation history and tool permissions remain safely inside your Python server.
+- **Specification-Driven Development**: In [Chapter 20 Spec TDD](../../education/20_synthesis/02_spec_tdd.md), you write automated tests verifying these exact JSON payloads before writing the backend code.
 
-## Later
-
-An optional chapter can add a live FastAPI server and a React chat that lists [07](../../education/07_the_state/00_save_the_messages.md) sessions. Same keys. Same rule: the page does not own the loop. Not on the 00-20 path.

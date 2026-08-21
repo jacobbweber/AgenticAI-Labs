@@ -1,42 +1,35 @@
-# OT: Pretrain a tiny LLM
+# Optional Training: Pretraining a Tiny Language Model from Scratch
 
-This folder is optional. It is not on the 00–15 path. After this page you can name the three objects in a pretrain step: the tokenized tensors, the train loop, and the weight file it writes. That is not an agent chapter. Finishing this page does not unlock chapter 15.
+By the end of this module, you will understand the three core components of foundational language model pretraining: tokenized text tensors, the next-token training loop, and serializing learned weight parameters to disk.
+
+While application developers typically interact with pre-existing models over HTTP, understanding how base weights are initialized and trained demystifies the entire AI stack.
 
 ## Data
-Three objects exist, and they are not the same as chapter 00.
-
-A **corpus** is text you tokenize into tensors (arrays of token IDs). Those IDs are the data. There is no HTTP POST. There is no `OLLAMA_HOST`. Lab 0 uses three strings: `aba`, `abc`, `cab`. Tokens are characters. Vocab size is 3.
-
-A **train loop** is a Python process that reads a batch of those IDs, predicts the next ID, compares the prediction to the real next ID, and computes a **loss** (one float). It then updates the weight numbers so the next prediction is closer. Lab 0 is a `V` by `V` logit table plus `softmax` and a mean `-log(p[next])`.
-
-A **weight file** is the same kind of file chapter 00 named (`.safetensors` or `.gguf`). After a train step the numbers inside it have changed. Chapter 00 never writes that file. This page does. Lab 0 writes `weights.json` with `stoi` and `W`.
-
-Lab 0 is `lab0_pretrain_tiny.py`. Functions: `build_vocab`, `make_pairs`, `softmax`, `train_step`, `train`. `steps` is 40. `lr` is 0.5. CPU only. No Hugging Face. The runnable labs that also live here are LoRA, GGUF, and GRPO.
+Foundational pretraining involves three primary objects:
+1. **Tokenized Corpus**: Raw text converted into numerical token ID arrays (tensors). In our pure-Python demonstration, we tokenize character sequences across a small vocabulary.
+2. **Next-Token Training Loop**: A loop that consumes token sequences, calculates predicted probability distributions over vocabulary items via `softmax`, and evaluates prediction errors using Cross-Entropy Loss (`-log(p[target])`).
+3. **Weight Checkpoint (`weights.json`)**: Serialized parameter matrices storing learned transition logits and vocabulary mappings (`stoi`, `W`).
 
 ## Information
-The only path on this page is:
-
-tokenized tensors → train loop → loss (float) → optimizer step → updated weights on disk
-
-Chapter 00 is a different path:
-
-script → HTTP POST (JSON) → provider at `192.168.1.29:11434` → JSON `response` → script
-
-If you are calling Ollama with `OLLAMA_HOST` (`http://192.168.1.29:11434`) and `OLLAMA_MODEL` (`qwen3.6:35b-a3b-65k`), you are not pretraining. You are using a provider that already loaded someone else's weights.
+Pretraining operates directly on mathematical arrays:
+- **Foundational Learning**: Pretraining is the process of teaching a model language patterns from raw text before any instruction tuning or RLHF occurs.
+- **Loss Convergence**: As optimization steps proceed, the loss metric decreases, demonstrating that the probability assigned to true next tokens is increasing.
+- **Independence from Inference APIs**: Pretraining creates the weight files that inference runtimes (like Ollama or vLLM) load later.
 
 ## Knowledge
-1. Confirm you actually want to train. The 00–15 line never requires this folder.
-2. Tokenize a small text file into token IDs. A first pretrain uses a small file, not a large crawl. Lab 0 tokenizes three short strings.
-3. Run a loop: take a window of IDs, predict the next ID, compute `loss` as a float, step the optimizer, write weights.
-4. Read `loss` after each step. If it is not a number, the loop is not training.
-5. Stop when `loss` has gone down on that small file. Do not start LoRA, GGUF, or GRPO on this page.
+Here is the step-by-step procedure:
+1. Build a character vocabulary mapping strings to discrete integer IDs (`build_vocab`).
+2. Generate input-target training pairs representing sequential token transitions (`make_pairs`).
+3. Run the optimization loop: compute logits, evaluate softmax probabilities, and calculate Cross-Entropy loss.
+4. Perform gradient descent updates to adjust weight matrix values.
+5. Save learned parameters to a JSON weight file (`weights.json`).
 
 ## Wisdom
-Skip this folder unless you care about training. It is optional. Finishing it does not unlock chapter 15. If you only need a model to answer, go back to [00_script_provider_weights.md](../00_atoms/00_script_provider_weights.md) and POST to `http://192.168.1.29:11434`.
+Pretraining is computationally intensive. For standard agent development, invoking existing pre-trained foundational models is vastly more practical. However, understanding the training loop builds deep intuition for model behavior.
 
 ## The When and Why
-- **When:** you want to train weights from text you own, not call a server.
-- **Why:** calling a server is chapter 00. Pretrain is the step that creates the weight file that chapter 00 later loads.
+- **When**: Exploring the fundamental mathematics of machine learning or pretraining specialized domain models.
+- **Why**: Understanding how weights learn token distributions demystifies model limitations, context windows, and hallucination mechanics.
 
 ## How it works
 

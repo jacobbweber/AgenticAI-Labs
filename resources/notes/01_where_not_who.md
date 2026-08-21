@@ -1,8 +1,8 @@
-# Where, not who
+# System Architecture: Designing by Location (`host_id`), Not Personas
 
-The useful key is where or what, not who.
+When building real-world automation systems, it is much more effective to organize tasks by *where* execution happens (target hosts and network ports) and *what* permissions are required, rather than assigning fictional job titles to agents.
 
-Example host map (JSON only, not a lab):
+Here is an example host configuration map (stored cleanly as JSON):
 
 ```json
 {
@@ -13,8 +13,18 @@ Example host map (JSON only, not a lab):
 }
 ```
 
-`jarvis` and `nimo` are machine names (`host_id`), not staff. "Department" in marketing is this map. "Talk to the Windows intern" is the wrong sentence. "Ask jarvis for alerts" is a `host_id` on a tool call.
+In this architecture:
+- `jarvis` and `nimo` are physical machine names (`host_id`), not fictional workers.
+- Instead of saying *"ask the Windows specialist,"* your code calls an explicit tool like `ask_host(host_id="jarvis", prompt="Check active alerts")`.
 
-Memory is keyed by `host_id` or `session_id` ([chapters 07](../../education/07_the_state/00_save_the_messages.md), [13](../../education/13_one_agent/00_persona_tools_loop_state.md), [09](../../education/09_agentic_memory_and_rag/01_agentic_memory.md)), not by a person name. The lab keys are `session_id` ([13](../../education/13_one_agent/00_persona_tools_loop_state.md) `state_store/{session_id}.json`), `thread_id` ([07](../../education/07_the_state/00_save_the_messages.md) `checkpoints.db`), and a fact `key` ([09](../../education/09_agentic_memory_and_rag/01_agentic_memory.md) `facts.json`). If you keep a file per machine, use `host_id` from the map.
+---
 
-If two loops must stay up on one machine, that is still [chapter 14](../../education/14_two_agents/03_skill_vs_two_agents.md) (two agents or a skill wrapper), not two employees.
+## Organizing Memory and State
+
+System state and memory should always be indexed by concrete identifiers rather than personal names:
+- **`session_id`**: Identifies a specific interactive conversation ([Chapter 13](../../education/13_one_agent/00_persona_tools_loop_state.md), stored in `state_store/{session_id}.json`).
+- **`thread_id`**: Identifies persistent database checkpoints ([Chapter 07](../../education/07_the_state/00_save_the_messages.md), stored in `checkpoints.db`).
+- **`key` / `host_id`**: Identifies specific system facts or machine profiles ([Chapter 09](../../education/09_agentic_memory_and_rag/01_agentic_memory.md), stored in `facts.json`).
+
+If you need to run two separate reasoning loops on a single server, structure them as a coordinator and a skill wrapper ([Chapter 14](../../education/14_two_agents/03_skill_vs_two_agents.md)) with clear security boundaries.
+

@@ -1,83 +1,75 @@
-# Lab 2: Reflexion loop
+# Lab 2: Building a Self-Healing Reflexion Loop with Critic Feedback
 
-After this lab a failed check produced a second attempt with the error in context. This is not a new model. It is the same POST plus the traceback.
+In this lab, you will build a Reflexion engine that generates Python code, executes it in a sandboxed critic process, captures any resulting `stderr` or tracebacks upon failure, and reflects the diagnostic back into the model prompt to produce a working fix.
+
+---
 
 ## What you touch
 - Script: `lab2_reflexion_loop.py`
-- Class / functions: `ReflexionEngine.run_reflexion_loop(task_goal)`, `llm_generate(prompt)`, `run_sandboxed_critic(temp_dir)`
-- File written: `solution.py` inside a temp dir
-- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
-- Keys sent: `model`, `prompt`, `stream` (`false`), `options.temperature` (`0.0`)
-- Keys read: `response`
-- Checker: process exit code and `stderr`
-- Return keys: `status`, `turns`, and on pass `verified_code`
+- Main Classes & Functions:
+  - `ReflexionEngine.run_reflexion_loop(task_goal) -> dict`
+  - `llm_generate(prompt) -> str`
+  - `run_sandboxed_critic(temp_dir) -> tuple[int, str]`
+- Generated Code File: `solution.py` created in a temporary directory
+- URL / Endpoint: `{OLLAMA_HOST}/api/generate` (defaults to `http://127.0.0.1:11434/api/generate`)
+- Ground-Truth Critic: Exit code 0 (Pass) vs Non-zero with captured `stderr` (Fail)
+
+---
 
 ## Steps
 ```mermaid
-flowchart LR
-    subgraph ref_lab5_script [This script]
-        G["llm_generate"]
-        C["run_sandboxed_critic"]
-        E["ReflexionEngine"]
-    end
-    subgraph ref_lab5_host [Ollama on port 11434]
-        H["POST /api/generate"]
-    end
-    E --> G
-    G --> H
-    H -->|"response"| G
-    G --> C
-    C -->|"exit 0"| OK["SUCCESS"]
-    C -->|"stderr in next prompt"| E
+flowchart TD
+    A["Task Goal: safe_divide(10, 0)"] --> B["llm_generate() -> solution.py"]
+    B --> C["run_sandboxed_critic() (Run subprocess)"]
+    C --> D{"Exit Code == 0?"}
+    D -->|"Yes (Pass)"| E["Return {status: 'SUCCESS', verified_code: ...}"]
+    D -->|"No (Fail)"| F["Capture stderr & traceback"]
+    F --> G{"Turns < max_turns (3)?"}
+    G -->|"Yes"| H["Append traceback into prompt & re-generate"]
+    H --> B
+    G -->|"No"| I["Return {status: 'FAILED_MAX_TURNS'}"]
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://192.168.1.29:11434` and `qwen3.6:35b-a3b-65k`.
-2. First answer: `llm_generate` POSTs `model`, `prompt`, `stream: false`, `options.temperature: 0.0`. The baked goal is `Create a function safe_divide(a, b) that divides a by b, handling ZeroDivisionError gracefully, and print safe_divide(10, 0).`
-3. Write the returned text to `solution.py`. Run it with `run_sandboxed_critic`. Exit `0` is pass. Return `{ "status": "SUCCESS", "turns": n, "verified_code": "..." }`.
-4. Fail a check: nonzero exit. Print `stderr`. Append that error (and the prior code) to the next prompt.
-5. Retry with the error in context. `max_turns` is 3. If the same `stderr` MD5 is in `seen_signatures`, the next prompt asks for a different strategy.
-6. If the cap is hit, return `{ "status": "FAILED_MAX_TURNS", "turns": 3 }`.
-7. Do not swap in a second model. The checker is the exit code.
+1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from environment variables, defaulting to `http://127.0.0.1:11434` and `llama3.2:1b`.
+2. Provide the task goal:
+   `"Create a function safe_divide(a, b) that divides a by b, handling ZeroDivisionError gracefully, and print safe_divide(10, 0)."`
+3. Implement `llm_generate(prompt)` to send a prompt to `{OLLAMA_HOST}/api/generate` and strip markdown code fences.
+4. Implement `run_sandboxed_critic(temp_dir)` to run `python solution.py` via `subprocess.run()`, capturing return code, stdout, and stderr.
+5. In `run_reflexion_loop()`:
+   - Loop `turn` from 1 up to `max_turns = 3`.
+   - Write model-generated code to `solution.py` and execute the critic.
+   - If exit code is `0`, return `{"status": "SUCCESS", "turns": turn, "verified_code": code}`.
+   - If exit code is non-zero, capture `stderr`, append the diagnostic to the next iteration's prompt, and repeat.
+6. Verify that broken initial attempts (e.g. unhandled ZeroDivisionError) self-heal into passing code on subsequent turns.
+
+---
 
 ## Data contract
-Only the keys this script sends and reads.
 
-**Request** `POST /api/generate`
+**Reflexion Feedback Prompt Structure**
 
-```json
-{
-  "model": "qwen3.6:35b-a3b-65k",
-  "prompt": "string",
-  "stream": false,
-  "options": { "temperature": 0.0 }
-}
+```text
+The previous code execution failed with the following diagnostic error:
+[CRITIC TRACEBACK]
+ZeroDivisionError: division by zero
+
+Please analyze this error and output a corrected, complete Python implementation.
 ```
 
-The error string lives in the next `prompt`, not in a `messages` list.
-
-**Pass return**
+**Success Return Payload**
 
 ```json
 {
   "status": "SUCCESS",
-  "turns": 1,
-  "verified_code": "string"
+  "turns": 2,
+  "verified_code": "def safe_divide(a, b):\n    try:\n        return a / b\n    except ZeroDivisionError:\n        return None\n\nprint(safe_divide(10, 0))"
 }
 ```
 
-**Cap return**
-
-```json
-{
-  "status": "FAILED_MAX_TURNS",
-  "turns": 3
-}
-```
+---
 
 ## Run
-Copy `.env.example` to `.env` in the repo root and uncomment the Ollama lines. The script loads that file (it does not override vars already set in the shell).
-
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/11_planning_and_reflection/lab2_reflexion_loop.py
@@ -87,12 +79,21 @@ python education/11_planning_and_reflection/lab2_reflexion_loop.py
 python education/11_planning_and_reflection/lab2_reflexion_loop.py
 ```
 
+---
+
 ## What you should see
-One or more `[TURN n]` blocks. A fail prints `[FAILED]` and `[CRITIC TRACEBACK]`. A later turn should be closer to the check (exit `0`, or a different error). A pass prints `[PASSED]` and `SUCCESS`. A cap prints `FAILED_MAX_TURNS`. If you see `URLError` or connection refused, the provider is not reachable. If you see HTTP 404, the model name is wrong or not pulled. If every turn is the same traceback, the error was not appended.
+- **Turn 1**: Initial code generated, critic execution failing with `[FAILED]` and `[CRITIC TRACEBACK]`.
+- **Turn 2**: Re-prompt with captured error, followed by corrected code passing critic execution with `[PASSED]` and status `SUCCESS`.
+
+---
 
 ## Stop here
-This is not a new model and not an eval suite. Chapter 04 is the outer `for`. This lab only appends the error. Evals (lab4) can score many of these runs. Do not add logit bias or a trace backend here.
+You have successfully implemented a self-healing reflexion loop! In Chapter 12, we will build evaluation suites to score agent reliability and accuracy.
+
+Next up: [Chapter 12: Agent Evals](../12_agent_evals/00_agent_evals.md).
+
+---
 
 ## Notes
-- Mechanism: generate, run `solution.py`, append `stderr`, retry inside `max_turns`.
-- Contract drift vs `lab2_reflexion_loop.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/generate`, not `/api/chat`, so the error is concatenated into `prompt` rather than appended as a `messages` item. `llm_generate` strips a leading python fence. Oscillation uses MD5 of `stderr`, not the SHA-256 tool hash from `lab2_cycle_detection.py`. Write env reads in your copy. Leave the reference file as-is.
+*(Record your reflexion trace and self-healed code here)*
+

@@ -1,36 +1,42 @@
-# 05: The Budget
+# 05: The Budget: Managing Execution Limits and Safety Stop Rules
 
-After this page a stop rule is a pair of dicts. `budget` has `max_turns` and `max_tokens` (integers). `spent` has `turns` and `tokens`. `check_budget(budget, spent)` returns `{ "ok": true }` or `{ "stop": true, "reason": "max_turns" }` or `{ "stop": true, "reason": "max_tokens" }`.
+By the end of this chapter, you will implement deterministic budget limits for agent execution. You will create a `check_budget(budget, spent)` evaluator that returns clear stop reasons (such as hitting a turn limit or token ceiling), ensuring your agent loops never run out of control.
+
+In Chapter 04, we built an iterative loop. In this chapter, we add safety boundaries so multi-turn agents stop predictably and explain why they stopped.
 
 ## Data
-A **budget** is `{ "max_turns": int, "max_tokens": int }`.
+We define two simple data structures:
+- **`budget`**: A configuration dictionary defining maximum thresholds: `{"max_turns": int, "max_tokens": int}`.
+- **`spent`**: A tracking dictionary measuring resources consumed so far: `{"turns": int, "tokens": int}`.
 
-A **spent** is `{ "turns": int, "tokens": int }`.
+The evaluator function `check_budget(budget, spent)` tests limits in order:
+1. First, check turns: if `spent["turns"] >= budget["max_turns"]`, return `{"stop": true, "reason": "max_turns"}`.
+2. Second, check tokens: if `spent["tokens"] >= budget["max_tokens"]`, return `{"stop": true, "reason": "max_tokens"}`.
+3. If both resources remain within limits, return `{"ok": true}`.
 
-`check_budget(budget, spent)` checks `max_turns` first. If `spent["turns"] >= budget["max_turns"]`, return `{ "stop": true, "reason": "max_turns" }`. Then check `max_tokens`. If `spent["tokens"] >= budget["max_tokens"]`, return `{ "stop": true, "reason": "max_tokens" }`. Else return `{ "ok": true }`.
-
-No HTTP. This chapter does not read `OLLAMA_HOST` or `OLLAMA_MODEL`. No dollars. No billing API.
+This chapter uses pure Python logic without network calls.
 
 ## Information
-Chapter 04 already caps a loop with `range` or a turn count. This chapter returns a reason object. The caller can print why the loop stopped.
+In real-world applications, autonomy without clear constraints can lead to infinite loops or unexpected resource consumption. 
 
-A cycle halt (chapter 12) stops on a repeated hash. A budget stops on a count. They are different objects.
-
-The budget can sit on a job row later. This chapter keeps `budget` and `spent` in memory.
+A structured stop evaluator provides two key benefits:
+1. **Predictability**: It prevents runaway execution before it happens.
+2. **Observability**: When an agent finishes or halts, downstream systems receive an explicit machine-readable `reason` code rather than a silent failure.
 
 ## Knowledge
-1. Build `budget` with integer `max_turns` and `max_tokens`.
-2. Start `spent` at `{ "turns": 0, "tokens": 0 }`.
-3. After each turn, increment `turns` and `tokens`.
-4. Call `check_budget(budget, spent)`.
-5. If `stop` is true, print `reason` and halt.
+Here is the step-by-step implementation:
+1. Define a `budget` dictionary specifying `max_turns` and `max_tokens`.
+2. Initialize `spent` with zeros: `{"turns": 0, "tokens": 0}`.
+3. After each iteration or model call, update `spent["turns"]` and `spent["tokens"]`.
+4. Call `check_budget(budget, spent)` at the start or end of each turn.
+5. If the evaluator returns `stop: true`, halt execution and log the specific `reason`.
 
 ## Wisdom
-Chapter 04 already has a turn cap in some labs. This chapter makes the reason a first-class return. Do not add dollars or a billing API. Autonomy without a budget is just a loop.
+Keeping stop rules deterministic and transparent makes debugging multi-turn agent systems straightforward. Keep this evaluator focused purely on resource budgets—cyclic loop detection will be handled separately in Chapter 06.
 
 ## The When and Why
-- **When:** a job can run more than one turn and you must say why it stopped.
-- **Why:** a silent cap hides whether you hit turns or tokens. A reason you can print is the stop rule.
+- **When**: Use budget evaluation whenever an agent executes multi-turn workflows or processes asynchronous tasks.
+- **Why**: Unbounded agent loops can consume excessive tokens, exhaust system memory, or become stuck in infinite loops. Structured stop rules guarantee that execution stops safely and predictably.
 
 ## How it works
 

@@ -1,43 +1,35 @@
-# 06: Chain-of-thought and reasoning
+# 06: Chain-of-Thought and Reasoning Demuxing
 
-After this chapter thinking tokens are a separate channel from the user-visible string. Chapter 01 already counted 766 `eval_count` tokens for two sentences. This chapter names those extra tokens and splits them off.
+By the end of this chapter, you will understand how modern reasoning models generate internal thought tokens and how to separate these internal thoughts from the user-facing response.
+
+In Chapter 01, you may have noticed that reasoning models can evaluate many tokens before producing a short answer. In this chapter, we create a stream demuxer to route internal thoughts and visible answers into separate channels.
 
 ## Data
-A reasoning model (Qwen 3.6, DeepSeek-R1 style) can write two kinds of text in one reply.
+Reasoning models (such as DeepSeek-R1 or Qwen reasoning variants) output two distinct kinds of text in a single generation stream:
+1. **Thinking Tokens**: The internal reasoning chain wrapped inside `<think>` and `</think>` tags. The model uses these tokens to work through complex logic step-by-step.
+2. **Response Content**: The final text outside of the `<think>` tags intended for the user or downstream parsers.
 
-**Thinking** is the text between `<think>` and `</think>`. The model uses it to work the problem. The user should not see it in the final string. `json.loads` should not see it either.
-
-**Response** is everything outside those tags. That is the answer you print, store, or parse.
-
-The tags are literals in the token stream. They are not a separate HTTP field. Ollama still puts every chunk in `response` on `POST /api/generate`. Your script has to split the string.
-
-The lab file is `lab1_cot_demuxer.py`. Class `CoTStreamDemuxer` has `feed(chunk)` and returns a pair: thinking text, response text. An older copy at `labs/01_single_agent/lab3_reasoning_demux` is deleted. Keep one demux lab.
-
-`OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. The route is `POST /api/generate`.
+Because providers like Ollama emit both sets of tokens in the same streaming response string, our application uses a `CoTStreamDemuxer` to split incoming chunks in real time.
 
 ## Information
-Chapter 01 printed `eval_count` and saw a large number for a short answer. Those extra tokens were thinking. If you leave them in the same string as the answer, two things break:
-
-1. A UI that prints `response` shows the scratch work.
-2. A later `json.loads` on the answer fails because `<think>` is not valid JSON.
-
-The split can run on a full string (`stream: false`) or on each NDJSON line (`stream: true`). The lab streams. Each line still has key `response`. `feed` looks for the tags inside that string.
-
-Chapter 07 already embeds a small `CoTStreamDemuxer` in the kernel. This chapter is the place that teaches the split. Cycle detection, logit steering, evals, and reflexion are the next files in this folder.
+Separating thinking tokens from final response text is critical for two reasons:
+1. **User Experience**: End users should see a clean answer, with internal reasoning optionally placed in an expandable thought log.
+2. **Data Integrity**: If an agent relies on structured JSON (as built in Chapter 02), unparsed `<think>` tags will break `json.loads()` and cause parsing errors.
 
 ## Knowledge
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. Use the defaults above.
-2. POST `model`, `prompt`, `stream: true`, `options.temperature: 0.0` to `{host}/api/generate`.
-3. For each NDJSON line, read `data["response"]` and pass it to `CoTStreamDemuxer.feed`.
-4. Buffer text after `<think>` into a think log. Buffer text after `</think>` (and any text before `<think>`) as the answer.
-5. Print the two channels on separate prefixes. Do not keep a second demux lab.
+Here is the step-by-step workflow:
+1. Stream incoming chunks from the provider with `stream: true`.
+2. Feed each text chunk into a `CoTStreamDemuxer` state machine (`IDLE`, `THINKING`, `RESPONSE`).
+3. Route text between `<think>` and `</think>` to the thinking log.
+4. Route text after `</think>` to the final answer payload.
+5. Print each channel with clear visual prefixes (`[THINKING LOG]` and `[RESPONSE PAYLOAD]`).
 
 ## Wisdom
-Stop when thinking and response are two strings. Do not add cycle detection, logit bias, or a reflexion loop yet. Those are later files in this chapter. If you add them now, a bad parse could come from the tags, the loop, or the eval.
+Keeping the demuxer lightweight and stream-oriented ensures real-time feedback without adding heavy dependencies.
 
 ## The When and Why
-- **When:** the model emits `<think>` tags, or `eval_count` is much larger than the visible answer.
-- **Why:** UI text and `json.loads` break if thinking stays in the same string as the answer.
+- **When**: Use a CoT demuxer whenever you interact with reasoning models that emit `<think>` blocks.
+- **Why**: Keeping reasoning tokens mixed in with response text clutters the UI and causes downstream JSON validation failures.
 
 ## How it works
 

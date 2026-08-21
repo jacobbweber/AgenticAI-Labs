@@ -1,41 +1,41 @@
-# 10: Event-driven workflows
+# 10: Event-Driven Workflows: Asynchronous Task Queues and Real-Time Event Streaming
 
-After this page a submit function returns immediately (`status_code` 202 plus `job_id`) and a worker reads an `asyncio.Queue`. The long model call does not sit inside the submit. FastAPI and SSE are chapter 10.
+By the end of this chapter, you will decouple task submission from execution by implementing an asynchronous task queue (`asyncio.Queue`) that returns an immediate HTTP 202 Accepted response and streams progress events (`job.started`, `agent.thought`, `agent.completed`) over an event bus.
+
+In earlier modules, model calls were executed synchronously. In this chapter, we build non-blocking, event-driven architectures to prevent gateway timeouts and support real-time user interfaces.
 
 ## Data
-The last two pages ran nodes in the same process and waited. This page splits **submit** from **work**.
-
-`task_queue` is an `asyncio.Queue`. Submit puts `{ "job_id", "prompt" }`. The worker `get()`s that dict.
-
-`event_bus` is a second `asyncio.Queue`. `emit_event(event_type, job_id, data)` puts a frame `{ "event_type", "job_id", "timestamp", "data" }`. Types in the lab: `job.started`, `agent.thought`, `agent.completed`, `agent.failed`.
-
-`api_submit_task(prompt)` builds `job_id` as `job_{int(time.time() * 1000)}`, puts the job, and returns `{ "status_code": 202, "message": "Accepted", "job_id", "status_url": "/api/jobs/{job_id}" }`. There is no real HTTP server. The 202 is a dict. Chapter 10 puts that dict on a port.
-
-The worker POSTs to `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434`, model `qwen3.6:35b-a3b-65k`) inside `loop.run_in_executor` with `timeout=30`. It sends `model`, `prompt`, `stream: false`, `options.temperature: 0.0`. It reads `response`.
-
-Functions in `lab3_async_event_queue.py`: `emit_event`, `async_agent_worker`, `event_stream_subscriber`, `api_submit_task`, `main`.
+An asynchronous event-driven workflow operates with two distinct queues:
+1. **Task Queue (`task_queue`)**: An `asyncio.Queue` that buffers incoming execution requests:
+   `{"job_id": "job_123", "prompt": "string"}`.
+2. **Event Bus (`event_bus`)**: An `asyncio.Queue` that streams progress frames:
+   `{"event_type": str, "job_id": str, "timestamp": float, "data": dict}`.
+   Event types include: `job.started`, `agent.thought`, `agent.completed`, and `agent.failed`.
+3. **Immediate Acknowledgement**: `api_submit_task(prompt)` generates a unique `job_id`, enqueues the job, and immediately returns:
+   `{"status_code": 202, "message": "Accepted", "job_id": "...", "status_url": "/api/jobs/..."}`.
 
 ## Information
-A synchronous HTTP handler waits for the model. Gateways often cut that wait at 30 to 60 seconds and return 504. Enqueue the job, return 202, let a worker POST to Ollama, emit events on the bus. The submit clock stops when the dict is returned, not when `response` arrives.
+Synchronous HTTP handlers block until model inference finishes. If a complex agent task takes 30–60 seconds, browser gateways often drop connections with HTTP 504 Gateway Timeouts.
 
-`urllib.request.urlopen` is blocking. The lab wraps it in `run_in_executor` so the asyncio loop can still run the subscriber while the POST is in flight.
-
-The subscriber prints each frame. That print is a stand-in for SSE or a WebSocket. Chapter 10 is the real socket.
+An event-driven pattern solves this:
+- **Instant Response**: The client receives a 202 Accepted response in milliseconds.
+- **Asynchronous Execution**: Background worker tasks process jobs from the queue at their own pace.
+- **Real-Time Visibility**: The event bus streams thoughts and status updates to frontend subscribers without holding open synchronous blocking requests.
 
 ## Knowledge
-1. Create `task_queue` and `event_bus` as `asyncio.Queue()`.
-2. Start `async_agent_worker` and `event_stream_subscriber` with `asyncio.create_task`.
-3. `api_submit_task` puts `{ job_id, prompt }` and returns 202 plus `job_id` plus `status_url`. Do not POST inside submit.
-4. The worker `get()`s a job, emits `job.started`, emits `agent.thought`, then POSTs `/api/generate` in an executor. On success emit `agent.completed` with `result` and `status: SUCCESS`. On error emit `agent.failed`.
-5. `await task_queue.join()` so main waits for the worker, not for submit.
-6. Do not add FastAPI, Redis, or Kafka here.
+Here is the step-by-step procedure:
+1. Instantiate `task_queue` and `event_bus` as `asyncio.Queue()` instances.
+2. Launch `async_agent_worker` and `event_stream_subscriber` as concurrent background tasks using `asyncio.create_task()`.
+3. In `api_submit_task(prompt)`, push the job to `task_queue` and immediately return HTTP 202 metadata.
+4. In the worker loop, pop jobs from `task_queue`, emit `job.started`, execute inference asynchronously via `loop.run_in_executor()`, and emit `agent.completed` with the result.
+5. In the subscriber, read from `event_bus` and stream event frames to the user.
 
 ## Wisdom
-An in-process `asyncio.Queue` is enough to prove 202 plus events. Redis, Kafka, and Celery are the same contract on more machines. A real HTTP route is chapter 10. If you add a framework now, a late 202 could come from the queue or from the framework, and you will not know which.
+Using Python's built-in `asyncio.Queue` allows you to test and validate event-driven patterns with zero external broker dependencies (like Redis or Kafka).
 
 ## The When and Why
-- **When:** a model call can exceed the HTTP timeout.
-- **Why:** holding the request open starves other work and dies at the gateway. 202 frees the caller while the worker talks to Ollama.
+- **When**: Use event queues whenever agent tasks take more than a few seconds, or when building streaming interactive UIs.
+- **Why**: Synchronous blocking calls exhaust server connections and trigger timeout errors. Event-driven architectures ensure snappy APIs and real-time observability.
 
 ## How it works
 

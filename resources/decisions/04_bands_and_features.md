@@ -1,53 +1,58 @@
-# Bands and features
+# Course Tiers and Feature Directory
 
-The walk is still [PATH.md](../../education/PATH.md) 00 through 20. This page does not move folders. It groups the numbered chapters and maps a sentence or a button to the lab.
+The curriculum in this repository follows a step-by-step path from Chapter 00 to Chapter 20 (see [`education/PATH.md`](../../education/PATH.md)).
 
-If a page disagrees with a lab brief, the brief wins. For tool vs wrapper vs two loops vs a job row, fill [01_when_x_vs_y.md](./01_when_x_vs_y.md) first.
+This guide groups the chapters into logical architectural tiers and provides a quick lookup directory so you can easily map practical application requirements to the exact lab where that capability is built.
 
-## Bands
+> **Note**: If any overview guide conflicts with a specific lab brief, the lab brief is always the primary source of truth.
 
-These names are groupings. They are not a second path.
+---
 
-| Band | Folders | What sits here |
+## The 7 Architectural Tiers
+
+| Tier | Chapters & Folders | Core Concepts Covered |
 |---|---|---|
-| Tier 1: The Wire & Protocol | [00](../../education/00_atoms/) [01](../../education/01_the_call/) [02](../../education/02_the_contract/) | Script, POST, `query_llm`, streaming, `messages[]`, structured JSON schemas |
-| Tier 2: The Core Loop & Kernel | [03](../../education/03_the_dispatcher/) [04](../../education/04_the_loop/) [05](../../education/05_the_budget/) [06](../../education/06_the_reliability/) | Dispatcher, ReAct loop, stop rules & budgets, CoT demuxing, loop detection, resilient gateways |
-| Tier 3: Persistence & Memory | [07](../../education/07_the_state/) [08](../../education/08_context_compaction/) [09](../../education/09_agentic_memory_and_rag/) | JSON / SQLite checkpointers, context pruning, episodic facts vs procedural rules, private RAG |
-| Tier 4: Control Flows & Reasoning | [10](../../education/10_the_workflow/) [11](../../education/11_planning_and_reflection/) [12](../../education/12_agent_evals/) | Linear DAGs, state graph workflows, async event queues, plan-and-solve, reflexion, evals |
-| Tier 5: Coordination & Protocols | [13](../../education/13_one_agent/) [14](../../education/14_two_agents/) [15](../../education/15_mcp_and_skills/) | Standalone agent kernel, supervisor-worker topologies, 5-key handoffs, agent cards, MCP, skills |
-| Tier 6: Security, Governance & Runtime | [16](../../education/16_the_shield/) [17](../../education/17_hitl_and_park_resume/) [18](../../education/18_the_job/) [19](../../education/19_the_front_door/) | Subprocess sandboxes, RBAC allowlists, HITL approval, parked states, jobs table, FastAPI SSE |
-| Tier 7: Synthesis | [20](../../education/20_synthesis/) | One host that composes all primitives: enterprise harnesses, SRE agents, spec TDD |
-| Auxiliary Training | [optional_training](../../education/optional_training/) | Pretrain tiny, LoRA/QLoRA adapters, 4-bit GGUF quantization, GRPO reasoning alignment |
-| Judgment | [this folder](./), [notes](../notes/) | When/Why and jargon. No new primitive |
+| **Tier 1: Wire & Protocol** | [00: Atoms](../../education/00_atoms/)<br>[01: The Call](../../education/01_the_call/)<br>[02: The Contract](../../education/02_the_contract/) | Python scripts, HTTP POST requests, `query_llm` wrappers, token streaming, the `messages` array, and structured JSON schemas. |
+| **Tier 2: Core Loop & Kernel** | [03: Dispatcher](../../education/03_the_dispatcher/)<br>[04: The Loop](../../education/04_the_loop/)<br>[05: The Budget](../../education/05_the_budget/)<br>[06: Reliability](../../education/06_the_reliability/) | Tool dispatching, the ReAct loop, execution stop rules and token budgets, Chain-of-Thought (CoT) demuxing, loop cycle detection, and resilient gateways. |
+| **Tier 3: Persistence & Memory** | [07: The State](../../education/07_the_state/)<br>[08: Context Compaction](../../education/08_context_compaction/)<br>[09: Memory & RAG](../../education/09_agentic_memory_and_rag/) | JSON and SQLite session checkpointers, context pruning and summarization, episodic facts vs procedural rules, and private local RAG. |
+| **Tier 4: Control Flow & Planning** | [10: The Workflow](../../education/10_the_workflow/)<br>[11: Planning & Reflection](../../education/11_planning_and_reflection/)<br>[12: Agent Evals](../../education/12_agent_evals/) | Deterministic DAG pipelines, state graph workflows, async event queues, Plan-and-Solve patterns, Reflexion loops, and automated agent evaluation suites. |
+| **Tier 5: Coordination & Standards** | [13: One Agent](../../education/13_one_agent/)<br>[14: Two Agents](../../education/14_two_agents/)<br>[15: MCP & Skills](../../education/15_mcp_and_skills/) | Standalone agent kernels, supervisor-worker topologies, five-key handoff protocols, agent manifests/cards, Model Context Protocol (MCP), and markdown skills. |
+| **Tier 6: Security & Runtime** | [16: The Shield](../../education/16_the_shield/)<br>[17: HITL & Park/Resume](../../education/17_hitl_and_park_resume/)<br>[18: The Job](../../education/18_the_job/)<br>[19: The Front Door](../../education/19_the_front_door/) | Subprocess sandboxes, role-based access control (RBAC), Human-In-The-Loop approval gates, parked state machines, background job tables, and FastAPI SSE endpoints. |
+| **Tier 7: Full Synthesis** | [20: Synthesis](../../education/20_synthesis/) | End-to-end integration combining all primitives: enterprise harness apps, autonomous SRE agents, and specification-driven test-driven development (TDD). |
+| **Auxiliary Training** | [Optional Training](../../education/optional_training/) | Pretraining tiny models, LoRA/QLoRA fine-tuning adapters, 4-bit GGUF quantization, and GRPO reasoning alignment. |
 
-## Feature map
+---
 
-Start from the sentence or the control. Then open the lab.
+## Feature-to-Lab Directory
 
-| I want | Open |
+When you have a specific feature in mind, use this directory to jump directly to the relevant lab:
+
+| What You Want to Build | Where to Look |
 |---|---|
-| Chat from a phone or browser | [19](../../education/19_the_front_door/00_fastapi_sse.md) plus the [13](../../education/13_one_agent/00_persona_tools_loop_state.md) kernel |
-| Stream tokens on a page | [19 lab1](../../education/19_the_front_door/lab1_sse_streaming_api.md), [19 lab3](../../education/19_the_front_door/lab3_frontend_client.md) |
-| Stop a running job from the page | [19 lab2](../../education/19_the_front_door/lab2_websocket_interrupt.md) `{ "type": "interrupt" }` |
-| A CLI instead of a page | [19 lab5](../../education/19_the_front_door/lab5_cli_harness.md) |
-| Hide person-facing vs model-facing text | [19 lab4](../../education/19_the_front_door/lab4_mx_vs_ux.md) |
-| A button mapped to a path and a JSON key | [notes 07](../notes/07_surface_map.md) |
-| Approve now, at this stdin | [17 lab1](../../education/17_hitl_and_park_resume/lab1_hitl_approval.md) |
-| Approve later, same row continues | [17](../../education/17_hitl_and_park_resume/00_hitl_and_park_resume.md) `park_job` |
-| "Any alerts on jarvis?" | [notes 02](../notes/02_one_router.md), [14 wrapper](../../education/14_two_agents/03_skill_vs_two_agents.md), [18](../../education/18_the_job/00_the_job.md). `jarvis` is `host_id` |
-| Run `ansible-playbook` | [03](../../education/03_the_dispatcher/00_tool_dispatch.md) tool `run_playbook`. Rules go in [15 `SKILL.md`](../../education/15_mcp_and_skills/lab2_skills.md) |
-| Watch logs on a schedule | Cron writes a [18](../../education/18_the_job/00_the_job.md) row, or a regex tool if no model is needed |
-| Messy coding without wrecking this chat | [14 wrapper](../../education/14_two_agents/03_skill_vs_two_agents.md). Past fixes in [09](../../education/09_agentic_memory_and_rag/lab1_episodic_vs_procedural.md) facts or files |
-| Two workers, one job list | [18 lab2](../../education/18_the_job/lab2_two_workers.md) `claimed_by` |
-| Stop a long loop with a reason | [05](../../education/05_the_budget/00_the_budget.md) |
-| Hide `<think>` tokens | [06](../../education/06_the_reliability/lab1_cot_demuxer.md) |
-| Survive a crash | [07](../../education/07_the_state/00_save_the_messages.md) / [13](../../education/13_one_agent/00_persona_tools_loop_state.md) session file |
-| Different allowlists (read logs vs run a playbook) | [16](../../education/16_the_shield/lab2_permissions.md), [lab3](../../education/16_the_shield/lab3_agent_rbac.md) |
-| Tool vs wrapper vs two loops vs a job row | [01_when_x_vs_y.md](./01_when_x_vs_y.md) |
-| Where the API sits vs the weight file | [00_script_server_weights.md](./00_script_server_weights.md) |
+| Connect a web frontend or mobile app to your agent | [Chapter 19: FastAPI SSE](../../education/19_the_front_door/00_fastapi_sse.md) paired with [Chapter 13: Kernel](../../education/13_one_agent/00_persona_tools_loop_state.md) |
+| Stream generated tokens directly to a browser interface | [Chapter 19 Lab 1](../../education/19_the_front_door/lab1_sse_streaming_api.md) and [Chapter 19 Lab 3](../../education/19_the_front_door/lab3_frontend_client.md) |
+| Allow users to interrupt or cancel a running task | [Chapter 19 Lab 2: WebSocket Interrupts](../../education/19_the_front_door/lab2_websocket_interrupt.md) |
+| Build an interactive terminal / CLI agent interface | [Chapter 19 Lab 5: CLI Harness](../../education/19_the_front_door/lab5_cli_harness.md) |
+| Separate user-facing chat text from internal model metadata | [Chapter 19 Lab 4: Model Experience vs User Experience](../../education/19_the_front_door/lab4_mx_vs_ux.md) |
+| Prompt a user for immediate confirmation before executing an action | [Chapter 17 Lab 1: HITL Approval](../../education/17_hitl_and_park_resume/lab1_hitl_approval.md) |
+| Pause a task until an administrator approves it asynchronously later | [Chapter 17: Park and Resume](../../education/17_hitl_and_park_resume/00_hitl_and_park_resume.md) |
+| Query a remote host or server safely | [Note 02: One Router](../notes/02_one_router.md), [Chapter 14: Wrapper Tools](../../education/14_two_agents/03_skill_vs_two_agents.md), and [Chapter 18: Jobs](../../education/18_the_job/00_the_job.md) |
+| Run an automated task (like Ansible or shell commands) via tools | [Chapter 03: Tool Dispatch](../../education/03_the_dispatcher/00_tool_dispatch.md) with guidelines in [Chapter 15: SKILL.md](../../education/15_mcp_and_skills/lab2_skills.md) |
+| Run periodic background tasks on a schedule | Use a cron scheduler writing to [Chapter 18: `jobs.json`](../../education/18_the_job/00_the_job.md) |
+| Run isolated trial-and-error code execution safely | [Chapter 14: Skill Wrapper](../../education/14_two_agents/03_skill_vs_two_agents.md) with memory saved in [Chapter 09](../../education/09_agentic_memory_and_rag/lab1_episodic_vs_procedural.md) |
+| Coordinate multiple worker processes sharing a single task list | [Chapter 18 Lab 2: Two Workers](../../education/18_the_job/lab2_two_workers.md) |
+| Prevent infinite loops and control execution costs | [Chapter 05: The Budget](../../education/05_the_budget/00_the_budget.md) |
+| Filter out internal `<think>` reasoning tags from output | [Chapter 06 Lab 1: CoT Demuxer](../../education/06_the_reliability/lab1_cot_demuxer.md) |
+| Restore conversation state after an app crash or restart | [Chapter 07: Saving State](../../education/07_the_state/00_save_the_messages.md) and [Chapter 13: Kernel](../../education/13_one_agent/00_persona_tools_loop_state.md) |
+| Restrict tools based on user roles and permissions | [Chapter 16 Lab 2: Permissions](../../education/16_the_shield/lab2_permissions.md) and [Chapter 16 Lab 3: RBAC](../../education/16_the_shield/lab3_agent_rbac.md) |
 
-## Surface
+---
 
-The page does not run ReAct. [19](../../education/19_the_front_door/01_frontend.md) holds `tokens` and `job_id` and can send interrupt. The loop, the job row, and the allowlist stay in the script.
+## Separating User Interface from Agent Logic
 
-If you are adding a button, name the key it sends or shows, then find that key in [notes 07](../notes/07_surface_map.md). Do not add a second tree of folders for UI.
+In our architecture, the frontend client ([Chapter 19](../../education/19_the_front_door/01_frontend.md)) simply displays streaming tokens and handles user input events. 
+
+The core reasoning loop, state management, background job processing, and security sandboxes reside cleanly inside your backend Python services.
+
+For design decisions on choosing between tools, wrappers, loops, or background workers, refer to [01_when_x_vs_y.md](./01_when_x_vs_y.md).
+

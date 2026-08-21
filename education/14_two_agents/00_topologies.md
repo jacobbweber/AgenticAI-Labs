@@ -1,51 +1,37 @@
-# 14: Two-Agent Topologies
+# 14: Two-Agent Topologies: Orchestration Patterns and Multi-Agent Coordination
 
-After this page you can name hub-and-spoke, a tree, a peer handoff, a capability manifest, and a bus. The labs implement supervisor-worker in `lab1_supervisor_worker.py`, a JSON handoff in `lab2_agent_handoff.py`, and capability manifest discovery in `lab3_agent_card_manifest.py`.
+By the end of this chapter, you will understand and implement multi-agent communication topologies: **Hub-and-Spoke (Supervisor-Worker)**, **Peer Handoff**, and **Agent Capability Manifests (Agent Cards)**.
+
+In Chapter 13, we built a self-contained single-agent harness. In this chapter, we explore how multiple specialized agents collaborate efficiently without polluting each other's context or leaking prompts.
 
 ## Data
-A **topology** is the list of who starts a call, who waits, and who joins the answers.
-
-**Hub-and-spoke** is one supervisor plus two or more workers. The supervisor is the hub. Each worker is a spoke. The supervisor starts both workers, waits for both, and prints or merges the results. `lab1_supervisor_worker.py` is this shape. The supervisor function is `supervisor_orchestrator`. The workers are `worker_security_auditor` and `worker_doc_generator`.
-
-A **worker** is one isolated prompt plus one model call. Isolated means the worker does not see the other worker's `messages` list or system prompt. Each worker builds its own `prompt` string and POSTs it.
-
-**Fan-out** is starting more than one worker at the same time. In the lab that is `asyncio.gather(worker_security_auditor(...), worker_doc_generator(...))`.
-
-**Fan-in** is joining those returns in the supervisor. Each worker returns `{ "role": "string", "output": "string" }`. The supervisor loops that list and prints both reports.
-
-A **tree** is a supervisor that starts a worker that itself starts more workers. The labs do not implement a tree.
-
-A **peer handoff** is one agent finishing and passing a JSON object to a second agent. That is `lab2_agent_handoff.py` and the next page.
-
-An **agent capability manifest** (`agent_card.json`) is a structured declaration of an agent's identity, version, capabilities, skill schemas, transport endpoint, and runtime policy for discovery and dynamic routing. That is `lab3_agent_card_manifest.py`.
-
-A **bus** is many agents publishing to a shared queue (Kafka, a gossip swarm). There is no bus in this chapter.
-
-`OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. The intended route is `POST /api/chat`. Port `11434` is the Ollama listener.
+We define three primary multi-agent topologies:
+1. **Hub-and-Spoke (Supervisor-Worker)**: A central supervisor coordinates multiple specialized workers in parallel (`asyncio.gather()`), collecting and merging their findings (e.g. security audits and technical documentation).
+2. **Peer Handoff (A2A Transfer)**: One agent executes its task and passes a structured JSON envelope directly to a peer agent across role boundaries.
+3. **Capability Manifest (`agent_card.json`)**: A machine-readable declaration of an agent's identity, version, capabilities, skill schemas, and transport endpoints for dynamic discovery.
 
 ## Information
-One agent from chapter 07 keeps one persona and one `messages` list. Two specialist jobs in that same list mix. The auditor instructions leak into the writer reply, or the writer instructions leak into the audit.
+When a single agent is assigned multiple complex personas (e.g. auditing security vulnerabilities AND writing customer documentation), prompt instructions frequently bleed across tasks, degrading output quality.
 
-Two agents split the work. The supervisor keeps the goal (here: one `code_snippet`). Each worker keeps a narrow system prompt and makes its own POST. The workers do not share a session file.
-
-The new fact is the join. Without `asyncio.gather` you have two scripts you run by hand. With it you have one process that fans out and fans in.
-
-Swarm and Kafka buses are later products, not this chapter.
+Multi-agent topologies solve this:
+- **Isolated Contexts**: Each worker receives only the relevant system persona and snippet without seeing peer intermediate reasoning.
+- **Concurrent Execution**: Fan-out execution with `asyncio.gather()` processes independent sub-tasks in parallel, dramatically reducing total latency.
+- **Structured Fan-In**: The supervisor joins individual worker reports into a coherent consolidated summary.
 
 ## Knowledge
-1. Pick a topology. For this lab pick hub-and-spoke.
-2. Write one supervisor function (`supervisor_orchestrator`) and two worker coroutines.
-3. Give each worker its own system prompt and no extra tools.
-4. Fan-out with `asyncio.gather`. Each worker POSTs `model`, `prompt`, `stream: false` to `{OLLAMA_HOST}/api/chat` (intended) or `/api/generate` (what the reference script sends).
-5. Fan-in the list of `{ "role", "output" }` dicts and print both.
-6. Do not add a Kafka topic, a gossip loop, or a third worker.
+Here is the step-by-step procedure:
+1. Select the appropriate topology (e.g. hub-and-spoke for parallel tasks, peer handoff for sequential transitions).
+2. Define narrow, specialized system personas for each worker.
+3. Implement `asyncio.gather()` in `supervisor_orchestrator()` to fan out requests concurrently.
+4. Collect standardized `{role: str, output: str}` dictionaries from each worker and merge them into a unified report.
+5. Define declarative `agent_card.json` manifests for automated capability discovery.
 
 ## Wisdom
-Two workers is enough to prove the topology. A third worker, a tree, or a gossip swarm adds failure modes (who timed out, who wrote the join) that are not this chapter. Tools and a permission matrix are chapter 09. A FastAPI host is chapter 10.
+Start with simple two-agent topologies before adding complex swarms. Isolated prompts and clean handoff envelopes solve 95% of multi-agent coordination needs without heavy distributed infrastructure.
 
 ## The When and Why
-- **When:** one context cannot hold two specialist jobs without mixing them.
-- **Why:** isolated prompts keep tools and instructions from leaking across roles. The supervisor still owns the goal and the join.
+- **When**: When tasks require distinct skill sets or when sub-tasks can be executed in parallel without shared conversational state.
+- **Why**: Single long prompts with conflicting personas cause prompt confusion. Multi-agent topologies keep prompts focused, modular, and fast.
 
 ## How it works
 

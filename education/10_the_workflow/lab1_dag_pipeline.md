@@ -1,101 +1,102 @@
-# Lab 1: DAG pipeline
+# Lab 1: Building a Deterministic DAG Pipeline with LLM Triage
 
-A dict has gone ingest, router, one worker, format, and the printed payload has `status` `COMPLETED` and a `processed_intent`.
+In this lab, you will build a 4-stage Directed Acyclic Graph (DAG) pipeline that ingests user requests, uses an LLM router to classify user intent (`code_fix` vs `general_qa`), dispatches to the appropriate worker, and outputs a formatted payload with status `COMPLETED`.
+
+---
 
 ## What you touch
 - Script: `lab1_dag_pipeline.py`
-- Functions: `node_ingest_request`, `node_route_intent`, `node_worker_code_fix`, `node_worker_general_qa`, `node_format_output`, `run_dag_pipeline`
-- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://127.0.0.1:11434/api/generate`)
-- Keys sent (router only): `model`, `prompt`, `stream` (`false`), `options.temperature` (`0.0`)
-- Keys read: `response` (then `json.loads` for `intent` and `confidence`)
-- State keys: `raw_input`, `timestamp`, `status`, `intent`, `confidence`, `worker_output`, `final_payload`
-- Prompt in `__main__`: `Fix the syntax error on line 42 in main.py where a closing parenthesis is missing.`
+- Node Functions:
+  - `node_ingest_request(raw_user_input) -> dict`
+  - `node_route_intent(state: dict) -> dict` (LLM triage)
+  - `node_worker_code_fix(state: dict) -> dict` (code worker stub)
+  - `node_worker_general_qa(state: dict) -> dict` (QA worker stub)
+  - `node_format_output(state: dict) -> dict`
+  - `run_dag_pipeline(raw_user_input: str) -> dict`
+- URL / Endpoint: `{OLLAMA_HOST}/api/generate` (defaults to `http://127.0.0.1:11434/api/generate`)
+- Test Prompt: `"Fix the syntax error on line 42 in main.py where a closing parenthesis is missing."`
+
+---
 
 ## Steps
 ```mermaid
 flowchart TD
-    subgraph lab1_dag_script [This script]
-        ING["node_ingest_request"]
-        RTE["node_route_intent"]
-        FIX["node_worker_code_fix"]
-        QA["node_worker_general_qa"]
-        FMT["node_format_output"]
-    end
-    subgraph lab1_dag_host [Ollama on port 11434]
-        GEN["POST /api/generate"]
-    end
-    ING --> RTE
-    RTE --> GEN
-    GEN -->|"response"| RTE
-    RTE -->|"code_fix"| FIX
-    RTE -->|"general_qa"| QA
-    FIX --> FMT
-    QA --> FMT
+    A["User Input"] --> B["node_ingest_request()"]
+    B --> C["node_route_intent() (POST /api/generate)"]
+    C --> D{"Parsed intent"}
+    D -->|"code_fix"| E["node_worker_code_fix()"]
+    D -->|"general_qa"| F["node_worker_general_qa()"]
+    E & F --> G["node_format_output()"]
+    G --> H["Return final_payload with status: COMPLETED"]
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://127.0.0.1:11434` and `llama3.2:1b`. The route is `{host}/api/generate`.
-2. Write `node_ingest_request(raw_user_input)`. Return `{ "raw_input": raw_user_input, "timestamp": time.time(), "status": "INGESTED" }`.
-3. Write `node_route_intent(state)`. POST a classifier prompt that asks for raw JSON `{ "intent": "code_fix" or "general_qa", "confidence": 0.0 to 1.0 }`. Send `model`, `prompt`, `stream: false`, `options.temperature: 0.0`.
-4. Read `data["response"]`. If the text starts with a markdown json fence, strip the fence. `json.loads` the text. Set `state["intent"]` and `state["confidence"]`. On any exception, set `intent` to `general_qa` and `confidence` to `0.0`.
-5. Write the two workers. Each sets `state["worker_output"]` to a stub string that includes `state["raw_input"]`. Do not POST. Do not open `main.py`.
-6. Write `node_format_output`. Set `state["final_payload"]` to `{ "status": "COMPLETED", "processed_intent": state["intent"], "result": state["worker_output"], "pipeline_duration_seconds": round(time.time() - state["timestamp"], 2) }`.
-7. Write `run_dag_pipeline`. Call ingest, route, then `if state["intent"] == "code_fix"` the code worker else the QA worker, then format. Print `json.dumps(state["final_payload"], indent=2)`.
-8. In `__main__`, call `run_dag_pipeline` with the line-42 prompt. If the host is unreachable, the router fallback should still print a completed payload with `general_qa`.
+1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from environment variables, defaulting to `http://127.0.0.1:11434` and `llama3.2:1b`.
+2. Implement `node_ingest_request(raw_user_input)`:
+   - Return `{"raw_input": raw_user_input, "timestamp": time.time(), "status": "INGESTED"}`.
+3. Implement `node_route_intent(state)`:
+   - Prompt the model for a raw JSON classification: `{"intent": "code_fix" | "general_qa", "confidence": float}`.
+   - Clean markdown code fences (` ```json `) and parse with `json.loads()`.
+   - On exception, gracefully fall back to `{"intent": "general_qa", "confidence": 0.0}`.
+4. Implement worker stubs (`node_worker_code_fix`, `node_worker_general_qa`) to populate `worker_output`.
+5. Implement `node_format_output(state)`:
+   - Construct `final_payload` with `status: "COMPLETED"`, `processed_intent`, `result`, and `pipeline_duration_seconds`.
+6. Implement `run_dag_pipeline(raw_user_input)` to sequence stages and print the formatted payload.
+7. Test with the line-42 syntax error prompt and verify that `processed_intent` routes to `code_fix`.
+
+---
 
 ## Data contract
-Only the keys this script sends and reads.
 
-**Router request** `POST /api/generate`
+**Router Classification Output**
 
 ```json
 {
-  "model": "llama3.2:1b",
-  "prompt": "string",
-  "stream": false,
-  "options": { "temperature": 0.0 }
+  "intent": "code_fix",
+  "confidence": 0.98
 }
 ```
 
-**Router reads** `response`.
-
-**Parsed from `response`**
-
-```json
-{ "intent": "code_fix", "confidence": 0.98 }
-```
-
-**Printed `final_payload`**
+**Final Formatted Payload (`final_payload`)**
 
 ```json
 {
   "status": "COMPLETED",
   "processed_intent": "code_fix",
-  "result": "string",
-  "pipeline_duration_seconds": 0
+  "result": "[CODE PATCH] Analyzed and generated automated fix for: Fix the syntax error on line 42...",
+  "pipeline_duration_seconds": 0.45
 }
 ```
 
+---
+
 ## Run
-From the repo root:
+From the repository root, run:
 
 ```bash
-OLLAMA_HOST=http://127.0.0.1:11434 OLLAMA_MODEL=llama3.2:1b python education/10_the_workflow/lab1_dag_pipeline.py
-```
-
-```powershell
-$env:OLLAMA_HOST="http://127.0.0.1:11434"
-$env:OLLAMA_MODEL="llama3.2:1b"
 python education/10_the_workflow/lab1_dag_pipeline.py
 ```
 
+```powershell
+python education/10_the_workflow/lab1_dag_pipeline.py
+```
+
+---
+
 ## What you should see
-`[NODE 1: INGESTION]`, then `[NODE 2: LLM ROUTER]` with `code_fix` and a confidence, then `[NODE 3A: CODE WORKER]`, then `[NODE 4: FORMATTER]`, then a JSON payload with `status: COMPLETED` and `processed_intent: code_fix`. If the model wraps JSON in fences, the strip in step 4 still parses. If parse or HTTP fails, you see `[NODE 2: FALLBACK CASCADE]` and `processed_intent` is `general_qa` with `[NODE 3B: QA WORKER]`. If you see `URLError` and no fallback, the `except` is missing.
+- `[NODE 1: INGESTION]` initializing pipeline state.
+- `[NODE 2: LLM ROUTER]` classifying prompt as `code_fix`.
+- `[NODE 3A: CODE WORKER]` processing the code patch stub.
+- `[NODE 4: FORMATTER]` assembling final telemetry and printing the completed JSON payload.
+
+---
 
 ## Stop here
-This is not ReAct. Do not let the model pick the next node. Do not add a back edge. Do not add a queue. The workers stay stubs. Next: [lab2_graph_workflow.md](./lab2_graph_workflow.md) or [01_graph_workflows.md](./01_graph_workflows.md).
+You have successfully built a deterministic DAG with LLM triage! In Lab 2, we will create state graphs with cyclic back edges.
+
+Next up: [Lab 2: Graph Workflows](./lab2_graph_workflow.md).
+
+---
 
 ## Notes
-- Boundary: `parsed = json.loads(raw_text)` then `intent = parsed.get("intent", "general_qa")`. Exceptions fall back.
-- Route is `/api/generate`, not `/api/chat`.
-- Keys sent and read match this brief. Do not edit the `.py` in the repo.
-- Chapter 08 uses a similar branch between two agents.
+*(Record your DAG pipeline execution logs here)*
+

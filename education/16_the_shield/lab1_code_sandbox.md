@@ -1,70 +1,77 @@
-# Lab 1: Code sandbox
+# Lab 1: Building a Subprocess Code Execution Sandbox
 
-Model-requested code ran outside the agent process.
+In this lab, you will build an isolated code execution sandbox `execute_sandboxed_python()` that runs untrusted Python code in an ephemeral temporary directory, captures `stdout`/`stderr`, and enforces a watchdog timeout to kill infinite loops.
+
+---
 
 ## What you touch
 - Script: `lab1_code_sandbox.py`
-- Function: `execute_sandboxed_python(code_snippet, timeout_seconds=5.0)`
-- Temp dir: `tempfile.TemporaryDirectory(prefix="agent_sandbox_")`
-- Child file: `sandbox_script.py` inside that dir
-- Child start: `subprocess.Popen([sys.executable, script_path], cwd=temp_dir, stdout=PIPE, stderr=PIPE)`
-- Wait: `process.communicate(timeout=timeout_seconds)`. On timeout, `process.kill()`
-- Return keys: `status`, `exit_code`, `stdout`, `stderr`, `duration_seconds`
-- Three snippets in `__main__`: valid `15 * 3` print, `data[10]` IndexError, `while True` loop with `timeout_seconds=2.0`
-- This script does not POST. It does not read `OLLAMA_HOST` or `OLLAMA_MODEL`.
+- Main Function: `execute_sandboxed_python(code_snippet: str, timeout_seconds: float = 5.0) -> dict`
+- Isolation Mechanisms:
+  - Working Directory: `tempfile.TemporaryDirectory(prefix="agent_sandbox_")`
+  - Subprocess Execution: `subprocess.Popen([sys.executable, script_path], cwd=temp_dir, stdout=PIPE, stderr=PIPE)`
+  - Timeout Watchdog: `process.communicate(timeout=timeout_seconds)` $\rightarrow$ `process.kill()` on timeout
+- Pure Python logic (no network calls required)
+
+---
 
 ## Steps
 ```mermaid
 flowchart TD
-    subgraph lab1_sand_script [lab1_code_sandbox.py]
-        FN["execute_sandboxed_python"]
-        TMP["agent_sandbox_ temp dir"]
-    end
-    subgraph lab1_sand_child [Child process]
-        PY["sandbox_script.py"]
-    end
-    FN -->|"write code_snippet"| TMP
-    TMP --> PY
-    FN -->|"Popen"| PY
-    PY -->|"stdout stderr exit_code"| FN
+    A["Raw Code Snippet"] --> B["Create Temp Directory ('agent_sandbox_...')"]
+    B --> C["Write to 'sandbox_script.py'"]
+    C --> D["Spawn Subprocess: sys.executable sandbox_script.py"]
+    D --> E{"Execution within timeout?"}
+    E -->|"Success (Exit 0)"| F["Return {status: 'COMPLETED', stdout: ...}"]
+    E -->|"Error (Exit != 0)"| G["Return {status: 'FAILED', stderr: ...}"]
+    E -->|"Timeout Expired"| H["Invoke process.kill() -> Return {status: 'TIMEOUT_EXCEEDED'}"]
 ```
 
-1. Write `execute_sandboxed_python`. Create a `TemporaryDirectory` with prefix `agent_sandbox_`. Write `code_snippet` to `sandbox_script.py` in that dir.
-2. Start `[sys.executable, script_path]` with `cwd` set to the temp dir. Capture stdout and stderr as text.
-3. Call `communicate(timeout=timeout_seconds)`. Default timeout is `5.0`. On `subprocess.TimeoutExpired`, `kill` the child and return `status` `TIMEOUT_EXCEEDED`, `exit_code` `-1`.
-4. On a normal finish, set `status` to `COMPLETED` if `exit_code` is 0, else `FAILED`. Put stripped stdout and stderr in the return dict. Include `duration_seconds`.
-5. In `__main__`, run three calls: the `15 * 3` print, the `data[10]` IndexError, and the infinite loop with `timeout_seconds=2.0`. Print each return dict.
-6. Confirm you see `COMPLETED`, `FAILED`, and `TIMEOUT_EXCEEDED`. Do not `eval` the string in-process. Do not add Docker or gVisor.
+1. Implement `execute_sandboxed_python(code_snippet, timeout_seconds=5.0)`:
+   - Create a temporary working directory with prefix `"agent_sandbox_"`.
+   - Write `code_snippet` into `sandbox_script.py` inside the temporary directory.
+   - Launch the subprocess using `sys.executable` and capture text streams.
+   - Call `process.communicate(timeout=timeout_seconds)` within a try/except block.
+   - On `subprocess.TimeoutExpired`, kill the process and return status `TIMEOUT_EXCEEDED` with `exit_code: -1`.
+   - On normal completion, set status to `COMPLETED` if exit code is 0, else `FAILED`.
+2. In `__main__`, run the sandbox against three test cases:
+   - **Case 1 (Valid)**: Simple multiplication calculation (`15 * 3`).
+   - **Case 2 (Runtime Error)**: List indexing error (`IndexError`).
+   - **Case 3 (Runaway Loop)**: Infinite `while True` loop with a short 2.0-second timeout.
+3. Verify that all three statuses (`COMPLETED`, `FAILED`, `TIMEOUT_EXCEEDED`) are handled cleanly.
+
+---
 
 ## Data contract
-Intended keys this lab should return. The reference file adds two more (Notes).
 
-**Intended return**
-
-```json
-{
-  "stdout": "string",
-  "stderr": "string",
-  "exit_code": 0
-}
-```
-
-**Reference script return**
+**Sandbox Return Payload**
 
 ```json
 {
   "status": "COMPLETED",
   "exit_code": 0,
-  "stdout": "string",
-  "stderr": "string",
-  "duration_seconds": 0.0
+  "stdout": "Result: 45",
+  "stderr": "",
+  "duration_seconds": 0.08
 }
 ```
 
-`status` is `COMPLETED`, `FAILED`, or `TIMEOUT_EXCEEDED`.
+**Timeout Return Payload**
+
+```json
+{
+  "status": "TIMEOUT_EXCEEDED",
+  "exit_code": -1,
+  "stdout": "",
+  "stderr": "Execution exceeded timeout limit of 2.0 seconds.",
+  "duration_seconds": 2.01
+}
+```
+
+---
 
 ## Run
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/16_the_shield/lab1_code_sandbox.py
@@ -74,15 +81,22 @@ python education/16_the_shield/lab1_code_sandbox.py
 python education/16_the_shield/lab1_code_sandbox.py
 ```
 
-This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`. Do not set those vars for this lab.
+---
 
 ## What you should see
-`=== STARTING SUBPROCESS CODE EXECUTION SANDBOX LAB ===`. Test 1 prints `Result: 45` and `status` `COMPLETED`, `exit_code` 0. Test 2 prints an `IndexError` traceback in `stderr` and `status` `FAILED`. Test 3 prints `[TIMEOUT] [SANDBOX ALERT] Timeout Exceeded (2.0s)!` and `status` `TIMEOUT_EXCEEDED`, `exit_code` `-1`. If the loop never dies, `communicate` was called without a timeout or `kill` did not run.
+- **Test 1**: Status `COMPLETED`, `exit_code: 0`, and `stdout: "Result: 45"`.
+- **Test 2**: Status `FAILED`, non-zero exit code, and captured `IndexError` in `stderr`.
+- **Test 3**: Status `TIMEOUT_EXCEEDED`, `exit_code: -1`, with watchdog kill message after 2.0 seconds.
+
+---
 
 ## Stop here
-Do not add Docker, gVisor, Wasm, a network namespace, or a seccomp profile. Do not `eval` in-process. Next: [lab2_permissions.md](./lab2_permissions.md).
+You have successfully built an isolated code execution sandbox! In Lab 2, we will implement a high-risk tool permission allowlist.
+
+Next up: [Lab 2: Permissions Allowlist](./lab2_permissions.md).
+
+---
 
 ## Notes
-- Keep the three tests: valid print, `IndexError`, infinite loop.
-- Contract drift vs `lab1_code_sandbox.py`: return object adds `status` and `duration_seconds`. No `OLLAMA_HOST` / `OLLAMA_MODEL`. No CPU or memory cgroup. The child can still open the network; isolation is a temp `cwd` and a timeout. The intended contract is a child process that returns text and an exit code. Write that in your copy. Do not edit the `.py` in the repo.
-- Chapter 15 can call this function from the harness.
+*(Record your sandbox test outputs and execution timings here)*
+

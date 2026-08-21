@@ -1,44 +1,38 @@
-# 09: Private RAG
+# 09: Private RAG: Local Retrieval and In-Flight PII Redaction
 
-After this chapter a local index answers from your files. The embed and the search stay on this machine. There is no cloud embed API on this page.
+By the end of this chapter, you will build a completely local, air-gapped Retrieval-Augmented Generation (RAG) pipeline that retrieves relevant context chunks from local documents and redacts personally identifiable information (PII) before model generation.
+
+In Chapter 08, we shrunk conversation history. In this chapter, we augment model prompts with external document chunks without sending private data to external cloud APIs.
 
 ## Data
-**RAG** means: retrieve text chunks, put them in the prompt, then generate. The model does not see your whole corpus. It sees the chunks you stuffed into `prompt` (or into `messages`).
-
-A **chunk** is a small piece of a local file. The intended shape is `{ "text": "string", "source": "path" }`. `text` is what goes in the prompt. `source` is the file path you can print as a citation.
-
-An **index** is the local store of those chunks. The intended store is on disk next to the script (or in RAM for a tiny lab). Search returns the top chunks for a query.
-
-**PII redaction** happens before you index. Emails and names become tokens such as `[EMAIL_1]` and `[PERSON_1]`. A vault dict maps token to original. After the model replies, you restore the originals in the printed string. The POST body should not contain the raw email.
-
-The lab file is `lab2_local_private_rag.py` (moved from labs/07). Functions: `LocalPIIRedactor.sanitize`, `LocalPIIRedactor.restore`, `LocalVectorStore.add_document`, `LocalVectorStore.search`, `run_airgapped_private_rag`. Module leftover `02_local_first_private_data` is the same idea: local files, local search, local POST.
-
-`OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. The route is `POST /api/generate`.
+A private RAG pipeline operates on three core primitives:
+1. **Document Chunks**: Small text segments extracted from local files:
+   `{"text": "string", "source": "path/to/doc.txt"}`.
+2. **Local Vector / Keyword Index**: An in-memory or on-disk search index mapping query terms to the most relevant document chunks.
+3. **In-Flight PII Redactor**: A privacy filter that replaces sensitive identifiers (names, emails, SSNs) with masked tokens (e.g. `[PERSON_1]`, `[EMAIL_1]`) prior to embedding or prompting, storing the mapping in an internal vault dictionary to restore original values in the final rendered response.
 
 ## Information
-Without chunks, the model guesses. With chunks, the answer can quote a local `source` path and the `text` you retrieved.
-
-The path is: index local files, query the index, build a prompt that contains the chunks, POST, print `response`. Redact PII on the way in. Restore PII on the way out.
-
-This is not a hosted vector service. Chroma Cloud, Pinecone, and a vendor embed API are out of scope. Chapter 00 already taught the POST. This page adds the retrieve-and-stuff step.
-
-Compaction (`00_context_engine.md`) shrinks the `messages` list you already have. RAG adds new text from files you did not put in that list. Codebase indexing (`03_codebase_indexing.md`) is the same retrieve-and-stuff idea pointed at a repo.
+Retrieval-Augmented Generation bridges the gap between static model weights and local private datasets:
+- Instead of fine-tuning or uploading confidential files to third-party providers, the application searches local files and injects only the relevant text chunks into the prompt context.
+- In-flight PII redaction guarantees that sensitive names and addresses never touch inference logs or external servers.
 
 ## Knowledge
-1. Read local files (or the lab's `private_docs` list). Split into chunks `{ "text", "source" }`.
-2. Run `LocalPIIRedactor.sanitize` on each chunk `text` (and on the query) before you index.
-3. Call `LocalVectorStore.add_document(doc_id, content)` for each sanitized chunk.
-4. Call `LocalVectorStore.search(query)` and take the top chunks.
-5. Build `prompt` as `Context: {chunk text}\nQuestion: {query}\nAnswer in 1 sentence:`.
-6. POST `model`, `prompt`, `stream: false`, `options.temperature: 0.0` to `{OLLAMA_HOST}/api/generate`.
-7. Read `data["response"]`. Run `LocalPIIRedactor.restore` before you print.
+Here is the step-by-step procedure:
+1. Load local documents and split them into distinct text chunks.
+2. Pass chunks through `LocalPIIRedactor.sanitize()` to tokenize names and emails into placeholders.
+3. Index the sanitized chunks in `LocalVectorStore`.
+4. Sanitize the incoming user query and retrieve top matching chunks.
+5. Format the prompt with the retrieved context:
+   `Context: {chunk_text}\nQuestion: {sanitized_query}\nAnswer in 1 sentence:`
+6. Send the request to `{OLLAMA_HOST}/api/generate`.
+7. Pass the generated text through `LocalPIIRedactor.restore()` to substitute original entities back into the final answer.
 
 ## Wisdom
-Stop when one local chunk is in the prompt and the printed answer came from that chunk. Do not add a hosted vector service, a cloud embed API, or a codebase walker on this page. If you add them now, a wrong answer could come from the index, the redactor, or the POST.
+Keeping embedding, indexing, and inference entirely on your local machine ensures complete data privacy for enterprise and personal applications.
 
 ## The When and Why
-- **When:** the answer must come from local files, and those files must not leave this machine.
-- **Why:** the model will guess without chunks. A cloud embed API would send the file text off-box.
+- **When**: Use local RAG whenever an AI application requires answers grounded in private files, medical records, or proprietary documentation.
+- **Why**: Language models hallucinate when answering questions about private data they were not trained on. Local RAG provides accurate, cited answers while keeping sensitive data secure.
 
 ## How it works
 

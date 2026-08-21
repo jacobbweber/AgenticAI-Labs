@@ -1,12 +1,12 @@
-# Planning, ReAct, and Reflexion at the Code and State Level
+# Planning, ReAct, and Reflexion: How Reasoning Loops Work
 
-When language models attempt complex, multi-step engineering tasks, zero-shot generation frequently fails due to compounding errors, context drift, and tool execution failures. To overcome these limitations, three primary control architectures have emerged:
+When language models attempt complex, multi-step tasks, answering in a single attempt often leads to errors. To help models solve difficult problems reliably, developers use three core reasoning patterns:
 
-1. **ReAct** (Reason + Act: greedy, step-by-step reaction)
-2. **Plan-and-Solve / Task Decomposition** (upfront structured planning with dependency tracking)
-3. **Reflexion** (evaluator-guided self-critique and trial-and-error retry loops)
+1. **ReAct** (Reason + Act: step-by-step thinking and tool execution).
+2. **Plan-and-Solve / Task Decomposition** (creating a structured plan first, then executing steps).
+3. **Reflexion** (learning from mistakes through automated critique and retry loops).
 
-This document breaks down each pattern to its literal code, data structures, state machine transitions, and memory transformations.
+This guide explores each pattern with clear code examples, data contracts, and state transition diagrams.
 
 ---
 

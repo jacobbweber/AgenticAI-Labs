@@ -1,82 +1,98 @@
-# Lab 3: Codebase index hits
+# Lab 3: Building a Codebase and Symbol Index
 
-This chapter folder is walked. A substring query prints hits with `path` and `span`. There are no embeddings and no HTTP.
+In this lab, you will write a filesystem scanner that walks source directories, parses function and class definitions into symbols, and performs substring queries returning exact file paths and line ranges (`path`, `span`).
+
+---
 
 ## What you touch
-- Script: `lab3_codebase_index.py` (write it next to this brief; there is no reference `.py` yet)
-- Root: `os.path.dirname(__file__)` (this `education/09_agentic_memory_and_rag` folder)
-- Function: `iter_files(root)` yields paths. Skip `.git`. Keep only `.py` and `.md`
-- Function: `index_file(path)` returns `{ "path": path, "text": text, "symbols": [names] }`
-- Function: `search_index(index, query)` returns a list of `{ "path": "string", "span": "string" }`
-- Query in `__main__`: `run_airgapped_private_rag`
-- `span` is a 1-based line range `start:end` for the matching line (a single line is `N:N`)
-- No HTTP. This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`.
-- No embeddings. No PII redaction. Do not treat lab 3 as this lab.
+- Script to create: `lab3_codebase_index.py`
+- Target Directory: `os.path.dirname(__file__)` (this chapter folder)
+- Main Functions:
+  - `iter_files(root: str)`
+  - `index_file(path: str) -> dict`
+  - `search_index(index: list, query: str) -> list`
+- Target Search Query: `"run_airgapped_private_rag"`
+- Pure Python logic (no network calls required)
+
+---
 
 ## Steps
 ```mermaid
-flowchart LR
-    subgraph lab4_idx_script [This script]
-        WALK["iter_files"]
-        IDX["index_file"]
-        Q["search_index"]
-    end
-    subgraph lab4_idx_tree [This folder]
-        FILES[".py and .md"]
-    end
-    FILES --> WALK
-    WALK --> IDX
-    IDX --> Q
+flowchart TD
+    A["Target Directory (this folder)"] --> B["iter_files(): Filter .py and .md"]
+    B --> C["index_file(): Read text & extract symbols (def/class)"]
+    C --> D["In-Memory Index List"]
+    D --> E["search_index(index, query='run_airgapped_private_rag')"]
+    E --> F["Return Hits: [{path, span: 'start:end'}]"]
 ```
 
-1. Write `iter_files(root)`. `os.walk` the root. Skip any directory named `.git`. Yield files whose names end with `.py` or `.md`.
-2. Write `index_file(path)`. Read the file as text. Collect `symbols`: for each line, if it starts with `def ` or `class ` (after strip), take the name before `(` or `:`. Return `{ "path": path, "text": text, "symbols": names }`.
-3. Write `search_index(index, query)`. For each record, split `text` into lines. If a line contains `query`, append `{ "path": record["path"], "span": f"{n}:{n}" }` where `n` is the 1-based line number. Also, if `query` is in `symbols`, keep that hit (the `def` line already matches the substring).
-4. In `__main__`, set `root` to `os.path.dirname(__file__)`. Build `index` by calling `index_file` on each `iter_files` path. Call `search_index(index, "run_airgapped_private_rag")`.
-5. Print each hit as `HIT path=` plus the path plus ` span=` plus the span. Print `hit_count` as the length of the list.
-6. Confirm at least one hit whose path ends with `lab2_local_private_rag.py` and whose span looks like `N:N`. Do not POST. Do not call `sanitize` or `restore`.
+1. Implement `iter_files(root: str)`:
+   - Walk directories using `os.walk()`, skipping `.git` folders.
+   - Yield file paths ending in `.py` or `.md`.
+2. Implement `index_file(path: str) -> dict`:
+   - Read file contents.
+   - Scan for lines beginning with `def ` or `class ` to extract symbol names.
+   - Return `{"path": path, "text": text, "symbols": [symbol_names]}`.
+3. Implement `search_index(index: list, query: str) -> list`:
+   - For each record, check lines containing `query` and format `span` as `f"{line_num}:{line_num}"` (1-indexed).
+   - Return list of `{"path": path, "span": span}` hits.
+4. In `__main__`:
+   - Build index for `os.path.dirname(__file__)`.
+   - Search for `"run_airgapped_private_rag"`.
+   - Print each match with `HIT path=... span=...` and total `hit_count`.
+   - Verify that at least one hit points to `lab2_local_private_rag.py`.
+
+---
 
 ## Data contract
-Only the keys this script writes and reads.
 
-**Index record**
-
-```json
-{ "path": "string", "text": "string", "symbols": ["run_airgapped_private_rag"] }
-```
-
-**Hit**
+**Index Record Structure**
 
 ```json
-{ "path": "string", "span": "66:66" }
+{
+  "path": "education/09_agentic_memory_and_rag/lab2_local_private_rag.py",
+  "text": "...",
+  "symbols": ["run_airgapped_private_rag"]
+}
 ```
 
-`span` is `start:end` in 1-based line numbers. A one-line match is `N:N`. The exact `N` depends on `lab2_local_private_rag.py`. Do not hardcode the number.
+**Search Hit Result**
 
-The script does not POST. Lab 3 is document RAG. This lab is a walk plus a substring.
+```json
+{
+  "path": "education/09_agentic_memory_and_rag/lab2_local_private_rag.py",
+  "span": "66:66"
+}
+```
+
+---
 
 ## Run
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/09_agentic_memory_and_rag/lab3_codebase_index.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/09_agentic_memory_and_rag/lab3_codebase_index.py
 ```
 
-This script ignores `OLLAMA_HOST` and `OLLAMA_MODEL`. They are listed so the lab Run block matches the other chapters. There is no HTTP call.
+---
 
 ## What you should see
-One or more `HIT path=...lab2_local_private_rag.py span=N:N` lines, then `hit_count` greater than 0. The path is under `education/09_agentic_memory_and_rag`. If `hit_count` is 0, the walk skipped `.py` files or the query string is wrong. If you see `[PERSON_1]` or a sanitized chunk, you opened lab 3. If you see a POST, you added HTTP this lab does not need.
+- One or more formatted `HIT path=... span=...` lines pointing to `lab2_local_private_rag.py`.
+- `hit_count` greater than zero indicating successful file discovery and line matching.
+
+---
 
 ## Stop here
-This is a walk and a substring. Do not add embeddings. Do not add tree-sitter. Do not redact PII. Do not POST. Lab 1 is the window. Lab 2 is fact vs how-to. Lab 3 is private RAG.
+You have successfully indexed codebase symbols and paths! In Chapter 10, we will build state graph orchestration and multi-node execution flows.
+
+Next up: [Chapter 10: State Graphs and Router Orchestration](../10_state_graphs_and_routing/00_state_graphs_and_routing.md).
+
+---
 
 ## Notes
-- Write `lab3_codebase_index.py` next to this brief. There is no reference `.py` in the repo yet.
-- Skip `.git` and keep `.py` / `.md` only so the walk stays small.
-- Keys written and read match this brief. Do not edit other `.py` files in the repo.
+*(Record your codebase indexing results and hit spans here)*
+

@@ -1,38 +1,44 @@
-# 01: The Call
+# 01: The Call: Function Wrappers and Token Streaming
 
-After this chapter you have a function `query_llm(prompt) -> str` and you can read tokens as they arrive. Chapter 00 was one raw POST in the script body. This chapter puts that POST in a function, then turns `stream` on.
+By the end of this chapter, you will have a clean, reusable Python function `query_llm(prompt) -> str` and will understand how to stream response tokens to your terminal in real time.
+
+In Chapter 00, we wrote a raw HTTP POST request in the main body of a script. In this chapter, we wrap that call into a reusable function and turn on streaming so you don't have to wait for the entire answer before seeing output.
 
 ## Data
-The same three things from chapter 00 are still here: a script, a provider on a port, and a weight file the provider already loaded. Two new literals appear.
+We work with the same three components from Chapter 00: your Python script, the background provider server, and the loaded model weights.
 
-A **function** named `query_llm` takes one argument, `prompt` (a string), and returns one value, the model text (a string). Other scripts call `query_llm("...")` instead of copying the `urllib.request` POST.
+Two new concepts appear:
+1. **The Reusable Wrapper Function**: A function named `query_llm(prompt: str) -> str` that encapsulates building the payload, sending the HTTP request, and returning the output string. This prevents you from having to copy network boilerplate across different scripts.
+2. **The `stream` Flag**: A boolean field in your JSON request:
+   - `stream: false`: The server completes the entire response before sending back a single JSON object.
+   - `stream: true`: The server sends back chunks of text as newline-delimited JSON (NDJSON) lines as they are generated.
 
-The **host** and **model** still come from the environment. `OLLAMA_HOST` defaults to `http://192.168.1.29:11434`. `OLLAMA_MODEL` defaults to `qwen3.6:35b-a3b-65k`. The route is still `POST /api/generate`.
-
-`stream` is a boolean on the request. `false` means the provider waits until the full answer exists, then sends one JSON object. `true` means the provider writes one JSON object per generated chunk, one object per line (NDJSON: newline-delimited JSON).
-
-The metric keys on the response are `eval_count` (tokens the model produced) and `eval_duration` (nanoseconds of decode on Ollama). Wall time is `time.time()` in the script, not a provider field. TTFT is seconds from the POST start until the first JSON line arrives when `stream` is true. Tokens per second is `eval_count / (eval_duration / 1e9)`.
+We also measure two key performance metrics:
+- **Time to First Token (TTFT)**: The number of seconds between sending your request and receiving the very first chunk of text.
+- **Tokens Per Second (TPS)**: How fast the model generates text, calculated as `eval_count / (eval_duration / 1e9)`.
 
 ## Information
-Wrapping means the chapter 00 POST lives inside `query_llm`. The URL, the JSON body, and the read of `response` stay the same. The new fact is that a second script can call the function without repeating those lines.
+Wrapping code into a function organizes your project cleanly: the underlying HTTP headers and JSON serialization stay safely inside `query_llm`, allowing your application logic to simply ask a question and receive a string.
 
-Streaming means the TCP connection stays open. The provider writes a line when it has a chunk. The script prints `chunk["response"]` and flushes stdout so text appears before the final `done: true` line. That final line carries `eval_count` and `eval_duration`.
-
-Lab 1 keeps `stream: false`, returns the text, and prints wall time, `eval_count`, and tokens/sec. Lab 2 sets `stream: true`, prints each chunk as it arrives, and records TTFT on the first line. Gateways, retries, and a second provider are chapter 11.
+Streaming keeps the network connection open so you can display words on the screen as they are generated. Rather than waiting multiple seconds in front of a silent terminal, your script prints text chunks incrementally and records performance metrics when the stream finishes.
 
 ## Knowledge
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. Use the same defaults as chapter 00.
-2. Write `query_llm(prompt: str) -> str`. Inside it, POST `model`, `prompt`, `stream: false`, and `options.temperature: 0.0` to `{host}/api/generate`. Return `result["response"]`.
-3. Time the call with `time.time()`. Print the text, wall time, `eval_count`, and TPS = `eval_count / (eval_duration / 1e9)`.
-4. Write a second script that POSTs the same keys with `stream: true`. Iterate `for line in response`. Parse each line as JSON. Print `chunk["response"]` immediately (`sys.stdout.write` then `flush`). Store TTFT on the first non-empty line. On `done: true`, read `eval_count` and `eval_duration` and print TPS.
-5. Do not add a circuit breaker, a second host, or a client class.
+Here is the step-by-step workflow:
+1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from your environment variables, using default fallback values if unset.
+2. Create `query_llm(prompt: str) -> str` to send `model`, `prompt`, `stream: false`, and `options: {"temperature": 0.0}` to `{OLLAMA_HOST}/api/generate`.
+3. Track execution time using `time.time()` and calculate generation speed in tokens per second.
+4. Set `stream: true` to iterate over incoming response lines (`for line in response:`).
+5. Parse each JSON line, write `chunk["response"]` to `sys.stdout`, and call `sys.stdout.flush()`.
+6. When the final chunk arrives (`done: true`), read `eval_count` and `eval_duration` to calculate final metrics.
 
 ## Wisdom
-A wrapper is the right tool when you are about to copy the POST into a second file. Streaming is the right tool when a 13 second wait for one JSON body leaves the terminal blank. If you only need one POST and you do not care about the wait, chapter 00 is enough. A gateway, retries, and failover are not this chapter. Adding them now hides whether the function, the stream parser, or the host is what broke.
+A wrapper function is helpful as soon as you find yourself copying HTTP request code into multiple files. Streaming is essential when you want responsive, real-time user experiences without long, silent delays.
+
+Keep your wrapper focused on the single call: do not add complex retry loops or multi-model routing yet. We will cover resiliency patterns in Chapter 06.
 
 ## The When and Why
-- **When:** you already have one working POST and you are about to call the model from a second script, or a non-stream call sits silent for many seconds.
-- **Why:** without a function you copy the POST. Without streaming you wait for the whole body. Both are this chapter. Failover is not.
+- **When**: Use a wrapper function whenever you need a clean, reusable way to query a model. Use streaming whenever you want real-time feedback and lower perceived latency.
+- **Why**: Without a wrapper function, you have to duplicate HTTP code across every file. Without streaming, users must wait silently until the entire response finishes generating.
 
 ## How it works
 

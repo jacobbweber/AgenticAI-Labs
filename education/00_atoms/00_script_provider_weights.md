@@ -1,43 +1,46 @@
 # 00: Script, Provider, Weights
 
-After this chapter you can point at three separate things and say what each one does. A later chapter can wrap the POST in a function. This chapter does not.
+By the end of this chapter, you will be able to clearly identify the three distinct parts of an AI system and understand what each one does. In later chapters, we will wrap network calls into reusable functions, but here we begin with the fundamental building blocks.
 
 ## Data
-Three things exist, and they are not the same object.
+There are three separate pieces involved in running an AI interaction:
 
-A **script** is a Python file you run. It builds a JSON object (keys and values, encoded as text) and sends it as an HTTP POST. HTTP means: send these bytes to this host and port, then wait for bytes back. A POST is the kind of request that carries a body.
+1. **The Python Script**: This is the file you write and execute. It constructs a JSON request body (specifying parameters like the model name and prompt) and sends it over the network as an HTTP POST request.
+2. **The Provider**: This is a background server process (such as Ollama, LM Studio, vLLM, llama.cpp server, or a cloud API) that listens on a network port. It receives your JSON request, converts text into tokens, runs calculations through the model weights, and returns a JSON response.
+3. **The Weight File**: This is a file stored on disk (such as a `.gguf` or `.safetensors` file) containing the numerical weights that define the trained model. The weight file itself cannot open network ports or respond to HTTP requests.
 
-A **provider** is a program that is already running and listening on a port. A port is a number the operating system uses so more than one program can accept network traffic on the same machine. Ollama, vLLM, LM Studio, llama.cpp server, and a cloud API are all providers. They are normal HTTP servers. They accept JSON and return JSON.
-
-A **weight file** is a file of numbers on disk (`.gguf` or `.safetensors`). Those numbers are the model. The file does not open a port. It does not read HTTP. It does not know your script exists.
-
-Your script never opens the weight file. The weight file never sees your script. The provider is the only process that loads the file into RAM or VRAM and does the math.
+Your Python script never opens the weight file directly, and the weight file never interacts directly with your script. The provider server is the only process that loads the weights into memory (RAM or VRAM) to perform the mathematical calculations.
 
 ## Information
-The only path is:
+The complete lifecycle of a single request follows a straightforward path:
 
-script → HTTP POST (JSON) → provider API → tokenizer → matrix math on the loaded weights → tokens → HTTP response (JSON) → script
+```text
+Python Script ──(HTTP POST JSON)──> Provider API ──> Tokenizer ──> Matrix Math on Weights ──> Output Tokens ──(HTTP Response JSON)──> Python Script
+```
 
-The tokenizer turns your sentence into token IDs (small integers). The matrix math turns those IDs into new IDs. The provider turns the new IDs back into text and puts that text in a JSON field.
+1. The tokenizer breaks your prompt text into numeric token IDs.
+2. The model processes those token IDs through its loaded weights to generate new token IDs.
+3. The provider converts the new token IDs back into readable text and packages them into a JSON response sent back to your script.
 
-If the provider is not running, the script fails with a connection error (`URLError`, connection refused). If the weight file is missing or the model name is wrong, the provider is running but it returns an HTTP error (often 404). Those are two different failures. Fix the process first, then the model name.
+If the provider server is not running, your script will fail with a connection error (`URLError` or connection refused). If the model name is incorrect or missing, the provider will return an HTTP error (such as a 404). Recognizing these as two distinct issues helps you troubleshoot quickly: check the server process first, then verify the model name.
 
 ## Knowledge
-1. Start the provider, or confirm it is already running. Default host is http://127.0.0.1:11434 (Ollama).
-2. Read the host and model from the environment (`OLLAMA_HOST`, `OLLAMA_MODEL`) so the URL is not hardcoded.
-3. Build a JSON body with the keys that provider documents for that route.
-4. POST it to the generate or chat route with `Content-Type: application/json`.
-5. Decode the JSON that comes back.
-6. Print one field. On Ollama `/api/generate` that field is `response`. On OpenAI-style `/v1/chat/completions` it is `choices[0].message.content`.
+Here are the practical steps to make a basic model call:
+1. Start your local provider (such as Ollama on `http://127.0.0.1:11434`), or confirm it is already running.
+2. Read the server host and model name from your environment variables (`OLLAMA_HOST`, `OLLAMA_MODEL`) to avoid hardcoding configuration in your scripts.
+3. Build a dictionary containing the required JSON fields.
+4. Send an HTTP POST request to the provider endpoint with the `Content-Type: application/json` header.
+5. Parse the returned JSON response.
+6. Print the generated text field. For Ollama's native `/api/generate` endpoint, that field is `response`. For OpenAI-style `/v1/chat/completions`, it is `choices[0].message.content`.
 
-Lab 1 does one POST and prints the text. Lab 2 uses the same POST and prints every key in both directions so the contract is visible.
+Lab 1 sends a single POST request and prints the text. Lab 2 inspects and prints all the keys sent and received so you can see the complete data contract.
 
 ## Wisdom
-Stop when one POST returns text. Do not add a client class, a stream parser, retries, or a loop yet. Those are later chapters. If you add them now, a failure could come from any of those extras and you will not know which of the three things broke.
+Stop once your script successfully prints text from the model. Resist the urge to add helper classes, streaming parsers, retry logic, or agent loops at this stage. Those concepts are introduced step-by-step in later chapters. Keeping things simple now ensures you can immediately identify what broke if an error occurs.
 
 ## The When and Why
-- **When:** the first time a program needs a model. Before tools, before a loop, before the word "agent".
-- **Why:** every later piece (dispatcher, ReAct, handoff JSON) is this same POST with more keys. If this POST is fuzzy, you cannot tell which key later chapters are adding.
+- **When**: Use this pattern the very first time an application needs to communicate with an AI model—before adding tools, loops, or complex agent behaviors.
+- **Why**: Every advanced agentic pattern built later in this course is built on top of this exact same HTTP POST request. Having a clear mental model of the basic request makes it easy to understand the additional keys added in future chapters.
 
 ## How it works
 

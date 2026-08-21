@@ -1,47 +1,41 @@
-# 13: One Agent
+# 13: One Agent: Unifying Persona, Tools, Execution Loop, and Persistent State
 
-Chapter 06 was graphs and queues. This chapter is one process that combines chapters 03 through 05.
+By the end of this chapter, you will build a complete, self-contained single-agent harness (`CoreAgentKernel`) that unifies system personas, tool registries, multi-turn execution loops, and persistent session state hydration.
 
-After this chapter one process has a system prompt, tools, the chapter 04 loop, and a session file. Two agents are chapter 08.
+In earlier chapters, we studied individual agent primitives in isolation—contracts in Chapter 02, dispatchers in Chapter 03, ReAct loops in Chapter 04, and persistence in Chapter 07. In this chapter, we bring them all together into a unified agent runtime.
 
 ## Data
-Chapters 03 to 05 are separate scripts. This chapter puts them in one host object.
-
-A **persona** is the `role: system` string. It is the first item in `messages`. It does not change between turns.
-
-**Tools** are the same pair as chapter 03 and 04: `TOOLS_SCHEMA` (sent on the POST) and `TOOL_REGISTRY` (name to Python function). The intended kernel can dispatch `tool_calls` inside `run_turn`.
-
-The **loop** is chapter 04: `for turn in range` around `POST /api/chat` until `tool_calls` is empty or `max_turns` is hit.
-
-**State** is a session JSON file. `SessionStateHydrator` in `lab1_core_harness_kernel.py` reads and writes `state_store/{session_id}.json`. Keys: `session_id`, `messages`, `turn_count`. `load_state(session_id)` returns that object or a fresh one. `save_state(session_id, state)` writes it.
-
-The **kernel** is class `CoreAgentKernel`. `run_turn(session_id, user_prompt)` loads, appends the user line, calls the model, appends the assistant line, saves, and returns `{ session_id, turn_count, thinking, response }`.
-
-`OLLAMA_HOST` should default to `http://127.0.0.1:11434`. `OLLAMA_MODEL` should default to `llama3.2:1b`. The intended route is `POST /api/chat`.
-
-The reference script also contains `CoTStreamDemuxer`, which splits `<think>` text from the visible reply. Full thinking-token demux is chapter 12. Do not treat that class as this chapter's idea.
+A complete single-agent kernel coordinates four fundamental pillars:
+1. **System Persona**: A foundational `role: "system"` prompt setting identity, operational constraints, and tool usage rules.
+2. **Tool Capabilities**: Schema specifications (`TOOLS_SCHEMA`) and matching Python callables (`TOOL_REGISTRY`).
+3. **Execution Loop**: The ReAct cycle that queries the LLM, resolves tool calls, feeds observation results back into context, and repeats until a final answer is ready.
+4. **Session State Hydration**: `SessionStateHydrator` manages loading and writing `state_store/{session_id}.json` (`{"session_id": str, "messages": list, "turn_count": int}`) so conversations persist across multiple turns and process restarts.
 
 ## Information
-One agent is one process that keeps a persona, can call tools, loops until text, and writes the `messages` list to disk so the next `run_turn` on the same `session_id` sees the earlier lines.
+Without persistent hydration, each user interaction starts from a blank slate, forgetting previous facts and context.
 
-Without hydration, turn 2 is a new empty list and the model does not know the name from turn 1. The file is how the second call sees `Hello! My name is Jacob.`
-
-Sandbox and RBAC are chapter 09. FastAPI is chapter 10. A second kernel is chapter 08.
+By wrapping execution in a stateful kernel:
+- **Conversation Continuity**: Facts shared in Turn 1 (e.g. `"My name is Jacob"`) are saved to disk and seamlessly restored in Turn 2.
+- **Unified Harness**: A single entry point `run_turn(session_id, user_prompt)` encapsulates loading history, dispatching tools, prompting the model, and checkpointing state.
 
 ## Knowledge
-1. Load `state_store/{session_id}.json` (or start `{ session_id, messages: [], turn_count: 0 }`).
-2. If `messages` is empty, append the system persona. Append `{ "role": "user", "content": user_prompt }`. Increment `turn_count`.
-3. POST `model`, `messages`, `tools`, `stream: false`, `options.temperature: 0.0` to `{OLLAMA_HOST}/api/chat`. Run the chapter 04 loop if `tool_calls` appear.
-4. Append the assistant text (optionally drop `<think>`). Save the session file.
-5. Call `run_turn` a second time on the same id. The second reply should use a fact from the first user line.
-6. Do not add Docker, a permission matrix, or a second agent.
+Here is the step-by-step procedure:
+1. Initialize `SessionStateHydrator` targeting a local JSON storage folder (`state_store/`).
+2. Implement `CoreAgentKernel.run_turn(session_id, user_prompt)`:
+   - Hydrate existing conversation history or initialize a new session.
+   - Inject the system persona if starting a fresh session.
+   - Append the incoming user prompt and increment `turn_count`.
+   - Send messages to `{OLLAMA_HOST}/api/chat` with tool schemas attached.
+   - Execute any requested tool calls and append observation messages.
+   - Append the final assistant response and save the updated session file to disk.
+3. Test multi-turn memory by introducing a fact in Turn 1 and querying it in Turn 2.
 
 ## Wisdom
-One kernel is enough for a single user and one session file. Tools and a ReAct loop belong in the intended kernel. They are not required to prove hydration: two `run_turn` calls on `session_9001` are enough to see the name persist. Docker, RBAC, and a second process are later chapters. If you add them now, a missed name could come from the file, the POST, or the sandbox.
+A robust single-agent harness is the bedrock for all advanced agentic patterns. Master the stateful single-agent loop before adding multi-agent coordination.
 
 ## The When and Why
-- **When:** you need the same conversation after the script exits, or after a second `run_turn` in the same process.
-- **Why:** without hydration the loop is a one-shot script. The file is what makes it an agent you can come back to.
+- **When**: Building conversational assistants, coding copilots, or stateful agent services that require persistent memory across turns.
+- **Why**: Stateless API endpoints cannot maintain conversational coherence without explicit session persistence.
 
 ## How it works
 

@@ -1,36 +1,41 @@
-# 19: FastAPI and SSE
+# 19: FastAPI and Server-Sent Events (SSE) Streaming
 
-After this page the UI is a client of the script. The script is a server. The lab is `lab1_sse_streaming_api.py`.
+By the end of this chapter, you will understand how to serve real-time streaming agent outputs to client user interfaces using Server-Sent Events (SSE) and structured frame formatting (`format_sse_frame`).
+
+In earlier chapters, we streamed tokens to stdout in the terminal. In web architectures, browsers and web clients consume live token streams through persistent HTTP connections using `Content-Type: text/event-stream`.
 
 ## Data
-**SSE** (Server-Sent Events) is an HTTP response with `Content-Type: text/event-stream`. The server keeps the connection open and writes lines. Each event is one or more lines, then a blank line. The payload line starts with `data: ` and ends with `\n\n`.
-
-A **FastAPI route** is a function that FastAPI calls when a client hits a path. The intended server is a FastAPI app. A browser opens that path with `EventSource`. `EventSource` is the browser API that reads `text/event-stream` and fires a message for each `data:` line.
-
-The lab file is `lab1_sse_streaming_api.py`. The functions are `format_sse_frame(event_type, data, event_id)` and `generate_agent_sse_stream(prompt)`. The first function returns the string `data: {json}\n\n`. The second function is an async generator that yields those strings.
-
-This lab does not start FastAPI and does not POST to Ollama. `OLLAMA_HOST` should still default to `http://192.168.1.29:11434` and `OLLAMA_MODEL` to `qwen3.6:35b-a3b-65k` when a later route streams from the model. Port `11434` is the Ollama listener. The intended FastAPI listener is port `8000` (uvicorn default). The reference script opens neither port.
+An **SSE Stream** transmits newline-delimited event frames across an open HTTP connection:
+- **Frame Format**: `data: {json_payload}\n\n`
+- **Envelope Structure**:
+  - `event_id`: Monotonically increasing integer ID.
+  - `event_type`: Lifecycle event name (`session_started`, `token_delta`, `tool_call_start`, `tool_call_result`, `turn_complete`).
+  - `timestamp`: Epoch timestamp in seconds.
+  - `data`: Event-specific payload (e.g. `{"delta": "word"}` or `{"tool_name": "read_file"}`).
 
 ## Information
-Chapter 01 streamed tokens to stdout. Stdout is a terminal. A browser cannot read your terminal. The browser needs an HTTP response it can keep open.
+Standard HTTP request-response cycles require waiting for the entire LLM generation to complete before sending a response.
 
-SSE is one-way: server to client. The client cannot send a second message on the same connection. Lab 2 uses a WebSocket for that.
-
-If you `print` tokens in the FastAPI process, the browser sees nothing. The browser only sees bytes on the HTTP connection.
+SSE streaming provides significant improvements:
+- **Low Latency**: The browser renders the very first generated token in milliseconds.
+- **Rich Telemetry**: Transmits reasoning tokens, tool invocations, and completion signals over the same continuous stream.
+- **Client Native**: Standard browser JavaScript consumes SSE directly via the native `EventSource` API.
 
 ## Knowledge
-1. Write `format_sse_frame`. It builds a JSON object and returns `data: {json}\n\n`.
-2. Write `generate_agent_sse_stream(prompt)`. Yield one frame at a time. The reference order is `session_started`, then `token_delta` frames, then `tool_call_start`, `tool_call_result`, `turn_complete`.
-3. Intended next step (not in the reference file): expose a FastAPI route that yields those lines with `Content-Type: text/event-stream`.
-4. Intended client: `EventSource` on that route. Append each `data` payload to the page.
-5. Do not build a Next.js app in this lab. Do not open a WebSocket.
+Here is the step-by-step procedure:
+1. Implement `format_sse_frame(event_type, data, event_id)` to serialize event payloads into standard `data: <json>\n\n` strings.
+2. Build an asynchronous generator (`generate_agent_sse_stream(prompt)`) yielding event frames.
+3. Emit `session_started` on stream initialization.
+4. Yield `token_delta` frames as LLM chunks arrive.
+5. Emit `tool_call_start` and `tool_call_result` when actuators execute.
+6. Emit `turn_complete` on final turn conclusion.
 
 ## Wisdom
-Stop when a client has received framed lines. Do not add React, a job queue, or a WebSocket yet. Those are the next pages and lab 2. If you add them now, a missing token could come from the UI, the socket, or the frame format.
+SSE is unidirectional (server to client) and ideal for streaming output. If you need bidirectional interactivity or mid-flight cancellations, pair SSE with WebSockets.
 
 ## The When and Why
-- **When:** a person is watching tokens appear one by one.
-- **Why:** stdout is not a UI. The browser needs `text/event-stream` on an HTTP connection.
+- **When**: Streaming real-time agent thinking, token generation, and tool status updates to web dashboards or chatbots.
+- **Why**: Output buffering degrades user experience. SSE delivers snappy, immediate visual feedback over standard HTTP.
 
 ## How it works
 

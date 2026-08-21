@@ -1,75 +1,62 @@
-# Lab 1: CoT demuxer
+# Lab 1: Building a Chain-of-Thought Stream Demuxer
 
-After this lab `<think>` text is not in the user-visible string. Two channels print: thinking and response.
+In this lab, you will implement a `CoTStreamDemuxer` that parses a live streaming response, separates internal thinking tokens (`<think>...</think>`) from user-facing answer text, and prints each channel independently.
+
+---
 
 ## What you touch
 - Script: `lab1_cot_demuxer.py`
-- Class / function: `CoTStreamDemuxer.feed(chunk)`
-- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
-- Keys sent: `model`, `prompt`, `stream` (`true`), `options.temperature` (`0.0`)
-- Keys read: each line `response`
-- Intended result keys: `thinking`, `response`
+- Main Class: `CoTStreamDemuxer` with `feed(chunk: str)` method
+- URL / Endpoint: `{OLLAMA_HOST}/api/generate` (defaults to `http://127.0.0.1:11434/api/generate`)
+- Request Keys: `model`, `prompt`, `stream` (`true`), `options.temperature` (`0.0`)
+- Demux Output Channels: `thinking` (reasoning log) and `response` (clean answer payload)
+
+---
 
 ## Steps
 ```mermaid
 flowchart LR
-    subgraph cot_lab1_script [This script]
-        S["lab1_cot_demuxer.py"]
-        D["CoTStreamDemuxer.feed"]
-    end
-    subgraph cot_lab1_host [Ollama on port 11434]
-        H["POST /api/generate"]
-    end
-    S -->|"stream true"| H
-    H -->|"NDJSON response chunk"| D
-    D --> T["thinking"]
-    D --> A["response"]
+    A["lab1_cot_demuxer.py"] -->|"POST (stream: true)"| B["Ollama Server"]
+    B -->|"Raw streaming chunks"| C["CoTStreamDemuxer.feed(chunk)"]
+    C -->|"Tokens in <think>"| D["Thinking Channel"]
+    C -->|"Tokens outside <think>"| E["Response Channel"]
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://192.168.1.29:11434` and `qwen3.6:35b-a3b-65k`.
-2. Build one JSON body: `model`, `prompt` (`Solve step-by-step: If a train travels at 60 mph for 2.5 hours, how far does it travel?`), `stream: true`, `options.temperature: 0.0`.
-3. POST it to `{host}/api/generate` with header `Content-Type: application/json`.
-4. Iterate `for line in response`. Skip empty lines. Parse each line with `json.loads`. Read `data["response"]`.
-5. Pass that chunk to `CoTStreamDemuxer.feed`. The class keeps a buffer and a state (`IDLE`, `THINKING`, `RESPONSE`). Text after `<think>` is thinking. Text after `</think>` (and any text before `<think>`) is the answer.
-6. Print thinking on one prefix (`[THINKING LOG]`) and the answer on another (`[RESPONSE PAYLOAD]`).
-7. At the end, print character counts for both channels. The answer string must not contain `<think>`.
+1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from environment variables, defaulting to `http://127.0.0.1:11434` and `llama3.2:1b` (or a reasoning model like `deepseek-r1:1.5b` or `qwen2.5:7b`).
+2. Construct the request payload dictionary with `model`, `prompt` (`"Solve step-by-step: If a train travels at 60 mph for 2.5 hours, how far does it travel?"`), `stream: True`, and `options: {"temperature": 0.0}`.
+3. Stream lines from `{OLLAMA_HOST}/api/generate`, parsing each line with `json.loads()`.
+4. Feed each incoming chunk into `CoTStreamDemuxer.feed(chunk)`. The demuxer tracks parser state (`IDLE`, `THINKING`, `RESPONSE`), stripping `<think>` tags and routing text accordingly.
+5. Print thinking text under `[THINKING LOG]` and response text under `[RESPONSE PAYLOAD]`.
+6. When streaming concludes, print total character counts for both channels. Verify that the response channel contains zero `<think>` tags.
+
+---
 
 ## Data contract
-Only the keys this script sends and reads, plus the intended split.
 
-**Request**
+**Request Payload**
 
 ```json
 {
-  "model": "qwen3.6:35b-a3b-65k",
+  "model": "llama3.2:1b",
   "prompt": "Solve step-by-step: If a train travels at 60 mph for 2.5 hours, how far does it travel?",
   "stream": true,
   "options": { "temperature": 0.0 }
 }
 ```
 
-**One stream line**
+**Demux Result Structure**
 
 ```json
 {
-  "response": "string",
-  "done": false
+  "thinking": "The train travels at 60 mph for 2.5 hours. Distance = Speed * Time = 60 * 2.5 = 150.",
+  "response": "The train travels a total distance of 150 miles."
 }
 ```
 
-**Intended demux result**
-
-```json
-{
-  "thinking": "string",
-  "response": "string"
-}
-```
+---
 
 ## Run
-Copy `.env.example` to `.env` in the repo root and uncomment the Ollama lines. The script loads that file (it does not override vars already set in the shell).
-
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/06_the_reliability/lab1_cot_demuxer.py
@@ -79,13 +66,22 @@ python education/06_the_reliability/lab1_cot_demuxer.py
 python education/06_the_reliability/lab1_cot_demuxer.py
 ```
 
+---
+
 ## What you should see
-Two channels. `[THINKING LOG]` lines, then `[RESPONSE PAYLOAD]` lines, then `Total Thinking Characters` and `Total Response Characters`. The distance answer (150 miles) should be in the response channel. If both channels are mixed in one string, `feed` is not splitting on the tags. If you see `URLError` or connection refused, the provider is not reachable. If you see HTTP 404, the model name is wrong or not pulled. If thinking is empty, this model may not emit `<think>` tags.
+- `[THINKING LOG]` showing step-by-step calculation tokens (if using a reasoning model).
+- `[RESPONSE PAYLOAD]` showing the final answer (150 miles) cleanly formatted without internal tags.
+- Character count summary for both channels.
+
+---
 
 ## Stop here
-This is not a UI filter and not a second demux lab. The old `labs/01_single_agent/lab3_reasoning_demux` is deleted. Do not add cycle detection, logit bias, or reflexion. Next: [lab2_cycle_detection.md](./lab2_cycle_detection.md).
+You now have a clean stream demuxer! In Lab 2, we will implement cycle detection to protect against infinite tool loops.
+
+Next up: [Lab 2: Cycle Detection](./lab2_cycle_detection.md).
+
+---
 
 ## Notes
-- Mechanism: state machine over a buffer. `feed` returns thinking text and response text for each chunk.
-- Contract drift vs `lab1_cot_demuxer.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). `feed` returns a tuple `(thinking_tokens, response_tokens)`, not a dict. The script prints character counts, not a JSON object. The intended contract is still `{ "thinking", "response" }`. Write that in your copy. Leave the reference file as-is.
-- Chapter 10 can show only the response channel. Chapter 07 already has a smaller copy of this class. Do not copy it again.
+*(Record your demuxed stream output and character counts here)*
+

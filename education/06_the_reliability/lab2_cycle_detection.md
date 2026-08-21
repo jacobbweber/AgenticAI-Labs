@@ -1,74 +1,76 @@
-# Lab 2: Cycle detection
+# Lab 2: Detecting and Halting Repeated Tool Execution Cycles
 
-After this lab a repeated tool signature stops the loop. `max_turns` is still there. The hash is the early stop.
+In this lab, you will implement step hashing (`compute_step_hash`) to track previously executed tool calls and immediately halt execution with `HALTED_BY_CYCLE_DETECTOR` when a repetitive loop is detected.
+
+---
 
 ## What you touch
 - Script: `lab2_cycle_detection.py`
-- Function: `compute_step_hash(tool_name, tool_args, tool_output)`
-- Tool: `read_database_record(record_id)` in `TOOL_REGISTRY`
-- URL / path: `{OLLAMA_HOST}/api/chat` (default `http://192.168.1.29:11434/api/chat`)
-- Keys sent: `model`, `messages`, `tools`, `stream` (`false`), `options.temperature` (`0.0`)
-- Keys read: `message`, `message.tool_calls`, `function.name`, `function.arguments`, `message.content`
-- Halt return: `HALTED_BY_CYCLE_DETECTOR`
+- Main Function: `compute_step_hash(tool_name: str, tool_args: dict, tool_output: str) -> str`
+- Tool: `read_database_record(record_id: int)` in `TOOL_REGISTRY`
+- URL / Endpoint: `{OLLAMA_HOST}/api/chat` (defaults to `http://127.0.0.1:11434/api/chat`)
+- Request Keys: `model`, `messages`, `tools`, `stream` (`false`), `options.temperature` (`0.0`)
+- Return Status on Cycle: `"HALTED_BY_CYCLE_DETECTOR"`
+
+---
 
 ## Steps
 ```mermaid
 flowchart LR
-    subgraph cyc_lab2_script [This script]
-        S["lab2_cycle_detection.py"]
-        H["compute_step_hash"]
-        SEEN["seen_hashes"]
-    end
-    subgraph cyc_lab2_host [Ollama on port 11434]
-        C["POST /api/chat"]
-    end
-    S --> C
-    C -->|"tool_calls"| S
-    S --> H
-    H --> SEEN
-    SEEN -->|"hash already present"| X["HALTED_BY_CYCLE_DETECTOR"]
+    A["lab2_cycle_detection.py"] -->|"Execute Tool"| B["read_database_record(999)"]
+    B -->|"Returns error string"| C["compute_step_hash()"]
+    C --> D{"Is hash in seen_hashes?"}
+    D -->|"No (First encounter)"| E["Add to seen_hashes & continue loop"]
+    D -->|"Yes (Cycle detected)"| F["HALTED_BY_CYCLE_DETECTOR"]
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://192.168.1.29:11434` and `qwen3.6:35b-a3b-65k`.
-2. Start `seen_hashes` as an empty list. `max_turns` is 5.
-3. POST `model`, `messages`, `tools` (`read_database_record`), `stream: false`, `options.temperature: 0.0` to `{host}/api/chat`.
-4. Read `message.tool_calls`. For each call, run `read_database_record` from `TOOL_REGISTRY`. Record `999` always returns `ERROR: Record 999 not found in table 'users'.`
-5. Call `compute_step_hash`. It builds `tool_name:{json.dumps(args, sort_keys=True)}:{output}` and returns the SHA-256 hex string.
-6. If that string is already in `seen_hashes`, print a cycle message and return `HALTED_BY_CYCLE_DETECTOR`. Do not POST again.
-7. If it is new, append it, add a `role: tool` message, and continue the chapter 04 loop.
-8. The baked prompt is `Fetch user record 999. If it fails, try fetching record 999 again.` That should produce the same hash twice.
+1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from environment variables, defaulting to `http://127.0.0.1:11434` and `llama3.2:1b`.
+2. Define a mock database tool `read_database_record(record_id: int)` that always returns `"ERROR: Record 999 not found in table 'users'."` when `record_id == 999`.
+3. Register the tool in `TOOL_REGISTRY` and define its JSON schema in `TOOLS_SCHEMA`.
+4. Implement `compute_step_hash(tool_name, tool_args, tool_output)`:
+   - Format: `f"{tool_name}:{json.dumps(tool_args, sort_keys=True)}:{tool_output}"`
+   - Compute and return the SHA-256 hexadecimal hash string.
+5. In your agent turn loop:
+   - When a tool is executed, compute its step hash.
+   - If the hash is already in `seen_hashes`, print an alert and return `"HALTED_BY_CYCLE_DETECTOR"`.
+   - If new, add it to `seen_hashes` and continue the loop.
+6. Test with a prompt that triggers repeated failures:
+   `"Fetch user record 999. If it fails, try fetching record 999 again."`
+
+---
 
 ## Data contract
-Only the keys this script sends and reads.
 
-**Request** `POST /api/chat`
+**Request Payload**
 
 ```json
 {
-  "model": "qwen3.6:35b-a3b-65k",
-  "messages": [],
-  "tools": [],
+  "model": "llama3.2:1b",
+  "messages": [
+    { "role": "user", "content": "Fetch user record 999. If it fails, try fetching record 999 again." }
+  ],
+  "tools": [ /* schema for read_database_record */ ],
   "stream": false,
   "options": { "temperature": 0.0 }
 }
 ```
 
-**Hash key** (string, then SHA-256)
+**Step Signature String (Hashed with SHA-256)**
 
-```
+```text
 read_database_record:{"record_id": 999}:ERROR: Record 999 not found in table 'users'.
 ```
 
-**Halt return**
+**Cycle Detection Termination Return**
 
 ```json
 "HALTED_BY_CYCLE_DETECTOR"
 ```
 
-## Run
-Copy `.env.example` to `.env` in the repo root and uncomment the Ollama lines. The script loads that file (it does not override vars already set in the shell).
+---
 
-From the repo root:
+## Run
+From the repository root, run:
 
 ```bash
 python education/06_the_reliability/lab2_cycle_detection.py
@@ -78,12 +80,22 @@ python education/06_the_reliability/lab2_cycle_detection.py
 python education/06_the_reliability/lab2_cycle_detection.py
 ```
 
+---
+
 ## What you should see
-`[ACTION]` and `[OBSERVATION]` for record 999, a `[TRAJECTORY HASH]`, then on the repeat `[CRITICAL ALERT] INFINITE LOOP DETECTED!` and `HALTED_BY_CYCLE_DETECTOR`. If the loop hits `max_turns` with no halt, the second call did not produce the same hash (args or result differed). If you see `URLError` or connection refused, the provider is not reachable. If you see HTTP 404, the model name is wrong or not pulled.
+1. **Turn 1**: Tool action for `read_database_record(record_id=999)` returning the error string, recording the first trajectory hash.
+2. **Turn 2**: Repeated tool call for record 999 generating an identical hash.
+3. A critical alert: `[CRITICAL ALERT] INFINITE LOOP DETECTED!` followed by immediate termination with `HALTED_BY_CYCLE_DETECTOR`.
+
+---
 
 ## Stop here
-This is not Tree of Thoughts and not MCTS. Do not add logit bias or a reflexion retry on this script. Chapter 04 is the loop. This lab only adds the hash. A later harness can call the same check.
+You have successfully implemented automated cycle prevention! In Lab 3, we will explore logit steering.
+
+Next up: [Lab 3: Logit Steering](./lab3_logit_steering.md).
+
+---
 
 ## Notes
-- Mechanism: SHA-256 of `tool_name` plus sorted args plus the tool result. Membership in `seen_hashes` is the stop.
-- Contract drift vs `lab2_cycle_detection.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and model are literals). Route is `/api/chat`. The print says the hash was "repeated consecutively" even though the check is "hash in the full `seen_hashes` list". Write env reads in your copy. Leave the reference file as-is.
+*(Record your cycle detection log trace here)*
+

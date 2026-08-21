@@ -1,21 +1,28 @@
-# Notes (jargon to objects)
+# Architectural Reference Notes: Translating Jargon into Concrete Code
 
-These pages map marketing words to files, JSON keys, and functions already in the course. They are not labs. Do not write a `.py` here. Read them after chapter 14 (and 18 if you have it). If a page disagrees with a lab brief, the brief wins.
+These reference notes bridge the gap between industry buzzwords (such as *"cognitive architectures"*, *"digital workers"*, or *"memory graphs"*) and the concrete files, JSON keys, and Python functions you build in this course.
 
-## Index
+These documents are conceptual guides rather than hands-on coding labs. They are best read after completing Chapter 14 (Multi-Agent Topologies) and Chapter 18 (Background Jobs).
 
-- [00_words.md](./00_words.md) - tool, skill, agent, staff, department, control plane
-- [01_where_not_who.md](./01_where_not_who.md) - host_id and purpose, not person names
-- [02_one_router.md](./02_one_router.md) - one process you talk to; its tools reach other hosts
-- [03_hosts_and_jobs.md](./03_hosts_and_jobs.md) - jarvis / nimo / net as rows and processes
-- [04_shape_tree.md](./04_shape_tree.md) - the word you hear and the course object on one tree
-- [05_the_harness.md](./05_the_harness.md) - sandbox, hooks, orchestration, state, subagents, evals
-- [06_the_parts.md](./06_the_parts.md) - brain, memory, plan, tools
-- [07_surface_map.md](./07_surface_map.md) - Send / stream / stop / history to path, key, and script
-- [08_what_is_an_agent.md](./08_what_is_an_agent.md) - The literal anatomy of an AI agent (5 architectural components, wire contracts, state transitions)
-- [09_tools_skills_agents.md](./09_tools_skills_agents.md) - Concrete boundaries: Tool vs Skill vs Agent (comparative matrix, handoffs, and decision heuristics)
-- [10_planning_and_reflection.md](./10_planning_and_reflection.md) - Planning, ReAct, and Reflexion at the code and state level (data contracts, execution plans, replanning)
-- [11_memory_architectures.md](./11_memory_architectures.md) - Memory architectures (4-tier hierarchy: working context, episodic facts.json, procedural rules, local RAG)
-- [12_framework_translations.md](./12_framework_translations.md) - Framework translations to pure Python (Rosetta Stone: LangChain, CrewAI, AutoGen, LangGraph)
+> **Note**: If any reference note ever conflicts with a specific lab brief, the lab brief is always the primary source of truth.
 
-Decisions (when X vs Y): [../decisions/](../decisions/). Which chapter for a feature: [../decisions/04_bands_and_features.md](../decisions/04_bands_and_features.md).
+---
+
+## Directory of Notes
+
+- [00_words.md](./00_words.md): Plain-English definitions mapping terms like *tool*, *skill*, *agent*, and *control plane* to exact Python code objects.
+- [01_where_not_who.md](./01_where_not_who.md): Why organizing agents by machine locations (`host_id`) and concrete capabilities is far more effective than inventing fictional employee personas.
+- [02_one_router.md](./02_one_router.md): Understanding the single entry-point router pattern that dispatches work across your environment.
+- [03_hosts_and_jobs.md](./03_hosts_and_jobs.md): How tasks and worker processes coordinate across machines using clean job rows.
+- [04_shape_tree.md](./04_shape_tree.md): A visual decision tree connecting common terms directly to course implementations.
+- [05_the_harness.md](./05_the_harness.md): Breaking down the term "agent harness" into sandboxes, permission gates, state persistence, and evaluation loops.
+- [06_the_parts.md](./06_the_parts.md): Translating conceptual components (brain, short-term memory, long-term memory, planning) into literal data structures.
+- [07_surface_map.md](./07_surface_map.md): How user interface actions (like sending messages, streaming tokens, and interrupting runs) map directly to HTTP endpoints and state files.
+- [08_what_is_an_agent.md](./08_what_is_an_agent.md): The concrete anatomical breakdown of an AI agent runtime into its 5 core engineering components.
+- [09_tools_skills_agents.md](./09_tools_skills_agents.md): A deep-dive matrix exploring the exact boundaries and trade-offs between tools, skill wrappers, and full agent loops.
+- [10_planning_and_reflection.md](./10_planning_and_reflection.md): How planning, ReAct loops, and Reflexion work under the hood using standard Python state manipulation.
+- [11_memory_architectures.md](./11_memory_architectures.md): A comprehensive overview of memory systems: working context, episodic facts, procedural rules, and local RAG.
+- [12_framework_translations.md](./12_framework_translations.md): A Rosetta Stone translating complex framework abstractions (LangChain, CrewAI, AutoGen, LangGraph) into pure, understandable Python.
+
+For practical decision trees on selecting architecture patterns, visit [Architectural Decisions](../decisions/) and the [Feature Directory](../decisions/04_bands_and_features.md).
+

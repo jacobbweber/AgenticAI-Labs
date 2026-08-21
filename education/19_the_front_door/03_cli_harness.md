@@ -1,36 +1,36 @@
-# 19: CLI Harness
+# 19: Command Line Interface (CLI) Harness
 
-After this page a terminal is another client of the same loop. The lab is a stdin/stdout script that calls `run_turn` (mocked) and asks y/n on a high-risk line.
+By the end of this chapter, you will understand how to construct a lightweight terminal CLI harness (`run_cli`) that wraps the agent kernel, supports multi-turn conversations via standard I/O (stdin/stdout), and incorporates interactive [y/n] Human-in-the-Loop checkpoints for high-risk tool execution.
+
+A graphical web browser is not mandatory for running agent loops. A terminal CLI interface provides a fast, developer-friendly client to interact with the exact same agent engine.
 
 ## Data
-A **CLI harness** is a script that reads a line from the keyboard and prints tokens to the terminal. It calls the same kernel as the HTTP front door. It does not open FastAPI or a browser.
-
-**stdin** is the stream the terminal sends into the process (what you type). **stdout** is the stream the process prints. A **TTY** is the terminal device that connects those two streams to a person.
-
-**HITL** (human in the loop) on a CLI is a yes/no prompt before a write. Example: print `Apply write to config.json? [y/n]` and read one line. Chapter 17 does the gate object. This page only says the prompt is the UI. Lab 5 uses `apply_hitl(turn, answer)` and a fixture list so the script does not hang on `input()`.
-
-The kernel is chapter 13: `CoreAgentKernel.run_turn(session_id, user_prompt)` and session JSON at `state_store/{session_id}.json` with keys `session_id`, `messages`, `turn_count`. Lab 5 does not copy that class. It calls `mock_run_turn` with the same return keys plus `high_risk` and `tool`.
-
-Lab 5 is `lab5_cli_harness.py`. Functions: `mock_run_turn`, `apply_hitl`, `run_cli`. Labs 1 and 2 are HTTP frames. `OLLAMA_HOST` defaults to `http://192.168.1.29:11434`. `OLLAMA_MODEL` defaults to `qwen3.6:35b-a3b-65k`. Port `11434` is Ollama. The CLI does not need port `8000`. Lab 5 does not POST.
+A **CLI Harness** manages interactive stdin/stdout communication:
+- **`run_cli(lines, run_turn)`**: Main interaction loop reading input prompts, invoking the kernel turn, and printing responses.
+- **`mock_run_turn(session_id, user_prompt)`**: Kernel turn simulator returning response text, `high_risk` flags, and tool targets.
+- **`apply_hitl(turn, answer)`**: Evaluator that queries `[y/n]` operator confirmation before executing destructive tools.
+- **Session Persistence**: Backed by the standard JSON session files (`state_store/{session_id}.json`) developed in Chapter 13.
 
 ## Information
-HTTP is not required for the loop. The loop is `run_turn`. FastAPI and `EventSource` are one client. `input()` and `print` are another client.
-
-A TUI (text UI with panels) is optional. A line-oriented CLI is enough for labs.
+The core agent engine is completely client-agnostic:
+- **Unified Engine**: The same underlying kernel powers Web SSE streams, Slack webhooks, and terminal CLIs without code modifications.
+- **Interactive Checkpoints**: Sensitive operations prompt the terminal user with `Apply write to config.json? [y/n]`, cleanly intercepting high-risk side effects before they execute.
+- **Automated Testing**: Passing pre-populated fixture lists of input lines allows automated CLI testing without hanging on interactive `input()` prompts.
 
 ## Knowledge
-1. Read a line from stdin (`input()` or `sys.stdin.readline`). Lab 5 walks a list of strings instead so the run is non-interactive.
-2. Call `run_turn(session_id, line)` on the chapter 13 kernel, or `mock_run_turn` in lab 5.
-3. Print the `response` field (and tokens if you stream).
-4. Before a write tool, print a y/n prompt and wait. Do not call the tool on `n`.
-5. Do not start FastAPI. Do not build a TUI in this chapter. Do not copy `CoreAgentKernel`.
+Here is the step-by-step procedure:
+1. Read user input lines from stdin or a test fixture array.
+2. Call `run_turn(session_id, user_prompt)` against the agent kernel.
+3. Print the assistant's natural language response.
+4. If `turn["high_risk"]` is True, prompt the user for confirmation (`[y/n]`).
+5. If confirmed (`"y"`), invoke the actuator; if declined (`"n"`), skip the tool execution and log the cancellation.
 
 ## Wisdom
-A CLI is enough to prove the kernel works without a browser. If you add FastAPI or a TUI now, a missing token could come from the socket, the page, or `run_turn`.
+A robust agent kernel does not care whether inputs originate from a Web browser, a cron daemon, or a terminal TTY. Design clean client boundaries.
 
 ## The When and Why
-- **When:** you are in a terminal, or you want to test the loop without HTTP.
-- **Why:** HTTP is not required for the loop. The same session JSON should work from stdin.
+- **When**: Local developer testing, headless automation scripts, SSH server environments, or CI/CD pipelines.
+- **Why**: Developing and debugging agent logic in a fast CLI loop is significantly faster and simpler than maintaining a full web stack.
 
 ## How it works
 

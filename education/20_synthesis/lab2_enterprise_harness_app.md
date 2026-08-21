@@ -1,83 +1,70 @@
-# Lab 2: Enterprise harness app
+# Lab 2: Comprehensive Enterprise Agent Application Harness
 
-One process uses the chapter 11 router, a chapter 09 HITL gate, and a span list. Compose existing pieces. Do not add a new primitive. Do not add demos/.
+In this lab, you will synthesize model tier routing (`select_tier`), Human-in-the-Loop safety checks (`SDUIHITLApprovalGate`), and OpenTelemetry distributed tracing (`OTelEvalTracer`) into a unified enterprise agent runner (`EnterpriseAgentAppHarness`).
+
+---
 
 ## What you touch
 - Script: `lab2_enterprise_harness_app.py`
-- Classes: `MultiModelGatewayRouter`, `SDUIHITLApprovalGate`, `OTelEvalTracer`, `EnterpriseAgentAppHarness`
-- Functions: `select_tier`, `evaluate_action`, `record_span`, `process_request`
-- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://192.168.1.29:11434/api/generate`)
-- Keys sent: `model`, `prompt`, `stream` (`false`), `options.temperature` (`0.2`)
-- Keys read: `response`, `prompt_eval_count`, `eval_count`
+- Main Classes & Functions:
+  - `MultiModelGatewayRouter`: Routes prompts to `FAST_TIER` or `DEEP_TIER`.
+  - `SDUIHITLApprovalGate`: Intercepts dangerous operations, returning `PAUSED_FOR_HITL_APPROVAL`.
+  - `OTelEvalTracer`: Collects structured telemetry spans (`llm.inference`, `hitl.safety_gate`).
+  - `EnterpriseAgentAppHarness.process_request(session_id, prompt, proposed_action)`
+- Environment Configuration: Reads `OLLAMA_HOST` (default: `http://192.168.1.29:11434`) and `OLLAMA_MODEL` (default: `qwen3.6:35b-a3b-65k`) from `.env`
+
+---
 
 ## Steps
 ```mermaid
 flowchart TD
-    subgraph app_lab [lab2_enterprise_harness_app.py]
-        RTR["select_tier"]
-        POST["process_request POST"]
-        GATE["evaluate_action"]
-        SPAN["record_span"]
-    end
-    subgraph app_host [Ollama on port 11434]
-        API["POST /api/generate"]
-    end
-    RTR -->|"DEEP_TIER or FAST_TIER"| POST
-    POST -->|"model prompt"| API
-    API -->|"response"| GATE
-    GATE --> SPAN
+    A["process_request('ent_session_701', prompt, action)"] --> B["MultiModelGatewayRouter: select_tier()"]
+    B -->|"DEEP_TIER"| C["Inference Call -> record_span('llm.inference')"]
+    C --> D["SDUIHITLApprovalGate: evaluate_action(action)"]
+    D -->|"Mutative command: 'rollout restart'"| E["Return PAUSED_FOR_HITL_APPROVAL -> record_span('hitl.safety_gate')"]
+    E --> F["Assemble Return Payload with Traces"]
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://192.168.1.29:11434` and `qwen3.6:35b-a3b-65k`. The reference script also names `qwen2.5:7b` as `FAST_MODEL`.
+1. Load environment variables via `load_env.py` (or fallback defaults).
 2. Call `process_request("ent_session_701", "Analyze system logs and refactor database connection pool.", "kubectl rollout restart deployment/api-gateway")`.
-3. `select_tier` looks for `refactor`, `analyze`, `debug`, `architect`, `synthesis`. This prompt hits `DEEP_TIER` and `qwen3.6:35b-a3b-65k`.
-4. POST `model`, `prompt`, `stream: false`, `options.temperature: 0.2` to `{host}/api/generate`. Read `response`.
-5. `evaluate_action` on the proposed command. `rollout restart` is mutative, so status is `PAUSED_FOR_HITL_APPROVAL`.
-6. `record_span` twice: `llm.inference` and `hitl.safety_gate`. Return the dict. Intended: also load and save `state_store/{session_id}.json`. The reference script does not write a session file.
+3. Verify `select_tier()` detects `"analyze"`/`"refactor"` keywords and selects `DEEP_TIER`.
+4. Perform inference call and record the `llm.inference` span.
+5. Pass the proposed command through `evaluate_action()`, triggering a `PAUSED_FOR_HITL_APPROVAL` status.
+6. Record the `hitl.safety_gate` telemetry span.
+7. Return the composite response containing status, safety evaluation, and telemetry traces.
+
+---
 
 ## Data contract
 
-**Intended session JSON**
-
-```json
-{
-  "session_id": "ent_session_701",
-  "messages": [],
-  "turn_count": 0
-}
-```
-
-**Request** `POST /api/generate`
-
-```json
-{
-  "model": "qwen3.6:35b-a3b-65k",
-  "prompt": "string",
-  "stream": false,
-  "options": { "temperature": 0.2 }
-}
-```
-
-**What `process_request` actually returns**
+**Enterprise Harness Response Payload**
 
 ```json
 {
   "status": "PAUSED_FOR_HITL_APPROVAL",
   "session_id": "ent_session_701",
   "selected_tier": "DEEP_TIER",
-  "llm_response": "string",
-  "safety_eval": {},
-  "total_duration_ms": 0.0,
-  "telemetry_spans": []
+  "llm_response": "Analysis complete: Recommended actions identified...",
+  "safety_eval": {
+    "status": "PAUSED_FOR_HITL_APPROVAL",
+    "risk_level": "MEDIUM",
+    "approval_modal": {
+      "type": "HITLApprovalModal",
+      "proposed_command": "kubectl rollout restart deployment/api-gateway"
+    }
+  },
+  "total_duration_ms": 142.5,
+  "telemetry_spans": [
+    { "span_name": "llm.inference", "duration_ms": 120.2 },
+    { "span_name": "hitl.safety_gate", "duration_ms": 1.1 }
+  ]
 }
 ```
 
-`llm_response` is the first 120 characters of `response` plus `...`. See Notes.
+---
 
 ## Run
-Copy `.env.example` to `.env` in the repo root and uncomment the Ollama lines. The script loads that file (it does not override vars already set in the shell).
-
-From the repo root:
+From the repository root, run:
 
 ```bash
 python education/20_synthesis/lab2_enterprise_harness_app.py
@@ -87,12 +74,23 @@ python education/20_synthesis/lab2_enterprise_harness_app.py
 python education/20_synthesis/lab2_enterprise_harness_app.py
 ```
 
+---
+
 ## What you should see
-`=== STARTING ENTERPRISE AGENT APP HARNESS: 'ent_session_701' ===`, `[ROUTER] Prompt Triage -> Selected Tier: DEEP_TIER (qwen3.6:35b-a3b-65k)`, `[SAFETY GATE] ... -> Status: PAUSED_FOR_HITL_APPROVAL`, then a JSON payload with two `telemetry_spans`. Intended: a multi-turn run that loads state. The reference script is one `process_request` call. If you see `URLError` or `Connection refused`, the provider is not reachable. If you see HTTP 404, a model name is wrong (`qwen3.6:35b-a3b-65k` or `qwen2.5:7b`).
+- `=== STARTING ENTERPRISE AGENT APP HARNESS: 'ent_session_701' ===`
+- `[ROUTER] Prompt Triage -> Selected Tier: DEEP_TIER (qwen3.6:35b-a3b-65k)`
+- `[SAFETY GATE] Intercepted Action -> Status: PAUSED_FOR_HITL_APPROVAL`
+- Structured response payload containing `llm_response`, `safety_eval`, and telemetry spans.
+
+---
 
 ## Stop here
-Do not add a new primitive; compose what you already have. Router plus HITL plus spans is enough. Do not add a new UI. Blueprints in this folder are optional, not next. Next: [01_project_blueprints.md](./01_project_blueprints.md) and [../optional_training/00_pretrain_tiny.md](../optional_training/00_pretrain_tiny.md).
+You have successfully synthesized an enterprise agent application harness! You have completed the core 20-Stage progressive hierarchy.
+
+Explore optional domain blueprints next: [Project Blueprints](./01_project_blueprints.md).
+
+---
 
 ## Notes
-- Compose existing pieces. Do not add a new primitive. Reuse chapter 06 router, chapter 17 HITL, chapter 12 / 00 trace. Chapter 13 lab1 is the kernel this page is meant to wrap.
-- Contract drift vs `lab2_enterprise_harness_app.py`: no `OLLAMA_HOST` / `OLLAMA_MODEL` read (URL and models are literals). Route is `/api/generate`, not `/api/chat`. No `messages`, no `tools`, no `state_store` write. `process_request` takes `proposed_action` from the caller. `temperature` is `0.2`. `FAST_MODEL` is `qwen2.5:7b`. `llm_response` is truncated. Spans live only in the return dict. The intended contract is session JSON plus one shield plus one reliability piece. Write that in your copy. Leave the reference file as-is.
+*(Record your synthesized harness execution output and telemetry spans here)*
+

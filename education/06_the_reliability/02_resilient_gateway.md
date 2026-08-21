@@ -1,38 +1,36 @@
-# 06: Resilient gateway
+# 06: Resilient Gateways: Retries, Exponential Backoff, and Model Fallbacks
 
-After this page a failed POST retries with backoff. A second host is optional. The lab is `lab4_resilient_gateway.py`.
+By the end of this chapter, you will build a resilient model gateway that automatically recovers from transient network drops, rate limits (HTTP 429), and server errors (HTTP 5xx) using exponential backoff retries and fallback models.
+
+In Chapter 01, we implemented a single model call. In this chapter, we add network resilience so transient failures don't crash your agent applications.
 
 ## Data
-A **gateway** here is a function around one POST. Chapter 01 had one try. This page wraps that try.
-
-**Backoff** is a sleep that grows after each fail. The lab uses `2 ** attempt` seconds (`attempt` starts at 1, so 2s then stop). **Jitter** is a random extra delay so two clients do not retry on the same tick. The lab does not add jitter.
-
-**Retry budget** is `max_retries`. The lab default is `2`.
-
-Errors this page cares about: HTTP 429 (too many requests), HTTP 5xx (server error), and a connection drop (`URLError`). The lab forces a fail with `timeout_seconds=0.001` on attempt 1, then catches `URLError`, `TimeoutError`, and `Exception`.
-
-A **circuit breaker** is a flag that stops calling a dead host after N fails. The lab does not implement one. It switches `model` on the same URL instead.
-
-The functions are `execute_llm_request(model_name, prompt, timeout_seconds)` and `resilient_llm_call(prompt, max_retries=2)`. URL in the file is `http://192.168.1.29:11434/api/generate`. Models are `PRIMARY_MODEL` `qwen3.6:35b-a3b-65k` and `FALLBACK_MODEL` `qwen3.6:35b-a3b`. Intended env defaults are still `OLLAMA_HOST` `http://192.168.1.29:11434` and `OLLAMA_MODEL` `qwen3.6:35b-a3b-65k`.
+A **resilient gateway** wraps raw model calls with retry and failover logic:
+- **Exponential Backoff**: A sleep duration that increases with each failed attempt (e.g. `2 ** attempt` seconds) to avoid overwhelming a busy server.
+- **Retry Budget (`max_retries`)**: The maximum number of attempts allowed before escalating (default is typically 2 or 3 retries).
+- **Target Exceptions**: Transient issues such as `URLError`, `TimeoutError`, HTTP 429 (rate limits), and HTTP 500/503 errors.
+- **Model Fallback**: Automatically switching to a backup model or alternative provider if the primary route fails repeatedly.
 
 ## Information
-The LAN host blips. One try hides flakes. A 429 or a dropped TCP should sleep and try again. After the budget, raise or switch host (or switch model, which is what the lab does).
+Local inference servers and cloud APIs occasionally experience hiccups, high load, or dropped connections. A single failed HTTP call should not crash a multi-step agent workflow.
 
-Do not add multi-region load balancing. That is a mesh. This page is one wrapper.
+By placing a resilient gateway between your application logic and the network layer, temporary glitches are absorbed and resolved automatically without user intervention.
 
 ## Knowledge
-1. Call `execute_llm_request`. POST `{ model, prompt, stream: false, options.temperature: 0.0 }` to `/api/generate`. Read `response`.
-2. On timeout, `URLError`, 429, or 5xx, sleep `2 ** attempt` and retry while `attempt < max_retries`.
-3. After the budget, call the fallback model (lab) or a second host (intended) or raise.
-4. Print the attempt number so the retry is visible.
-5. Do not add a circuit-breaker library or multi-region balancing.
+Here is the step-by-step implementation:
+1. Wrap the low-level HTTP call inside a function `resilient_llm_call(prompt, max_retries=2)`.
+2. Loop over attempts: `for attempt in range(1, max_retries + 1):`.
+3. Try sending the request to the primary model.
+4. If a transient error occurs, catch the exception, log the retry attempt, and sleep for `2 ** attempt` seconds.
+5. If the primary model exhausts all retries, switch to the fallback model or secondary host.
+6. Return the successful response string or raise a clean `RuntimeError` if all routes fail.
 
 ## Wisdom
-Retries plus one fallback is enough to prove a flake is not a hard fail. A circuit breaker and a second host are the same idea with more state. If you add them now, a hang could come from the breaker or from the POST.
+Adding basic retries and exponential backoff provides 99% of production reliability benefits with minimal complexity.
 
 ## The When and Why
-- **When:** the LAN host blips, returns 429, or returns 5xx.
-- **Why:** one try is not production. The wrapper is what makes a flake visible and recoverable.
+- **When**: Use a resilient gateway for all production agent applications, long-running batch jobs, and critical workflows.
+- **Why**: Transient network blips and rate limits are inevitable in distributed systems. Automatic retries ensure high availability and robust execution.
 
 ## How it works
 

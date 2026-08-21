@@ -1,16 +1,23 @@
-# The harness
+# What is an Agent Harness?
 
-Marketing "harness" is not a new primitive. It is the script around the POST: dispatcher, loop, session, allowlist, job row. [Chapter 20](../../education/20_synthesis/00_harness_overview.md) is the compose step. If this page disagrees with a lab brief, the brief wins.
+In developer discussions, the term **"agent harness"** refers to the surrounding Python application that manages the AI model's inputs and outputs. 
 
-The model only emits text and `tool_calls`. The script runs the function, saves state, and stops or parks.
+The AI model itself only does two things: it generates text tokens and suggests tool calls. The **harness** is everything else: dispatching functions, maintaining conversation history, enforcing security policies, managing token budgets, and saving state to disk.
 
-| Word you hear | Course object |
+In [Chapter 20: Synthesis](../../education/20_synthesis/00_harness_overview.md), you bring all these capabilities together into a complete enterprise harness.
+
+---
+
+## Harness Terminology Translated to Code
+
+| Concept You Hear | Concrete Course Implementation |
 |---|---|
-| Sandbox / execution environment | Isolated place a tool runs ([16](../../education/16_the_shield/01_security_overview.md)). Not the model. |
-| Hooks / deterministic gates | A check before the function runs: [16](../../education/16_the_shield/lab2_permissions.md) `lookup_permission`, HITL, or [17](../../education/17_hitl_and_park_resume/00_hitl_and_park_resume.md) park. Not a second model. |
-| Tool orchestration | [03](../../education/03_the_dispatcher/00_tool_dispatch.md) dispatcher plus the [04](../../education/04_the_loop/00_the_react_loop.md) loop. The model emits `tool_calls`. The script runs `TOOL_REGISTRY`. That is ReAct. |
-| State / persistence / memory | [07](../../education/07_the_state/00_save_the_messages.md) session file, [09](../../education/09_agentic_memory_and_rag/01_agentic_memory.md) facts and files, [18](../../education/18_the_job/00_the_job.md) `jobs.json`, [17](../../education/17_hitl_and_park_resume/00_hitl_and_park_resume.md) park. Outside the context window. |
-| Subagents / delegation | [14 wrapper](../../education/14_two_agents/03_skill_vs_two_agents.md) or two loops. See [04_shape_tree.md](./04_shape_tree.md). Isolated `messages`, then one JSON or a handoff. |
-| Observability / evaluation | [06](../../education/06_the_reliability/) cycle hash, reflexion, evals ([12](../../education/12_agent_evals/00_agent_evals.md)). Print the [05](../../education/05_the_budget/00_the_budget.md) stop reason. Not a required telemetry stack. |
+| **Execution Sandbox** | An isolated environment (such as a restricted subprocess) where untrusted tool code runs safely ([Chapter 16](../../education/16_the_shield/01_security_overview.md)). |
+| **Deterministic Policy Gates** | Explicit security and approval checks before running a tool, such as `lookup_permission` ([Chapter 16 Lab 2](../../education/16_the_shield/lab2_permissions.md)) or Human-In-The-Loop approval ([Chapter 17](../../education/17_hitl_and_park_resume/00_hitl_and_park_resume.md)). |
+| **Tool Orchestration** | The combination of the tool dispatcher ([Chapter 03](../../education/03_the_dispatcher/00_tool_dispatch.md)) and the ReAct execution loop ([Chapter 04](../../education/04_the_loop/00_the_react_loop.md)). |
+| **State & Persistence** | Storing conversation data outside the model's context window using session files ([Chapter 07](../../education/07_the_state/00_save_the_messages.md)), facts databases ([Chapter 09](../../education/09_agentic_memory_and_rag/01_agentic_memory.md)), and job records ([Chapter 18](../../education/18_the_job/00_the_job.md)). |
+| **Subagent Delegation** | Isolating subtasks using skill wrappers ([Chapter 14](../../education/14_two_agents/03_skill_vs_two_agents.md)) or coordinating multiple agent loops. |
+| **Observability & Safety** | Tracking execution budgets ([Chapter 05](../../education/05_the_budget/00_the_budget.md)), detecting repetitive reasoning loops ([Chapter 06](../../education/06_the_reliability/)), and running automated benchmark evaluations ([Chapter 12](../../education/12_agent_evals/00_agent_evals.md)). |
 
-Do not add Redis, OpenTelemetry, or a sandbox product because this page lists the words. The lab objects above are enough.
+You do not need heavy third-party enterprise platforms or complex telemetry servers to build a powerful agent harness. The standard Python patterns built across these labs give you complete control and reliability.
+

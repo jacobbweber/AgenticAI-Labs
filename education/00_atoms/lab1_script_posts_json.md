@@ -1,30 +1,38 @@
-# Lab 1: Script posts JSON
+# Lab 1: Sending an HTTP POST Request to a Model
 
-A Python file on disk has received text from a model. No wrapper function. No streaming. No tools.
+In this lab, you will write a standalone Python script that sends a JSON payload to a local model and prints the generated text response.
+
+---
 
 ## What you touch
 - Script: `lab1_script_posts_json.py`
-- URL / path: `{OLLAMA_HOST}/api/generate` (default `http://127.0.0.1:11434/api/generate`)
-- Keys sent: `model`, `prompt`, `stream` (`false`)
-- Keys read: `response`
+- URL / Endpoint: `{OLLAMA_HOST}/api/generate` (defaults to `http://127.0.0.1:11434/api/generate`)
+- Keys Sent: `model`, `prompt`, `stream` (`false`)
+- Keys Read: `response`
+
+---
 
 ## Steps
 ```mermaid
 flowchart LR
-    A["lab1_script_posts_json.py"] -->|"POST /api/generate"| B["Ollama :11434"]
-    B -->|"JSON.response"| A
+    A["lab1_script_posts_json.py"] -->|"POST JSON payload"| B["Ollama Server (:11434)"]
+    B -->|"Response JSON"| A
 ```
 
-1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from the environment. If they are unset, use `http://127.0.0.1:11434` and `llama3.2:1b`.
-2. Build one JSON body: `model`, `prompt` ("In 2 sentences, explain what an HTTP POST request is."), `stream: false`. Do not send `options`.
-3. POST it to `{host}/api/generate` with header `Content-Type: application/json`.
-4. Decode the response JSON.
-5. Print `result["response"]`. If that field is missing or empty, exit with an error. If the host is unreachable, exit with the URL and the connection error.
+1. Read `OLLAMA_HOST` and `OLLAMA_MODEL` from environment variables using `os.environ.get()` (defaulting to `http://127.0.0.1:11434` and `llama3.2:1b` if unset).
+2. Construct a Python dictionary with three fields:
+   - `"model"`: your target model string
+   - `"prompt"`: `"In 2 sentences, explain what an HTTP POST request is."`
+   - `"stream"`: `False`
+3. Send an HTTP POST request to `{OLLAMA_HOST}/api/generate` with the header `Content-Type: application/json` using Python's standard `urllib.request`.
+4. Parse the returned JSON response bytes using `json.loads()`.
+5. Extract and print the `response` string. If the response is missing or the host is unreachable, display a helpful error message.
+
+---
 
 ## Data contract
-Only the keys this script sends and reads.
 
-**Request**
+**Request Payload**
 
 ```json
 {
@@ -34,32 +42,44 @@ Only the keys this script sends and reads.
 }
 ```
 
-**Response**
+**Response Payload**
 
 ```json
 {
-  "response": "string"
+  "response": "An HTTP POST request is used to send data to a server..."
 }
 ```
 
+---
+
 ## Run
-From the repo root:
+From the repository root, run:
 
 ```bash
-OLLAMA_HOST=http://127.0.0.1:11434 OLLAMA_MODEL=llama3.2:1b python education/00_atoms/lab1_script_posts_json.py
-```
-
-```powershell
-$env:OLLAMA_HOST="http://127.0.0.1:11434"
-$env:OLLAMA_MODEL="llama3.2:1b"
 python education/00_atoms/lab1_script_posts_json.py
 ```
 
+```powershell
+python education/00_atoms/lab1_script_posts_json.py
+```
+
+---
+
 ## What you should see
-Two sentences about HTTP POST. If you see `URLError` or `Connection refused`, the provider process is not reachable at that host. If you see HTTP 404, the model name is wrong or not pulled. If you see `empty 'response' field`, you hit the wrong route or the model returned no visible text.
+You should see a clear, two-sentence explanation of HTTP POST printed to your terminal.
+
+- If you encounter a `URLError` or connection error, verify that Ollama or your local server is actively running.
+- If you receive an HTTP 404, check that your model name matches what is installed (`ollama list`).
+
+---
 
 ## Stop here
-This is not a client library. Do not add `def query_llm(prompt) -> str`. That is chapter 01. Do not stream. Do not add tools. Next: [lab2_read_the_json.md](./lab2_read_the_json.md).
+This lab focuses purely on executing a single HTTP POST request. Do not build wrapper functions or add token streaming yet—those will be developed in Chapter 01.
+
+Next up: [Lab 2: Reading the JSON Contract](./lab2_read_the_json.md).
+
+---
 
 ## Notes
-Leave this empty until you run it. Paste the printed text from your machine here.
+*(Record your output and any observations here after running the script)*
+

@@ -1,40 +1,38 @@
-# 09: Codebase indexing
+# 09: Codebase Indexing: File Trees and Abstract Syntax Tree (AST) Search
 
-After this chapter a repo is a tree of files plus an optional symbol list, not one blob. You walk paths, store path plus text or symbols, and query for a function. This page does not add a new indexer product.
+By the end of this chapter, you will implement an automated codebase indexer that scans a project directory, extracts symbol definitions (`def`, `class`), and returns targeted line spans to supply precise context to your agent.
+
+In Chapter 02, we retrieved document chunks. In this chapter, we adapt retrieval techniques to navigate source code repositories efficiently without sending entire codebases to the model.
 
 ## Data
-A **repo** is directories and files on disk. Each file has a path and text. Some files also have an **AST** (abstract syntax tree): a parse of `def`, `class`, and imports so you can store symbols, not only raw lines.
-
-An **index** maps `path` to text, or `path` to a list of symbols. A **hit** is one match you would stuff into a prompt: `{ "path": "string", "span": "string" }`. `path` is the file. `span` is the line range or the snippet.
-
-This is the same retrieve job as `02_private_rag.md`, pointed at a source tree instead of a document folder. Grep (`rg`, ripgrep) is the simple form: walk files, match a string, print `path` and the matching lines. A symbol index is grep plus a parse.
-
-Lab 4 is `lab3_codebase_index.py`. Functions: `iter_files`, `index_file`, `search_index`. The root is this folder. The query is `run_airgapped_private_rag`. Hits print `path` and `span`. Lab 4 does not POST and does not embed.
-
-This file was moved from `modules/16/00_codebase_indexing_overview.md`. Lab 3 is private RAG on hardcoded strings, not a repo walk.
-
-`OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. The POST happens after you have hits. Indexing itself is file I/O. Lab 4 stops at the printed hits.
+A codebase indexer structures source trees into searchable records:
+- **Repository Traversal**: Systematically iterating over project directories while ignoring build artifacts, binaries, and `.git` folders.
+- **Symbol Extraction (AST Parsing)**: Extracting structural identifiers (function names, class definitions) from source files.
+- **Codebase Index Record**: A structured representation of a file:
+  `{"path": "string", "text": "string", "symbols": ["name1", "name2"]}`.
+- **Search Hit Result**: A precise reference matching a query:
+  `{"path": "string", "span": "start_line:end_line"}`.
 
 ## Information
-When an agent must find a function, it should not POST the whole repo. It should query the index, take a few hits, and put those `{ path, span }` snippets in `prompt` or `messages`.
+Feeding an entire codebase into an LLM context window quickly exhausts token budgets and slows down execution.
 
-Grep is enough to prove the idea: `rg -n "def run_airgapped" education/09_agentic_memory_and_rag` returns a path and a line. A later AST pass can store `function_name` and a byte span so a query for `run_airgapped_private_rag` hits the def, not every mention.
-
-Private RAG (`02_private_rag.md`) indexes prose and redacts PII. This page indexes code and keeps `path`. Do not merge the two stores.
+By building a lightweight index:
+- Agents can query specific symbol names (e.g. `run_airgapped_private_rag`) or keyword patterns.
+- The index returns only the relevant file paths and line ranges, enabling targeted prompt construction.
 
 ## Knowledge
-1. Walk the tree (`os.walk` or `rg --files`). Skip `.git`, `node_modules`, and binary files. Lab 4 keeps `.py` and `.md` only.
-2. For each file, store `{ "path": "education/09_agentic_memory_and_rag/lab2_local_private_rag.py", "text": "..." }` or a symbol list from a parse.
-3. Query by string or by symbol name. Collect hits `{ "path": "string", "span": "string" }`.
-4. Stuff the top hits into `prompt` and POST to `{OLLAMA_HOST}/api/generate` with `model`, `stream: false`. Lab 4 does not POST.
-5. Do not build a language-server plugin or a new indexer product on this page.
+Here is the step-by-step procedure:
+1. Walk directory trees using `iter_files()`, skipping `.git` and non-code files.
+2. Read each file and extract defined function and class names using lightweight string parsing or Python's `ast` module.
+3. Store records in an in-memory index dictionary.
+4. When queried, match terms against file text and symbols to produce exact `{ "path", "span" }` location hits.
 
 ## Wisdom
-Stop when a query returns `path` and `span` and you can name grep as the simple form. Do not invent a full indexer lab product, a tree-sitter stack, or a second RAG store here. If you add them now, a miss could come from the walk, the parse, or the POST.
+Fast substring search and symbol indexing (similar to tools like ripgrep) provide effective codebase navigation without requiring complex language server plugins.
 
 ## The When and Why
-- **When:** the agent must find a function or a file in a repo.
-- **Why:** grep is the simple form of this. Posting the whole tree wastes context. A hit list is the retrieve step.
+- **When**: Use codebase indexing when building coding assistants, repository exploration agents, or automated refactoring tools.
+- **Why**: Language models work best when given focused, relevant code snippets rather than raw, unorganized file trees.
 
 ## How it works
 

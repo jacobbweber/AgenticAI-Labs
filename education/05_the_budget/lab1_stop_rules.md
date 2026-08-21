@@ -1,44 +1,45 @@
-# Lab 1: Stop rules
+# Lab 1: Implementing Budget Stop Rules
 
-`check_budget` returns `ok` or `stop` plus a reason. Two fixtures print `max_turns` then `max_tokens`.
+In this lab, you will implement `check_budget(budget, spent)` and test it against two distinct test fixtures to verify that it halts deterministically for both turn limits (`max_turns`) and token ceilings (`max_tokens`).
+
+---
 
 ## What you touch
-- Script: `lab1_stop_rules.py` (write it next to this brief; there is no reference `.py` yet)
-- Functions: `check_budget(budget, spent)`
-- Dicts: `budget` (`max_turns`, `max_tokens`), `spent` (`turns`, `tokens`)
-- No HTTP. This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`.
-- No jobs file. In-memory `spent` is enough.
-- No USD.
+- Script to create: `lab1_stop_rules.py`
+- Main Function: `check_budget(budget: dict, spent: dict) -> dict`
+- Input Dictionaries: `budget` (`max_turns`, `max_tokens`) and `spent` (`turns`, `tokens`)
+- Pure Python logic (no network requests or environment variables required)
+
+---
 
 ## Steps
 ```mermaid
 flowchart TD
-    subgraph lab1_bud_fn [check_budget]
-        T1B["max_turns first"]
-        K1B["max_tokens second"]
-    end
-    subgraph lab1_bud_loop [Each step]
-        INC1B["turns plus 1, tokens plus 40"]
-        CHK1B["check_budget"]
-    end
-    INC1B --> CHK1B
-    CHK1B --> T1B
-    T1B -->|"turns at cap"| STOP1B["stop max_turns"]
-    T1B --> K1B
-    K1B -->|"tokens at cap"| STOP2B["stop max_tokens"]
-    K1B --> OK1B["ok"]
+    A["check_budget(budget, spent)"] --> B{"Is spent['turns'] >= budget['max_turns']?"}
+    B -->|"Yes"| C["Return {stop: True, reason: 'max_turns'}"]
+    B -->|"No"| D{"Is spent['tokens'] >= budget['max_tokens']?"}
+    D -->|"Yes"| E["Return {stop: True, reason: 'max_tokens'}"]
+    D -->|"No"| F["Return {ok: True}"]
 ```
 
-1. Write `check_budget(budget, spent)`. If `spent["turns"] >= budget["max_turns"]`, return `{ "stop": true, "reason": "max_turns" }`. Else if `spent["tokens"] >= budget["max_tokens"]`, return `{ "stop": true, "reason": "max_tokens" }`. Else return `{ "ok": true }`. Check `max_turns` first. Then `max_tokens`.
-2. Write a helper that starts `spent` at `{ "turns": 0, "tokens": 0 }`. Loop up to 5 steps. Each step: `turns += 1`, then `tokens += 40`, then call `check_budget`. Print `ok` or `stop` plus `reason`. Halt on `stop`.
-3. Fixture 1: `budget` `{ "max_turns": 3, "max_tokens": 100 }`. After step 1: turns 1, tokens 40, `ok`. After step 2: turns 2, tokens 80, `ok`. After step 3: turns 3, tokens 120. `turns == max_turns`, so `reason` is `max_turns`.
-4. Fixture 2: `budget` `{ "max_turns": 10, "max_tokens": 50 }`. Same increment. After step 2: turns 2, tokens 80. `tokens >= max_tokens` and turns are under the cap, so `reason` is `max_tokens`.
-5. In `__main__`, run both fixtures. Print both reasons. Do not POST. Do not write `jobs.json`.
+1. Create `check_budget(budget: dict, spent: dict) -> dict`:
+   - Check turn count first: if `spent["turns"] >= budget["max_turns"]`, return `{"stop": True, "reason": "max_turns"}`.
+   - Check token count second: if `spent["tokens"] >= budget["max_tokens"]`, return `{"stop": True, "reason": "max_tokens"}`.
+   - Otherwise, return `{"ok": True}`.
+2. Implement a test runner loop that initializes `spent` to `{"turns": 0, "tokens": 0}` and simulates up to 5 steps, incrementing `turns += 1` and `tokens += 40` on each step until `check_budget` signals a stop.
+3. Test **Fixture 1** (Turn Bound):
+   - Budget: `{"max_turns": 3, "max_tokens": 100}`
+   - Expected: Steps 1 and 2 return `ok: True`. Step 3 reaches turn 3 and halts with `reason: "max_turns"`.
+4. Test **Fixture 2** (Token Bound):
+   - Budget: `{"max_turns": 10, "max_tokens": 50}`
+   - Expected: Step 1 returns `ok: True`. Step 2 reaches 80 tokens (exceeding 50) and halts with `reason: "max_tokens"`.
+5. Run both fixtures and verify that both reasons are printed accurately.
+
+---
 
 ## Data contract
-Only the keys this script uses.
 
-**budget**
+**Budget Configuration**
 
 ```json
 {
@@ -47,7 +48,7 @@ Only the keys this script uses.
 }
 ```
 
-**spent** (start)
+**Resource Consumption (Initial)**
 
 ```json
 {
@@ -56,7 +57,7 @@ Only the keys this script uses.
 }
 ```
 
-**ok**
+**Evaluator Return (Within Limits)**
 
 ```json
 {
@@ -64,7 +65,7 @@ Only the keys this script uses.
 }
 ```
 
-**stop**
+**Evaluator Return (Limit Exceeded)**
 
 ```json
 {
@@ -73,10 +74,10 @@ Only the keys this script uses.
 }
 ```
 
-`reason` is `max_turns` or `max_tokens`. Check order is `max_turns` first, then `max_tokens`.
+---
 
 ## Run
-From the repo root:
+From the repository root, run your script:
 
 ```bash
 python education/05_the_budget/lab1_stop_rules.py
@@ -86,15 +87,21 @@ python education/05_the_budget/lab1_stop_rules.py
 python education/05_the_budget/lab1_stop_rules.py
 ```
 
-This script does not read `OLLAMA_HOST` or `OLLAMA_MODEL`. Do not set those vars for this lab.
+---
 
 ## What you should see
-Fixture 1 prints `ok` twice, then `stop` with `reason` `max_turns`. Fixture 2 prints `ok` once, then `stop` with `reason` `max_tokens`. If fixture 1 prints `max_tokens`, you checked tokens first. If a fixture runs all 5 steps, you did not halt on `stop`.
+- **Fixture 1**: Two `ok` statuses followed by `stop` with reason `max_turns`.
+- **Fixture 2**: One `ok` status followed by `stop` with reason `max_tokens`.
+
+---
 
 ## Stop here
-This is not a billing API. Do not add USD. Do not add a jobs file. Next: [../06_the_reliability/00_cot_and_reasoning.md](../06_the_reliability/00_cot_and_reasoning.md).
+You now have a reliable stop evaluator! In Chapter 06, we will build reliability layers, including Chain-of-Thought demuxing and infinite loop detection.
+
+Next up: [Chapter 06: The Reliability](../06_the_reliability/00_cot_and_reasoning.md).
+
+---
 
 ## Notes
-- Write `lab1_stop_rules.py` next to this brief. There is no reference `.py` in the repo yet.
-- In-memory `spent` is enough. Do not edit other `.py` files in the repo.
-- Check `max_turns` first so fixture 1 is deterministic.
+*(Record your test runs and observations here)*
+

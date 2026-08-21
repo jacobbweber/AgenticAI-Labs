@@ -1,38 +1,35 @@
-# 06: Cycle detection and logit steering
+# 06: Cycle Detection and Logit Steering
 
-After this page a repeated tool signature stops the loop, and optional logit bias can block tokens. Chapter 04 already has `max_turns`. That cap is not enough if the same tool and args repeat until the cap.
+By the end of this chapter, you will implement cycle detection to automatically detect and halt repetitive tool loops, and learn how logit steering guides token generation probabilities.
+
+In Chapter 04, we relied on `max_turns` to bound execution. In this chapter, we add proactive hash-based cycle detection so repeated failures are stopped immediately on the second identical attempt rather than wasting remaining turns.
 
 ## Data
-A **cycle** is the same tool step happening again. The signature is `tool_name` plus the args plus the tool result. `compute_step_hash` in `lab2_cycle_detection.py` builds one string `tool_name:{json.dumps(args, sort_keys=True)}:{output}` and runs SHA-256. The hash is the key. If that key is already in `seen_hashes`, the loop returns `HALTED_BY_CYCLE_DETECTOR`.
-
-**Logit bias** is a number added to a token's raw score before softmax. A large negative number (the lab uses `-100.0`) makes that token almost never win. A positive number (the lab uses `+5.0` on `{`) makes a token more likely. `apply_logit_bias_steering` in `lab3_logit_steering.py` does that add. Stop strings are the other optional halt: tell the provider to stop when it emits a given string.
-
-The cycle lab talks to Ollama. The steering lab does not. It uses a local `VOCAB_TABLE` of token strings to integer ids.
-
-`OLLAMA_HOST` should default to `http://192.168.1.29:11434`. `OLLAMA_MODEL` should default to `qwen3.6:35b-a3b-65k`. The cycle route is `POST /api/chat`.
-
-These files were moved from `modules/08` and `labs/01` lab2. Cycle stays `lab2_cycle_detection`. Steering is `lab3_logit_steering`.
+We introduce two key techniques:
+1. **Step Hashing for Cycle Detection**: A deterministic hash computed from `tool_name`, sorted `arguments`, and the returned `result` string:
+   $$\text{Step Hash} = \text{SHA256}(\text{tool\_name} + \text{args\_json} + \text{result})$$
+   We track all step hashes in a `seen_hashes` set. If an identical step signature repeats, the loop immediately halts with `HALTED_BY_CYCLE_DETECTOR`.
+2. **Logit Bias Steering**: Adjusting the raw unnormalized logits before the softmax activation function to either ban specific tokens (e.g. adding `-100.0` to prevent filler words) or encourage specific formatting tokens (e.g. adding `+5.0` to `{`).
 
 ## Information
-Chapter 04 stops when `tool_calls` is empty or `max_turns` is hit. If the model asks for `read_database_record({"record_id": 999})` every turn, and that tool always returns `ERROR: Record 999 not found`, `max_turns` still spends those turns. Hashing each step (the lab keeps every hash in `seen_hashes`) stops the repeat as soon as it appears.
+When an agent encounters a persistent tool error (such as a database query for a non-existent record), naive loops may repeatedly invoke the exact same function with the exact same parameters. Cycle detection catches this oscillation on the very first repetition.
 
-Steering is a different lever. It does not watch history. It changes which next token is likely. Use it when you want to block words (`apologize`, `cannot`) or boost a format token (`{`). Guardrails that reject a prompt or reject non-JSON output are extra in the steering script. They are not the cycle hash.
-
-Do not add MCTS (tree search over many futures). That is a different algorithm and not this page.
+Logit steering operates directly on model probabilities during token generation, allowing developers to enforce vocabulary constraints without changing prompts.
 
 ## Knowledge
-1. After each tool call, hash `tool_name`, sorted args, and the result string.
-2. If that hash is in `seen_hashes`, halt. Do not POST again.
-3. If it is new, append it and keep the chapter 04 loop.
-4. Optional: add a logit bias map (token id to float) or a stop string list.
-5. Do not add MCTS.
+Here is the step-by-step procedure:
+1. After every tool execution, compute the SHA-256 hash of the tool name, serialized arguments, and output result.
+2. Check if the hash is already present in `seen_hashes`.
+3. If present, immediately stop the loop and return `HALTED_BY_CYCLE_DETECTOR`.
+4. If new, add the hash to `seen_hashes` and continue normal execution.
+5. For steering, apply logit bias adjustments to token IDs before calculating softmax probabilities.
 
 ## Wisdom
-A hash of the last step is enough to stop a repeat. `max_turns` is the blunt backup. Logit bias is optional and local in this lab. If you add a search tree now, a hang could come from the hash, the tree, or the model.
+Step hashing is an inexpensive, foolproof guardrail against infinite agent loops. Keep the hash check fast and simple.
 
 ## The When and Why
-- **When:** the same `tool_name` plus args (and the same result) repeats, or you need to block a small set of tokens.
-- **Why:** a turn cap still spends those turns. A hash stops the second copy. Bias is for tokens, not for loops.
+- **When**: Use cycle detection in any multi-turn agent that executes external tools. Use logit steering when strict vocabulary control or formatting constraints are required.
+- **Why**: Turn limits eventually stop loops, but cycle detection stops them immediately, saving API costs and execution time.
 
 ## How it works
 
