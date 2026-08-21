@@ -1,12 +1,23 @@
 """Reference solution. Moved from the old education/labs tree."""
 import json
+import os
+import sys
 import time
 import urllib.request
+from pathlib import Path
 from typing import Dict, Any
 
-# Local Ollama Host Endpoint (LAN Nimo Mini PC hardware)
-OLLAMA_OPENAI_URL = "http://192.168.1.29:11434/v1/chat/completions"
-MODEL_NAME = "qwen3.6:35b-a3b-65k"
+_ROOT = next(
+    p for p in [Path(__file__).resolve().parent, *Path(__file__).resolve().parent.parents]
+    if (p / "load_env.py").is_file()
+)
+sys.path.insert(0, str(_ROOT))
+from load_env import load_env
+
+load_env()
+# Local Ollama Host Endpoint (OpenAI-compatible /v1 route)
+OLLAMA_OPENAI_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434").rstrip("/") + "/v1/chat/completions"
+MODEL_NAME = os.environ.get("OLLAMA_MODEL", "llama3.2:1b")
 
 def benchmark_local_llm_endpoint(prompt: str) -> Dict[str, Any]:
     """
