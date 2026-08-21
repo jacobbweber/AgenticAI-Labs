@@ -1,12 +1,22 @@
 """Reference solution: dict-through-functions DAG with an LLM router. Chapter 06."""
 import json
 import os
+import sys
 import time
 import urllib.request
+from pathlib import Path
 from typing import Dict, Any
 
-OLLAMA_URL = os.environ.get("OLLAMA_HOST", "http://192.168.1.29:11434").rstrip("/") + "/api/generate"
-MODEL_NAME = os.environ.get("OLLAMA_MODEL", "qwen3.6:35b-a3b-65k")
+_ROOT = next(
+    p for p in [Path(__file__).resolve().parent, *Path(__file__).resolve().parent.parents]
+    if (p / "load_env.py").is_file()
+)
+sys.path.insert(0, str(_ROOT))
+from load_env import load_env
+
+load_env()
+OLLAMA_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434").rstrip("/") + "/api/generate"
+MODEL_NAME = os.environ.get("OLLAMA_MODEL", "llama3.2:1b")
 
 def node_ingest_request(raw_user_input: str) -> Dict[str, Any]:
     print("[NODE 1: INGESTION] Normalizing input payload...")

@@ -75,6 +75,8 @@ Intended chapter 00 generate POST. The reference script uses `/v1` (Notes).
 ```
 
 ## Run
+Copy `.env.example` to `.env` in the repo root and uncomment the Ollama lines. The script loads that file (it does not override vars already set in the shell).
+
 From the repo root:
 
 ```bash
@@ -82,12 +84,10 @@ python education/11_engine_room/lab1_local_llm_server.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/11_engine_room/lab1_local_llm_server.py
 ```
 
-The reference script does not read those env vars. The URL and model are literals. Ollama must be up on port `11434`.
+Ollama must be up on port `11434`.
 
 ## What you should see
 `=== STARTING LOCAL LLM SERVER & OPENAI-COMPATIBLE BENCHMARK LAB ===`. Then `[LOCAL INFRA] Connecting to OpenAI-compatible endpoint: http://192.168.1.29:11434/v1/chat/completions` and `Target Local Model: 'qwen3.6:35b-a3b-65k'`. Then `Execution Completed in ...s!` with Prompt Tokens, Completion Tokens, and Tokens/Sec. Then `=== LOCAL MODEL RESPONSE ===` and two sentences. If you see `URLError` or connection refused, the process is down. If you see HTTP 404, the model name is wrong.

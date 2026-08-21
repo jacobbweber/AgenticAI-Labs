@@ -75,6 +75,8 @@ The error string lives in the next `prompt`, not in a `messages` list.
 ```
 
 ## Run
+Copy `.env.example` to `.env` in the repo root and uncomment the Ollama lines. The script loads that file (it does not override vars already set in the shell).
+
 From the repo root:
 
 ```bash
@@ -82,8 +84,6 @@ python education/12_reliability/lab5_reflexion_loop.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/12_reliability/lab5_reflexion_loop.py
 ```
 
