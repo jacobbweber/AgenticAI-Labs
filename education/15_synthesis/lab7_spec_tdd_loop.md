@@ -79,6 +79,8 @@ WHEN two numbers are passed, the system SHALL return their product.
 `run_test_suite` returns one int. The pipeline prints both. The red and green files are literals in the reference script. See Notes.
 
 ## Run
+Copy `.env.example` to `.env` in the repo root and uncomment the Ollama lines. The script loads that file (it does not override vars already set in the shell).
+
 From the repo root:
 
 ```bash
@@ -86,8 +88,6 @@ python education/15_synthesis/lab7_spec_tdd_loop.py
 ```
 
 ```powershell
-$env:OLLAMA_HOST="http://192.168.1.29:11434"
-$env:OLLAMA_MODEL="qwen3.6:35b-a3b-65k"
 python education/15_synthesis/lab7_spec_tdd_loop.py
 ```
 
