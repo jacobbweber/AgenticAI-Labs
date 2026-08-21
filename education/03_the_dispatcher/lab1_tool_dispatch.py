@@ -3,6 +3,16 @@ import json
 import os
 import sys
 import urllib.request
+from pathlib import Path
+
+_ROOT = next(
+    p for p in [Path(__file__).resolve().parent, *Path(__file__).resolve().parent.parents]
+    if (p / "load_env.py").is_file()
+)
+sys.path.insert(0, str(_ROOT))
+from load_env import load_env
+
+load_env()
 
 
 def add_numbers(a, b) -> str:
